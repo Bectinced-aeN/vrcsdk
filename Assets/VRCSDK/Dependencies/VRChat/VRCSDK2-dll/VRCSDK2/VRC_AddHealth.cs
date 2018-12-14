@@ -30,6 +30,7 @@ namespace VRCSDK2
 			VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "AddHealth";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 4;
 			vrcEvent.ParameterString = "AddHealth";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{

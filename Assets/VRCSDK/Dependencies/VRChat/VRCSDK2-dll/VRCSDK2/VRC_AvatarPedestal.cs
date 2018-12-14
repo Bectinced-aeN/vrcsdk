@@ -42,20 +42,28 @@ namespace VRCSDK2
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
 		public void SwitchAvatar(string id)
 		{
 			blueprintId = id;
 			if (Instance != null)
 			{
-				Instance.SendMessage("RefreshAvatar", 1);
+				Networking.RPC(VRC_EventHandler.VrcTargetType.All, Instance, "RefreshAvatar");
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.All
+		})]
 		public void SetAvatarUse()
 		{
 			if (Instance != null)
 			{
-				Instance.SendMessage("SetAvatarUse", 1);
+				Networking.RPC(VRC_EventHandler.VrcTargetType.Local, Instance, "SetAvatarUse");
 			}
 		}
 	}

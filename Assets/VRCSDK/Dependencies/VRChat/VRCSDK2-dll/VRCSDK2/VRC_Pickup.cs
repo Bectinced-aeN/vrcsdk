@@ -35,6 +35,8 @@ namespace VRCSDK2
 
 		public delegate void HapticEventDelegate(VRC_Pickup obj, float duration, float amplitude, float frequency);
 
+		public bool DisallowTheft;
+
 		public Rigidbody physicalRoot;
 
 		public Transform ExactGun;
@@ -49,28 +51,28 @@ namespace VRCSDK2
 
 		public string UseText = "Use";
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public VRC_EventHandler.VrcBroadcastType useEventBroadcastType;
 
 		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
 		public string UseDownEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string UseUpEventName;
 
 		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string PickupEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string DropEventName;
 
 		public float ThrowVelocityBoostMinSpeed = 1f;
@@ -109,7 +111,9 @@ namespace VRCSDK2
 
 		public static Func<VRC_Pickup, VRC_PlayerApi> _GetCurrentPlayer;
 
-		public VRC_PlayerApi currentPlayer => _GetCurrentPlayer(this);
+		public VRC_PlayerApi currentPlayer => (_GetCurrentPlayer == null) ? null : _GetCurrentPlayer(this);
+
+		public bool IsHeld => currentPlayer != null && currentHand != PickupHand.None;
 
 		public PickupHand currentHand => _GetPickupHand(this);
 
@@ -152,13 +156,22 @@ namespace VRCSDK2
 
 		public void RevertPhysics()
 		{
-			this.get_transform().SetParent(originalParent);
+			if (this.get_transform().get_parent() != originalParent)
+			{
+				this.get_transform().SetParent(originalParent);
+			}
 			if (physicalRoot != null)
 			{
-				physicalRoot.set_isKinematic(originalKinematic);
-				physicalRoot.set_useGravity(originalGravity);
+				if (physicalRoot.get_isKinematic() != originalKinematic)
+				{
+					physicalRoot.set_isKinematic(originalKinematic);
+				}
+				if (physicalRoot.get_useGravity() != originalGravity)
+				{
+					physicalRoot.set_useGravity(originalGravity);
+				}
 				Collider component = physicalRoot.GetComponent<Collider>();
-				if (component != null)
+				if (component != null && component.get_isTrigger() != originalTrigger)
 				{
 					component.set_isTrigger(originalTrigger);
 				}

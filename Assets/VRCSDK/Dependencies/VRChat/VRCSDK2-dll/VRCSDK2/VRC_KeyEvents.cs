@@ -30,6 +30,10 @@ namespace VRCSDK2
 
 		private void Start()
 		{
+			if (this.GetComponentInParent<VRC_PlayerApi>() != null || this.GetComponent<VRC_PlayerApi>() != null)
+			{
+				Object.Destroy(this);
+			}
 			if (Initialize != null)
 			{
 				Initialize(this);

@@ -67,6 +67,10 @@ namespace VRCSDK2
 				{
 					return new GameObjectSurrogate();
 				}
+				if (type == typeof(Transform))
+				{
+					return new TransformSurrogate();
+				}
 				if (type.IsSubclassOf(typeof(Object)))
 				{
 					return new ObjectSurrogate();
@@ -188,15 +192,19 @@ namespace VRCSDK2
 			{
 				//IL_0001: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0007: Expected O, but got Unknown
-				//IL_0011: Unknown result type (might be due to invalid IL or missing references)
-				//IL_001f: Unknown result type (might be due to invalid IL or missing references)
 				//IL_002d: Unknown result type (might be due to invalid IL or missing references)
 				//IL_003b: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0049: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0057: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0065: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0073: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0081: Unknown result type (might be due to invalid IL or missing references)
+				//IL_008f: Unknown result type (might be due to invalid IL or missing references)
 				Transform val = obj;
+				if (val.get_gameObject() == null)
+				{
+					throw new ArgumentException("Transform must have an associated gameObject.");
+				}
 				object[] parameters = new object[9]
 				{
 					val.get_position(),
@@ -209,34 +217,40 @@ namespace VRCSDK2
 					val.get_up(),
 					val.get_name()
 				};
+				string gameObjectPath = GetGameObjectPath(val.get_gameObject());
+				info.AddValue("path", gameObjectPath);
 				info.AddValue("data", ParameterEncoder(parameters));
 			}
 
 			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
 			{
-				//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0007: Expected O, but got Unknown
-				//IL_002d: Unknown result type (might be due to invalid IL or missing references)
-				//IL_003b: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0049: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0057: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0065: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0073: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0081: Unknown result type (might be due to invalid IL or missing references)
-				//IL_008f: Unknown result type (might be due to invalid IL or missing references)
-				Transform val = obj;
+				//IL_0050: Unknown result type (might be due to invalid IL or missing references)
+				//IL_005f: Unknown result type (might be due to invalid IL or missing references)
+				//IL_006e: Unknown result type (might be due to invalid IL or missing references)
+				//IL_007d: Unknown result type (might be due to invalid IL or missing references)
+				//IL_008c: Unknown result type (might be due to invalid IL or missing references)
+				//IL_009b: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00aa: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00b9: Unknown result type (might be due to invalid IL or missing references)
+				string @string = info.GetString("path");
+				GameObject val = FindGameObject(@string);
+				if (val == null)
+				{
+					return null;
+				}
+				Transform transform = val.get_transform();
 				byte[] dataParameters = (byte[])info.GetValue("data", typeof(byte[]));
 				object[] array = ParameterDecoder(dataParameters);
-				val.set_position((Vector3)array[0]);
-				val.set_rotation((Quaternion)array[1]);
-				val.set_localPosition((Vector3)array[2]);
-				val.set_localRotation((Quaternion)array[3]);
-				val.set_localScale((Vector3)array[4]);
-				val.set_forward((Vector3)array[5]);
-				val.set_right((Vector3)array[6]);
-				val.set_up((Vector3)array[7]);
-				val.set_name((string)array[8]);
-				return val;
+				transform.set_position((Vector3)array[0]);
+				transform.set_rotation((Quaternion)array[1]);
+				transform.set_localPosition((Vector3)array[2]);
+				transform.set_localRotation((Quaternion)array[3]);
+				transform.set_localScale((Vector3)array[4]);
+				transform.set_forward((Vector3)array[5]);
+				transform.set_right((Vector3)array[6]);
+				transform.set_up((Vector3)array[7]);
+				transform.set_name((string)array[8]);
+				return transform;
 			}
 		}
 
@@ -456,7 +470,7 @@ namespace VRCSDK2
 			VRC_EventDispatcher dispatcher = Dispatcher;
 			if (dispatcher != null)
 			{
-				return dispatcher.FindGameObject(path);
+				return dispatcher.FindGameObject(path, suppressErrors: true);
 			}
 			return VRC_EventDispatcherLocal.FindGameObjectFallback(path);
 		}

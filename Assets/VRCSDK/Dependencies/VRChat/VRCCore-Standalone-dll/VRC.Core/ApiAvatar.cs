@@ -28,6 +28,12 @@ namespace VRC.Core
 			Any
 		}
 
+		private static AssetVersion _VERSION = null;
+
+		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.3.4p1", 0);
+
+		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.3.4p1", 0);
+
 		protected string mName;
 
 		protected string mImageUrl;
@@ -47,6 +53,22 @@ namespace VRC.Core
 		protected string mUnityPackageUrl;
 
 		public string thumbnailImageUrl;
+
+		private AssetVersion mAssetVersion;
+
+		private string mPlatform;
+
+		public static AssetVersion VERSION
+		{
+			get
+			{
+				if (_VERSION == null)
+				{
+					_VERSION = new AssetVersion(Application.get_unityVersion(), 1);
+				}
+				return _VERSION;
+			}
+		}
 
 		public new string id
 		{
@@ -148,6 +170,30 @@ namespace VRC.Core
 			}
 		}
 
+		public AssetVersion assetVersion
+		{
+			get
+			{
+				return mAssetVersion;
+			}
+			set
+			{
+				mAssetVersion = value;
+			}
+		}
+
+		public string platform
+		{
+			get
+			{
+				return mPlatform;
+			}
+			set
+			{
+				mPlatform = value;
+			}
+		}
+
 		public void Init(APIUser author, string name, string imageUrl, string assetUrl, string description, List<string> tags, string packageUrl = "")
 		{
 			mName = name;
@@ -158,6 +204,7 @@ namespace VRC.Core
 			mAuthorName = author.displayName;
 			mAuthorId = author.id;
 			mUnityPackageUrl = packageUrl;
+			UpdateVersionAndPlatform();
 		}
 
 		public void Init()
@@ -171,6 +218,7 @@ namespace VRC.Core
 			mAuthorName = string.Empty;
 			mAuthorId = string.Empty;
 			mVersion = -1;
+			UpdateVersionAndPlatform();
 		}
 
 		public void Init(Dictionary<string, object> jsonObject)
@@ -188,7 +236,9 @@ namespace VRC.Core
 			List<string> source = list;
 			if (source.Any((string s) => !jsonObject.ContainsKey(s)))
 			{
-				Debug.LogError((object)"Could not initialize Avatar due to insufficient json parameters");
+				Debug.LogError((object)("Could not initialize Avatar due to insufficient json parameters.\nMissing: " + string.Join(", ", (from s in source
+				where !jsonObject.ContainsKey(s)
+				select s).ToArray())));
 			}
 			else
 			{
@@ -198,6 +248,10 @@ namespace VRC.Core
 				mAuthorName = (jsonObject["authorName"] as string);
 				mAuthorId = (jsonObject["authorId"] as string);
 				mAssetUrl = (jsonObject["assetUrl"] as string);
+				if (jsonObject.ContainsKey("unityPackageUrl"))
+				{
+					mUnityPackageUrl = (jsonObject["unityPackageUrl"] as string);
+				}
 				mDescription = (jsonObject["description"] as string);
 				mTags = Tools.ObjListToStringList((List<object>)jsonObject["tags"]);
 				mVersion = (int)(double)jsonObject["version"];
@@ -205,10 +259,36 @@ namespace VRC.Core
 				{
 					thumbnailImageUrl = (jsonObject["thumbnailImageUrl"] as string);
 				}
+				string unityVersion = DefaultAssetVersion.UnityVersion;
+				if (jsonObject.ContainsKey("unityVersion"))
+				{
+					unityVersion = (jsonObject["unityVersion"] as string);
+				}
+				int result = DefaultAssetVersion.ApiVersion;
+				if (jsonObject.ContainsKey("assetVersion"))
+				{
+					string text = jsonObject["assetVersion"] as string;
+					if (string.IsNullOrEmpty(text) || !int.TryParse(text, out result))
+					{
+						Debug.LogError((object)("Invalid assetVersion string: " + text));
+					}
+				}
+				mAssetVersion = new AssetVersion(unityVersion, result);
+				mPlatform = "standalonewindows";
+				if (jsonObject.ContainsKey("platform"))
+				{
+					mPlatform = (jsonObject["platform"] as string);
+				}
 			}
 		}
 
-		protected new virtual Dictionary<string, string> BuildWebParameters()
+		public void UpdateVersionAndPlatform()
+		{
+			mAssetVersion = VERSION;
+			mPlatform = ApiModel.GetAssetPlatformString();
+		}
+
+		protected override Dictionary<string, string> BuildWebParameters()
 		{
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			dictionary["name"] = name;
@@ -222,6 +302,9 @@ namespace VRC.Core
 			{
 				dictionary["unityPackageUrl"] = unityPackageUrl;
 			}
+			dictionary["unityVersion"] = mAssetVersion.UnityVersion.ToString();
+			dictionary["assetVersion"] = mAssetVersion.ApiVersion.ToString();
+			dictionary["platform"] = mPlatform;
 			return dictionary;
 		}
 
@@ -271,7 +354,21 @@ namespace VRC.Core
 
 		public static void Fetch(string id, Action<ApiAvatar> successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendGetRequest("avatars/" + id, delegate(Dictionary<string, object> obj)
+			Fetch(id, compatibleVersionsOnly: true, successCallback, errorCallback);
+		}
+
+		public static void Fetch(string id, bool compatibleVersionsOnly, Action<ApiAvatar> successCallback, Action<string> errorCallback)
+		{
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			if (compatibleVersionsOnly)
+			{
+				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
+				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
+				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
+				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+			}
+			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
+			ApiModel.SendRequest("avatars/" + id, HTTPMethods.Get, dictionary, delegate(Dictionary<string, object> obj)
 			{
 				ApiAvatar apiAvatar = ScriptableObject.CreateInstance<ApiAvatar>();
 				apiAvatar.Init(obj);
@@ -288,7 +385,7 @@ namespace VRC.Core
 		public void AssignToThisUser()
 		{
 			string endpoint = "avatars/" + id + "/select";
-			ApiModel.SendPutRequest(endpoint, null, delegate
+			ApiModel.SendPutRequest(endpoint, delegate
 			{
 			}, delegate(string message)
 			{
@@ -296,7 +393,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending)
+		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true)
 		{
 			string endpoint = "avatars";
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
@@ -331,6 +428,14 @@ namespace VRC.Core
 				dictionary.Add("order", "descending");
 				break;
 			}
+			if (compatibleVersionsOnly)
+			{
+				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
+				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
+				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
+				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+			}
+			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
 			ApiModel.SendRequest(endpoint, HTTPMethods.Get, dictionary, delegate(List<object> objs)
 			{
 				List<ApiAvatar> list = new List<ApiAvatar>();

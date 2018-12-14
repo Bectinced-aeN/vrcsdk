@@ -30,7 +30,8 @@ namespace VRCSDK2
 			SetLayer,
 			SetMaterial,
 			AddHealth,
-			AddDamage
+			AddDamage,
+			SetComponentActive
 		}
 
 		public enum VrcBroadcastType
@@ -41,7 +42,10 @@ namespace VRCSDK2
 			Owner,
 			AlwaysUnbuffered,
 			MasterUnbuffered,
-			OwnerUnbuffered
+			OwnerUnbuffered,
+			AlwaysBufferOne,
+			MasterBufferOne,
+			OwnerBufferOne
 		}
 
 		public enum VrcTargetType
@@ -52,7 +56,10 @@ namespace VRCSDK2
 			Master,
 			AllBuffered,
 			OthersBuffered,
-			Local
+			Local,
+			AllBufferOne,
+			OthersBufferOne,
+			TargetPlayer
 		}
 
 		public enum VrcBooleanOp
@@ -81,7 +88,6 @@ namespace VRCSDK2
 
 			public int ParameterInt = 1;
 
-			[Obsolete("Use ParameterObjects instead", false)]
 			[HideInInspector]
 			public GameObject ParameterObject;
 
@@ -115,7 +121,7 @@ namespace VRCSDK2
 
 		public long CombinedNetworkId = -1L;
 
-		private VRC_EventDispatcher _dispatcher;
+		public VRC_EventDispatcher _dispatcher;
 
 		public bool _registered;
 
@@ -166,6 +172,11 @@ namespace VRCSDK2
 
 		private void Awake()
 		{
+			VRC_EventHandler[] components = this.get_gameObject().GetComponents<VRC_EventHandler>();
+			if (components.Length > 1 || components[0] != this)
+			{
+				Debug.LogError((object)("Multiple event handlers found on " + this.get_gameObject().get_name() + ", bad things will happen."));
+			}
 			foreach (VrcEvent @event in Events)
 			{
 				if (@event.ParameterBoolOp == VrcBooleanOp.Unused)
@@ -190,13 +201,7 @@ namespace VRCSDK2
 				{
 					CombinedNetworkId = AssignCombinedNetworkId(this);
 				}
-				GameObject val = GameObject.Find("/VRC_OBJECTS/Dispatcher");
-				if (val != null)
-				{
-					_dispatcher = val.GetComponent<VRC_EventDispatcher>();
-					_dispatcher.RegisterEventHandler(this);
-				}
-				else
+				if (_dispatcher == null)
 				{
 					_dispatcher = this.get_gameObject().GetComponent<VRC_EventDispatcherLocal>();
 					if (_dispatcher == null)
@@ -232,9 +237,27 @@ namespace VRCSDK2
 		{
 			if (e != null && !(this.get_gameObject() == null))
 			{
-				if (_dispatcher == null || !Networking.IsNetworkSettled || (e.ParameterObject != null && !Networking.IsObjectReady(e.ParameterObject)) || (e.ParameterObjects != null && e.ParameterObjects.Any((GameObject o) => !Networking.IsObjectReady(o))) || !Networking.IsObjectReady(this.get_gameObject()))
+				if (_dispatcher == null)
 				{
+					Debug.LogFormat("Deferring event {0} of type {1} because dispatcher is unavailable.", new object[2]
+					{
+						e.Name,
+						e.EventType
+					});
 					DeferEvent(e, broadcast, instagatorId, fastForward);
+				}
+				else if (!Networking.IsNetworkSettled)
+				{
+					Debug.LogFormat("Deferring event {0} of type {1} because the network is not settled.", new object[2]
+					{
+						e.Name,
+						e.EventType
+					});
+					DeferEvent(e, broadcast, instagatorId, fastForward);
+				}
+				else if ((e.ParameterObjects == null || e.ParameterObjects.Length == 0) && e.ParameterObject == null)
+				{
+					Debug.LogError((object)("No object to receive event " + e.Name + " of type " + e.EventType));
 				}
 				else
 				{
@@ -263,74 +286,80 @@ namespace VRCSDK2
 			{
 				LogEvent(this, e, CombinedNetworkId, broadcast, instagatorId, fastForward);
 			}
-			switch (e.EventType)
+			else
 			{
-			case VrcEventType.AnimationBool:
-				_dispatcher.SetAnimatorBool(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterBoolOp);
-				break;
-			case VrcEventType.AnimationFloat:
-				_dispatcher.SetAnimatorFloat(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterFloat);
-				break;
-			case VrcEventType.AnimationTrigger:
-				_dispatcher.SetAnimatorTrigger(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject);
-				break;
-			case VrcEventType.AudioTrigger:
-				_dispatcher.TriggerAudioSource(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString, fastForward);
-				break;
-			case VrcEventType.PlayAnimation:
-				_dispatcher.PlayAnimation(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, fastForward);
-				break;
-			case VrcEventType.SendMessage:
-				_dispatcher.SendMessage(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
-				break;
-			case VrcEventType.MeshVisibility:
-				_dispatcher.SetMeshVisibility(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
-				break;
-			case VrcEventType.SetParticlePlaying:
-				_dispatcher.SetParticlePlaying(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
-				break;
-			case VrcEventType.TeleportPlayer:
-				_dispatcher.TeleportPlayer(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject);
-				break;
-			case VrcEventType.RunConsoleCommand:
-				_dispatcher.RunConsoleCommand(CombinedNetworkId, broadcast, instagatorId, e.ParameterString);
-				break;
-			case VrcEventType.SetGameObjectActive:
-				_dispatcher.SetGameObjectActive(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
-				break;
-			case VrcEventType.SetWebPanelURI:
-				_dispatcher.SetWebPanelURI(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
-				break;
-			case VrcEventType.SetWebPanelVolume:
-				_dispatcher.SetWebPanelVolume(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
-				break;
-			case VrcEventType.SpawnObject:
-				_dispatcher.SpawnObject(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString, e.ParameterBytes);
-				break;
-			case VrcEventType.SendRPC:
-				_dispatcher.SendRPC(CombinedNetworkId, broadcast, instagatorId, (VrcTargetType)e.ParameterInt, e.ParameterObject, e.ParameterString, e.ParameterBytes);
-				break;
-			case VrcEventType.ActivateCustomTrigger:
-				_dispatcher.ActivateCustomTrigger(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
-				break;
-			case VrcEventType.DestroyObject:
-				_dispatcher.DestroyObject(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject);
-				break;
-			case VrcEventType.SetLayer:
-				_dispatcher.SetLayer(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterInt);
-				break;
-			case VrcEventType.SetMaterial:
-				_dispatcher.SetMaterial(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
-				break;
-			case VrcEventType.AddHealth:
-				_dispatcher.AddHealth(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
-				break;
-			case VrcEventType.AddDamage:
-				_dispatcher.AddDamage(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
-				break;
-			default:
-				Debug.LogError((object)("Unknown event type " + e.EventType.ToString()));
-				break;
+				switch (e.EventType)
+				{
+				case VrcEventType.AnimationBool:
+					_dispatcher.SetAnimatorBool(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterBoolOp);
+					break;
+				case VrcEventType.AnimationFloat:
+					_dispatcher.SetAnimatorFloat(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterFloat);
+					break;
+				case VrcEventType.AnimationTrigger:
+					_dispatcher.SetAnimatorTrigger(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject);
+					break;
+				case VrcEventType.AudioTrigger:
+					_dispatcher.TriggerAudioSource(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString, fastForward);
+					break;
+				case VrcEventType.PlayAnimation:
+					_dispatcher.PlayAnimation(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, fastForward);
+					break;
+				case VrcEventType.SendMessage:
+					_dispatcher.SendMessage(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
+					break;
+				case VrcEventType.MeshVisibility:
+					_dispatcher.SetMeshVisibility(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
+					break;
+				case VrcEventType.SetParticlePlaying:
+					_dispatcher.SetParticlePlaying(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
+					break;
+				case VrcEventType.TeleportPlayer:
+					_dispatcher.TeleportPlayer(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
+					break;
+				case VrcEventType.RunConsoleCommand:
+					_dispatcher.RunConsoleCommand(CombinedNetworkId, broadcast, instagatorId, e.ParameterString);
+					break;
+				case VrcEventType.SetGameObjectActive:
+					_dispatcher.SetGameObjectActive(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterBoolOp);
+					break;
+				case VrcEventType.SetWebPanelURI:
+					_dispatcher.SetWebPanelURI(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
+					break;
+				case VrcEventType.SetWebPanelVolume:
+					_dispatcher.SetWebPanelVolume(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
+					break;
+				case VrcEventType.SpawnObject:
+					_dispatcher.SpawnObject(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString, e.ParameterBytes);
+					break;
+				case VrcEventType.SendRPC:
+					_dispatcher.SendRPC(CombinedNetworkId, broadcast, instagatorId, (VrcTargetType)e.ParameterInt, e.ParameterObject, e.ParameterString, e.ParameterBytes);
+					break;
+				case VrcEventType.ActivateCustomTrigger:
+					_dispatcher.ActivateCustomTrigger(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
+					break;
+				case VrcEventType.DestroyObject:
+					_dispatcher.DestroyObject(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject);
+					break;
+				case VrcEventType.SetLayer:
+					_dispatcher.SetLayer(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterInt);
+					break;
+				case VrcEventType.SetMaterial:
+					_dispatcher.SetMaterial(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString);
+					break;
+				case VrcEventType.AddHealth:
+					_dispatcher.AddHealth(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
+					break;
+				case VrcEventType.AddDamage:
+					_dispatcher.AddDamage(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterFloat);
+					break;
+				case VrcEventType.SetComponentActive:
+					_dispatcher.SetComponentActive(CombinedNetworkId, broadcast, instagatorId, e.ParameterObject, e.ParameterString, e.ParameterBoolOp);
+					break;
+				default:
+					Debug.LogError((object)("Unknown event type " + e.EventType.ToString()));
+					break;
+				}
 			}
 		}
 
@@ -403,9 +432,12 @@ namespace VRCSDK2
 			Unregister();
 		}
 
-		private void Update()
+		private void LateUpdate()
 		{
-			ProcessDeferredEvents();
+			if (deferredEvents.FirstOrDefault() != null)
+			{
+				ProcessDeferredEvents();
+			}
 		}
 
 		public long GetCombinedNetworkId()
@@ -419,7 +451,7 @@ namespace VRCSDK2
 
 		public static bool HasEventTrigger(GameObject go)
 		{
-			return go.GetComponent<VRC_Trigger>() != null;
+			return go.GetComponent<VRC_Interactable>() != null;
 		}
 
 		public void SetReady(bool ready)

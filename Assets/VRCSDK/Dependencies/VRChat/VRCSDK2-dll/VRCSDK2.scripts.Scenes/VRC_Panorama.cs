@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace VRCSDK2.scripts.Scenes
 {
+	[RequireComponent(typeof(VRC_DataStorage))]
 	internal class VRC_Panorama : MonoBehaviour
 	{
 		public enum Layout
@@ -64,7 +65,11 @@ namespace VRCSDK2.scripts.Scenes
 			}
 		}
 
-		private void NextPano()
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void NextPano()
 		{
 			data.data[dataIndex].valueInt++;
 			if (data.data[dataIndex].valueInt >= panoramas.Count)
@@ -73,13 +78,27 @@ namespace VRCSDK2.scripts.Scenes
 			}
 		}
 
-		private void PrevPano()
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void PrevPano()
 		{
 			data.data[dataIndex].valueInt--;
 			if (data.data[dataIndex].valueInt < 0)
 			{
 				data.data[dataIndex].valueInt = panoramas.Count - 1;
 			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void ShowPanoAt(int index)
+		{
+			index = ((index >= 0) ? ((index < panoramas.Count) ? index : (panoramas.Count - 1)) : 0);
+			data.data[dataIndex].valueInt = index;
 		}
 
 		private IEnumerator ShowPano(int index)

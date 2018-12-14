@@ -22,7 +22,8 @@ namespace VRCSDK2
 			Float,
 			String,
 			SerializeBytes,
-			SerializeObject
+			SerializeObject,
+			Other
 		}
 
 		[Serializable]

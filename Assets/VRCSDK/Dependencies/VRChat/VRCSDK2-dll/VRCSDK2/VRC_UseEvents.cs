@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace VRCSDK2
@@ -12,7 +13,7 @@ namespace VRCSDK2
 
 		public bool isHidden;
 
-		public VRC_EventHandler.VrcBroadcastType BroadcastType;
+		public VRC_EventHandler.VrcBroadcastType BroadcastType = VRC_EventHandler.VrcBroadcastType.AlwaysBufferOne;
 
 		public static UpdateDelegate UpdateUse;
 
@@ -22,6 +23,10 @@ namespace VRCSDK2
 			if (isHidden)
 			{
 				this.get_gameObject().set_layer(LayerMask.NameToLayer("Default"));
+			}
+			if (this.GetComponents<VRC_UseEvents>().Any((VRC_UseEvents u) => u.EventName == EventName && u != this))
+			{
+				Object.Destroy(this);
 			}
 		}
 

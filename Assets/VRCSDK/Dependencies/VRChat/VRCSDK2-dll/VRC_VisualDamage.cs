@@ -42,7 +42,7 @@ public class VRC_VisualDamage : MonoBehaviour
 		curve.AddKey(new Keyframe(1f, minDamageScale));
 	}
 
-	private void OnLevelWasLoaded()
+	private void OnSceneWasLoaded()
 	{
 		Object.Destroy(this.get_gameObject());
 	}

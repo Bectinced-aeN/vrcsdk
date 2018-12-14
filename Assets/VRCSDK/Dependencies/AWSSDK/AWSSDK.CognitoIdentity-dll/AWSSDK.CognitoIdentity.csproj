@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{188CD7AF-4DA1-4151-A43A-4EB6E5DBC49F}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>AWSSDK.CognitoIdentity</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AWSSDK.Core">
+      <HintPath>.\output\VRCSDK-2017.08.29.13.08-Unity563p1\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AWSSDK.SecurityToken">
+      <HintPath>.\output\VRCSDK-2017.08.29.13.08-Unity563p1\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.SecurityToken.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core">
+      <HintPath>C:\WINDOWS\assembly\GAC_MSIL\System.Core\3.5.0.0__b77a5c561934e089\System.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <HintPath>C:\WINDOWS\assembly\GAC_MSIL\System\2.0.0.0__b77a5c561934e089\System.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\CognitoIdentityProviderInfoMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\CognitoIdentityProviderInfoUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\CreateIdentityPoolRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\CreateIdentityPoolResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\CredentialsUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DeleteIdentitiesRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DeleteIdentitiesResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DeleteIdentityPoolRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DeleteIdentityPoolResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DescribeIdentityPoolRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DescribeIdentityPoolResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DescribeIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\DescribeIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetCredentialsForIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetCredentialsForIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetIdentityPoolRolesRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetIdentityPoolRolesResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetIdRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetIdResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetOpenIdTokenForDeveloperIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetOpenIdTokenForDeveloperIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetOpenIdTokenRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\GetOpenIdTokenResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\IdentityDescriptionUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\IdentityPoolShortDescriptionUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\ListIdentitiesRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\ListIdentitiesResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\ListIdentityPoolsRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\ListIdentityPoolsResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\LookupDeveloperIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\LookupDeveloperIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\MergeDeveloperIdentitiesRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\MergeDeveloperIdentitiesResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\SetIdentityPoolRolesRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\SetIdentityPoolRolesResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UnlinkDeveloperIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UnlinkDeveloperIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UnlinkIdentityRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UnlinkIdentityResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UnprocessedIdentityIdUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UpdateIdentityPoolRequestMarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model.Internal.MarshallTransformations\UpdateIdentityPoolResponseUnmarshaller.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\CognitoIdentityProviderInfo.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ConcurrentModificationException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\CreateIdentityPoolRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\CreateIdentityPoolResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\Credentials.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DeleteIdentitiesRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DeleteIdentitiesResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DeleteIdentityPoolRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DeleteIdentityPoolResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DescribeIdentityPoolRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DescribeIdentityPoolResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DescribeIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DescribeIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\DeveloperUserAlreadyRegisteredException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ExternalServiceException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetCredentialsForIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetCredentialsForIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetIdentityPoolRolesRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetIdentityPoolRolesResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetIdRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetIdResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetOpenIdTokenForDeveloperIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetOpenIdTokenForDeveloperIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetOpenIdTokenRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\GetOpenIdTokenResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\IdentityDescription.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\IdentityPoolShortDescription.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\InternalErrorException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\InvalidIdentityPoolConfigurationException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\InvalidParameterException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\LimitExceededException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ListIdentitiesRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ListIdentitiesResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ListIdentityPoolsRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ListIdentityPoolsResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\LookupDeveloperIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\LookupDeveloperIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\MergeDeveloperIdentitiesRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\MergeDeveloperIdentitiesResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\NotAuthorizedException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ResourceConflictException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\ResourceNotFoundException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\SetIdentityPoolRolesRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\SetIdentityPoolRolesResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\TooManyRequestsException.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UnlinkDeveloperIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UnlinkDeveloperIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UnlinkIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UnlinkIdentityResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UnprocessedIdentityId.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UpdateIdentityPoolRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity.Model\UpdateIdentityPoolResponse.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityCallback.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityClient.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityConfig.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityException.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityRequest.cs" />
+    <Compile Include="Amazon.CognitoIdentity\AmazonCognitoIdentityResult.cs" />
+    <Compile Include="Amazon.CognitoIdentity\CognitoAWSCredentials.cs" />
+    <Compile Include="Amazon.CognitoIdentity\CognitoIdentityAsyncExecutor.cs" />
+    <Compile Include="Amazon.CognitoIdentity\ErrorCode.cs" />
+    <Compile Include="Amazon.CognitoIdentity\IAmazonCognitoIdentity.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

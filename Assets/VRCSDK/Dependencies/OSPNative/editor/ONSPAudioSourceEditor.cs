@@ -57,18 +57,18 @@ public class OculusSpatializerUserParamsEditor : Editor
 		
 		{
 			#if CUSTOM_LAYOUT
-			m_Component.EnableSpatialization = EditorGUILayout.Toggle("Enable Spatialization", m_Component.EnableSpatialization);
-			m_Component.DisableRfl  = EditorGUILayout.Toggle("Disable Reflections", m_Component.DisableRfl);
+			m_Component.EnableSpatialization = EditorGUILayout.Toggle("Spatialization Enabled", m_Component.EnableSpatialization);
+			m_Component.EnableRfl  = EditorGUILayout.Toggle("Reflections Enabled", m_Component.EnableRfl);
 			m_Component.Gain  = EditorGUILayout.FloatField("Gain", m_Component.Gain);
 
 			Separator();
 
-			Label ("INVERSE SQUARE ATTENUATION");
-			m_Component.UseInvSqr = EditorGUILayout.Toggle("Enable", m_Component.UseInvSqr);
+			Label ("OCULUS ATTENUATION");
+			m_Component.UseInvSqr = EditorGUILayout.Toggle("Enabled", m_Component.UseInvSqr);
 			Label ("");
-			Label("FALLOFF RANGE (0 - 1000000 meters)");
-			m_Component.Near  = EditorGUILayout.FloatField("Near", m_Component.Near);
-			m_Component.Far   = EditorGUILayout.FloatField("Far", m_Component.Far);
+			Label("RANGE (0.0 - 1000000.0 meters)");
+			m_Component.Near  = EditorGUILayout.FloatField("Minimum", m_Component.Near);
+			m_Component.Far   = EditorGUILayout.FloatField("Maximum", m_Component.Far);
 
 			Separator();
 /*

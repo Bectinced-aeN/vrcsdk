@@ -350,7 +350,7 @@ namespace VRCSDK2
             e.ParameterString = triggerEvent == null ? null : triggerEvent.Name;    
         }
 
-        public static Dictionary<string, List<MethodInfo>> GetSharedPublicMethodsOnGameObjects(SerializedProperty objectsProperty)
+        public static Dictionary<string, List<MethodInfo>> GetSharedAccessibleMethodsOnGameObjects(SerializedProperty objectsProperty)
         {
             Dictionary<string, List<MethodInfo>> methods = new Dictionary<string, List<MethodInfo>>();
 
@@ -361,7 +361,7 @@ namespace VRCSDK2
                 GameObject obj = prop.objectReferenceValue != null ? prop.objectReferenceValue as GameObject : null;
                 if (obj != null)
                 {
-                    methods = VRC_EditorTools.GetPublicMethodsOnGameObject(obj);
+                    methods = VRC_EditorTools.GetAccessibleMethodsOnGameObject(obj);
                     break;
                 }
             }
@@ -372,7 +372,7 @@ namespace VRCSDK2
                 GameObject obj = prop.objectReferenceValue != null ? prop.objectReferenceValue as GameObject : null;
                 if (obj != null)
                 {
-                    Dictionary<string, List<MethodInfo>> thisObjMethods = VRC_EditorTools.GetPublicMethodsOnGameObject(obj);
+                    Dictionary<string, List<MethodInfo>> thisObjMethods = VRC_EditorTools.GetAccessibleMethodsOnGameObject(obj);
                     foreach (string className in methods.Keys.Where(s => thisObjMethods.Keys.Contains(s) == false))
                         toRemove.Add(className);
                 }
@@ -384,41 +384,55 @@ namespace VRCSDK2
             return methods;
         }
 
-        public static Dictionary<string, List<MethodInfo>> GetPublicMethodsOnGameObject(GameObject go)
+        public static Dictionary<string, List<MethodInfo>> GetAccessibleMethodsOnGameObject(GameObject go)
         {
             Dictionary<string, List<MethodInfo>> methods = new Dictionary<string, List<MethodInfo>>();
             if (go == null)
                 return methods;
 
             Component[] cs = go.GetComponents<Component>();
-            foreach (Component c in cs)
+            if (cs == null)
+                return methods;
+
+            foreach (Component c in cs.Where(co => co != null))
             {
                 Type t = c.GetType();
 
-                // if component is in UnityEngine namespace
-                if ((!string.IsNullOrEmpty(t.Namespace) && t.Namespace.Contains("UnityEngine")) || methods.ContainsKey(t.Name))
+                if (methods.ContainsKey(t.Name))
                     continue;
 
                 // if component is the eventhandler
                 if (t == typeof(VRC_EventHandler))
                     continue;
 
-                List<MethodInfo> l = GetPublicMethodsForClass(t);
+                List<MethodInfo> l = GetAccessibleMethodsForClass(t);
                 methods.Add(t.Name, l);
             }
 
             return methods;
         }
 
-        public static List<MethodInfo> GetPublicMethodsForClass(Type t)
+        public static List<MethodInfo> GetAccessibleMethodsForClass(Type t)
         {
             // Get the public methods.
             MethodInfo[] myArrayMethodInfo = t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             List<MethodInfo> methods = new List<MethodInfo>();
+
+            // if component is in UnityEngine namespace, skip it
+            if (!string.IsNullOrEmpty(t.Namespace) && (t.Namespace.Contains("UnityEngine") || t.Namespace.Contains("UnityEditor")))
+                return methods;
+
+            bool isVRCSDK2 = !string.IsNullOrEmpty(t.Namespace) && t.Namespace.Contains("VRCSDK2");
+
             // Display information for all methods.
             for (int i = 0; i < myArrayMethodInfo.Length; i++)
             {
                 MethodInfo myMethodInfo = (MethodInfo)myArrayMethodInfo[i];
+
+                // if it's VRCSDK2, require RPC
+                if (isVRCSDK2 && myMethodInfo.GetCustomAttributes(typeof(VRCSDK2.RPC), true).Length == 0)
+                    continue;
+
                 methods.Add(myMethodInfo);
             }
             return methods;

@@ -2,9 +2,9 @@ namespace VRCSDK2
 {
 	public interface IVRC_Destructible
 	{
-		byte[] GetState();
+		object[] GetState();
 
-		void SetState(byte[] state);
+		void SetState(object[] state);
 
 		float GetMaxHealth();
 

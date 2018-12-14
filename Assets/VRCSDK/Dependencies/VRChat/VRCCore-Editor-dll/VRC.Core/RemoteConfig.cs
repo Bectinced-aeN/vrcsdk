@@ -13,7 +13,22 @@ namespace VRC.Core
 
 		private static Dictionary<string, object> config;
 
+		private static Dictionary<string, object> overrideConfig = new Dictionary<string, object>();
+
 		public static OnConfigInitialized onConfigInitialized;
+
+		private static object GetValue(string key)
+		{
+			if (!ApiModel.IsDevApi() && overrideConfig.ContainsKey(key))
+			{
+				return overrideConfig[key];
+			}
+			if (config.ContainsKey(key))
+			{
+				return config[key];
+			}
+			return null;
+		}
 
 		public static void Init(bool fetchFreshConfig = true, Action onInit = null, Action onError = null)
 		{
@@ -44,7 +59,7 @@ namespace VRC.Core
 			bool result = false;
 			if (IsInitialized())
 			{
-				result = config.ContainsKey(key);
+				result = (GetValue(key) != null);
 			}
 			return result;
 		}
@@ -56,9 +71,9 @@ namespace VRC.Core
 				Init();
 			}
 			string result = null;
-			if (IsInitialized() && config.ContainsKey(key))
+			if (IsInitialized() && HasKey(key))
 			{
-				result = (string)config[key];
+				result = GetValue(key).ToString();
 			}
 			return result;
 		}
@@ -70,9 +85,13 @@ namespace VRC.Core
 				Init();
 			}
 			List<string> result = new List<string>();
-			if (IsInitialized() && config.ContainsKey(key))
+			if (IsInitialized())
 			{
-				result = Tools.ObjListToStringList((List<object>)config[key]);
+				object value = GetValue(key);
+				if (value != null)
+				{
+					result = Tools.ObjListToStringList((List<object>)value);
+				}
 			}
 			return result;
 		}

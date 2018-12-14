@@ -44,6 +44,10 @@ namespace VRCSDK2
 
 		public delegate void Action<T1, T2, T3, T4, T5>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5);
 
+		public static Func<VRC_PlayerApi, bool> _isMasterDelegate = null;
+
+		public static Func<VRC_PlayerApi, bool> _isModeratorDelegate = null;
+
 		public bool isLocal = true;
 
 		public string name = "<uninitialized>";
@@ -84,7 +88,35 @@ namespace VRCSDK2
 
 		public static Action<VRC_PlayerApi, Vector3, Quaternion> _TeleportTo = null;
 
+		public static Action<VRC_PlayerApi, Vector3, Quaternion, VRC_SceneDescriptor.SpawnOrientation> _TeleportToOrientation = null;
+
 		public static Action<VRC_PlayerApi, bool> _EnablePickups = null;
+
+		public static Action<VRC_PlayerApi, Color> _SetNamePlateColor = null;
+
+		public static Action<VRC_PlayerApi> _RestoreNamePlateColor = null;
+
+		public static Action<VRC_PlayerApi, bool> _SetNamePlateVisibility = null;
+
+		public static Action<VRC_PlayerApi, string, string> _SetPlayerTag = null;
+
+		public static Func<VRC_PlayerApi, string, string> _GetPlayerTag = null;
+
+		public static Func<string, string, List<int>> _GetPlayersWithTag = null;
+
+		public static Action<VRC_PlayerApi> _ClearPlayerTags = null;
+
+		public static Action<VRC_PlayerApi, bool, string, string> _SetInvisibleToTagged = null;
+
+		public static Action<VRC_PlayerApi, bool, string, string> _SetInvisibleToUntagged = null;
+
+		public static Action<VRC_PlayerApi, int, string, string> _SetSilencedToTagged = null;
+
+		public static Action<VRC_PlayerApi, int, string, string> _SetSilencedToUntagged = null;
+
+		public static Action<VRC_PlayerApi> _ClearInvisible = null;
+
+		public static Action<VRC_PlayerApi> _ClearSilence = null;
 
 		public static Action<VRC_PlayerApi, RuntimeAnimatorController> _PushAnimations = null;
 
@@ -95,6 +127,10 @@ namespace VRCSDK2
 		public static Action<VRC_PlayerApi, Vector3> _SetVelocity = null;
 
 		public static Func<VRC_PlayerApi, Vector3> _GetVelocity = null;
+
+		public bool isMaster => _isMasterDelegate(this);
+
+		public bool isModerator => _isModeratorDelegate(this);
 
 		public static List<VRC_PlayerApi> AllPlayers => sPlayers;
 
@@ -176,9 +212,22 @@ namespace VRCSDK2
 
 		public void TeleportTo(Vector3 teleportPos, Quaternion teleportRot)
 		{
-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0007: Unknown result type (might be due to invalid IL or missing references)
-			_TeleportTo(this, teleportPos, teleportRot);
+			//IL_0010: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0011: Unknown result type (might be due to invalid IL or missing references)
+			if (_TeleportTo != null)
+			{
+				_TeleportTo(this, teleportPos, teleportRot);
+			}
+		}
+
+		public void TeleportTo(Vector3 teleportPos, Quaternion teleportRot, VRC_SceneDescriptor.SpawnOrientation teleportOrientation)
+		{
+			//IL_0010: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0011: Unknown result type (might be due to invalid IL or missing references)
+			if (_TeleportToOrientation != null)
+			{
+				_TeleportToOrientation(this, teleportPos, teleportRot, teleportOrientation);
+			}
 		}
 
 		public void EnablePickups(bool enable)
@@ -186,7 +235,73 @@ namespace VRCSDK2
 			_EnablePickups(this, enable);
 		}
 
-		private void Awake()
+		public void SetNamePlateColor(Color col)
+		{
+			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+			_SetNamePlateColor(this, col);
+		}
+
+		public void RestoreNamePlateColor()
+		{
+			_RestoreNamePlateColor(this);
+		}
+
+		public void SetNamePlateVisibility(bool flag)
+		{
+			_SetNamePlateVisibility(this, flag);
+		}
+
+		public void SetPlayerTag(string tagName, string tagValue = "")
+		{
+			_SetPlayerTag(this, tagName, tagValue);
+		}
+
+		public string GetPlayerTag(string tagName)
+		{
+			return _GetPlayerTag(this, tagName);
+		}
+
+		public List<int> GetPlayersWithTag(string tagName, string tagValue = "")
+		{
+			return null;
+		}
+
+		public void ClearPlayerTags()
+		{
+			_ClearPlayerTags(this);
+		}
+
+		public void SetInvisibleToTagged(bool invisible, string tagName, string tagValue = "")
+		{
+			_SetInvisibleToTagged(this, invisible, tagName, tagValue);
+		}
+
+		public void SetInvisibleToUntagged(bool invisible, string tagName, string tagValue = "")
+		{
+			_SetInvisibleToUntagged(this, invisible, tagName, tagValue);
+		}
+
+		public void SetSilencedToTagged(int level, string tagName, string tagValue = "")
+		{
+			_SetSilencedToTagged(this, level, tagName, tagValue);
+		}
+
+		public void SetSilencedToUntagged(int level, string tagName, string tagValue = "")
+		{
+			_SetSilencedToUntagged(this, level, tagName, tagValue);
+		}
+
+		public void ClearInvisible()
+		{
+			_ClearInvisible(this);
+		}
+
+		public void ClearSilence()
+		{
+			_ClearSilence(this);
+		}
+
+		private void Start()
 		{
 			sPlayers.Add(this);
 			if (Initialize != null)

@@ -229,13 +229,13 @@ namespace VRCSDK2
 			}
 		}
 
-		public override void TeleportPlayer(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject Destination)
+		public override void TeleportPlayer(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject Destination, VRC_EventHandler.VrcBooleanOp alignRoomWithDestination)
 		{
 			string gameObjectPath = GetGameObjectPath(Destination);
-			_TeleportPlayer(CombinedNetworkId, Instigator, gameObjectPath);
+			_TeleportPlayer(CombinedNetworkId, Instigator, gameObjectPath, alignRoomWithDestination);
 		}
 
-		public void _TeleportPlayer(long CombinedNetworkId, int Instigator, string DestinationName)
+		public void _TeleportPlayer(long CombinedNetworkId, int Instigator, string DestinationName, VRC_EventHandler.VrcBooleanOp alignRoomWithDestination)
 		{
 			Transform val = FindTransform(DestinationName);
 			if (!(val == null))
@@ -392,6 +392,45 @@ namespace VRCSDK2
 			}
 		}
 
+		public override void SetComponentActive(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject targetObject, string componentTypeName, VRC_EventHandler.VrcBooleanOp enable)
+		{
+			if (!(targetObject == null) && !string.IsNullOrEmpty(componentTypeName))
+			{
+				Type type = null;
+				Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+				foreach (Assembly assembly in assemblies)
+				{
+					type = assembly.GetType(componentTypeName, throwOnError: false, ignoreCase: true);
+					if (type != null)
+					{
+						break;
+					}
+				}
+				if (type == null)
+				{
+					Debug.LogError((object)("Could not find Type of name " + componentTypeName));
+				}
+				else
+				{
+					PropertyInfo property = type.GetProperty("enabled");
+					if (property == null)
+					{
+						Debug.LogError((object)(type.FullName + " does not respond to \"enabled\""));
+					}
+					else
+					{
+						Component[] components = targetObject.GetComponents(type);
+						foreach (Component obj in components)
+						{
+							bool current = (bool)property.GetValue(obj, null);
+							bool flag = VRC_EventHandler.BooleanOp(enable, current);
+							property.SetValue(obj, flag, null);
+						}
+					}
+				}
+			}
+		}
+
 		public override void RegisterEventHandler(VRC_EventHandler handler)
 		{
 		}
@@ -425,7 +464,7 @@ namespace VRCSDK2
 			return text;
 		}
 
-		public override GameObject FindGameObject(string path)
+		public override GameObject FindGameObject(string path, bool suppressErrors)
 		{
 			return FindGameObjectFallback(path);
 		}

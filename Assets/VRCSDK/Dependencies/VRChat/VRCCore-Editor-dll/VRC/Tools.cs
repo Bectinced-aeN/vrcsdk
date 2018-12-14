@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VRC.Core;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Caching;
+using VRC.Core.BestHTTP.JSON;
 
 namespace VRC
 {
@@ -112,6 +114,16 @@ namespace VRC
 			return list;
 		}
 
+		public static Dictionary<string, string> ObjDictToStringDict(Dictionary<string, object> dict)
+		{
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			foreach (KeyValuePair<string, object> item in dict)
+			{
+				dictionary[item.Key] = item.Value.ToString();
+			}
+			return dictionary;
+		}
+
 		public static string GetGameObjectPath(GameObject obj)
 		{
 			string text = "/" + obj.get_name();
@@ -121,6 +133,13 @@ namespace VRC
 				text = "/" + obj.get_name() + text;
 			}
 			return text;
+		}
+
+		public static int CombineHashCodes(int a, int b)
+		{
+			int num = 17;
+			num = num * 31 + a.GetHashCode();
+			return num * 31 + b.GetHashCode();
 		}
 
 		public static string GetRandomDigits(int digits)
@@ -244,6 +263,189 @@ namespace VRC
 				array[i] = LayerMask.LayerToName(i);
 			}
 			return array;
+		}
+
+		public static void ClearExpiredBestHTTPCache()
+		{
+			TimeSpan deleteOlder = TimeSpan.FromDays(14.0);
+			ulong maxCacheSize = 5242880uL;
+			HTTPCacheService.BeginMaintainence(new HTTPCacheMaintananceParams(deleteOlder, maxCacheSize));
+			Debug.LogError((object)"Cleaning Cache");
+		}
+
+		public static string GetTempFolderPath(string subFolderName = "")
+		{
+			return Path.Combine(Application.get_temporaryCachePath(), subFolderName);
+		}
+
+		public static string GetTempFileName(string extension, out string errorStr, string subFolderName = "", bool createFolder = true)
+		{
+			try
+			{
+				string tempFolderPath = GetTempFolderPath(subFolderName);
+				string empty = string.Empty;
+				int num = 0;
+				bool flag = false;
+				do
+				{
+					empty = Path.Combine(tempFolderPath, Path.GetRandomFileName());
+					if (extension != null)
+					{
+						empty = Path.ChangeExtension(empty, extension);
+					}
+					flag = File.Exists(empty);
+				}
+				while (flag && num++ < 10);
+				if (flag)
+				{
+					errorStr = "Couldn't generate unique filename!";
+					return string.Empty;
+				}
+				if (createFolder && !string.IsNullOrEmpty(subFolderName))
+				{
+					string directoryName = Path.GetDirectoryName(empty);
+					if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
+					{
+						Directory.CreateDirectory(directoryName);
+					}
+				}
+				errorStr = string.Empty;
+				return empty;
+				IL_00a5:;
+			}
+			catch (Exception ex)
+			{
+				errorStr = ex.Message;
+			}
+			return string.Empty;
+		}
+
+		public static bool FileCanRead(string filename)
+		{
+			string whyNot;
+			return FileCanRead(filename, out whyNot);
+		}
+
+		public static bool FileCanRead(string filename, out string whyNot)
+		{
+			FileStream fileStream = null;
+			try
+			{
+				fileStream = File.OpenRead(filename);
+			}
+			catch (Exception ex)
+			{
+				whyNot = ex.Message;
+				return false;
+				IL_001e:;
+			}
+			fileStream.Close();
+			whyNot = string.Empty;
+			return true;
+		}
+
+		public static void FileCopy(string filename, string targetFilename, Action onSuccess, Action<string> onError)
+		{
+			string text = string.Empty;
+			try
+			{
+				File.Copy(filename, targetFilename);
+			}
+			catch (Exception ex)
+			{
+				text = ex.Message;
+			}
+			if (string.IsNullOrEmpty(text))
+			{
+				onSuccess?.Invoke();
+			}
+			else
+			{
+				onError?.Invoke(text);
+			}
+		}
+
+		public static void FileMove(string filename, string targetFilename, Action onSuccess, Action<string> onError)
+		{
+			string text = string.Empty;
+			try
+			{
+				File.Move(filename, targetFilename);
+			}
+			catch (Exception ex)
+			{
+				text = ex.Message;
+			}
+			if (string.IsNullOrEmpty(text))
+			{
+				onSuccess?.Invoke();
+			}
+			else
+			{
+				onError?.Invoke(text);
+			}
+		}
+
+		public static float DivideSafe(float num, float den)
+		{
+			return (den == 0f) ? 0f : (num / den);
+		}
+
+		public static bool GetFileSize(string filename, out long size, out string errorStr)
+		{
+			try
+			{
+				FileInfo fileInfo = new FileInfo(filename);
+				size = fileInfo.Length;
+				errorStr = string.Empty;
+				return true;
+				IL_001d:
+				bool result;
+				return result;
+			}
+			catch (Exception ex)
+			{
+				size = 0L;
+				errorStr = ex.Message;
+				return false;
+				IL_0036:
+				bool result;
+				return result;
+			}
+		}
+
+		public static void FileMD5(string filename, Action<byte[]> onSuccess, Action<string> onError)
+		{
+			string text = string.Empty;
+			byte[] array = null;
+			try
+			{
+				MD5 mD = MD5.Create();
+				array = mD.ComputeHash(File.OpenRead(filename));
+			}
+			catch (Exception ex)
+			{
+				array = null;
+				text = ex.Message;
+			}
+			if (string.IsNullOrEmpty(text))
+			{
+				onSuccess?.Invoke(array);
+			}
+			else
+			{
+				onError?.Invoke(text);
+			}
+		}
+
+		public static string JsonEncode(object obj)
+		{
+			return Json.Encode(obj);
+		}
+
+		public static object JsonDecode(string json)
+		{
+			return Json.Decode(json);
 		}
 	}
 }

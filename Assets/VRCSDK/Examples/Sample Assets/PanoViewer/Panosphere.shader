@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 // Unlit shader. Simplest possible textured shader.
 // - no lighting
 // - no lightmap support
@@ -42,7 +44,7 @@ Shader "Panosphere"
 				v2f vert (appdata_t v)
 				{
 					v2f o;
-					o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+					o.vertex = UnityObjectToClipPos(v.vertex);
 					o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 					o.texcoord.x = 1 - o.texcoord.x;
 					UNITY_TRANSFER_FOG(o,o.vertex);

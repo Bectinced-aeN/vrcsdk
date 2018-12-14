@@ -33,7 +33,7 @@ namespace VRCSDK2
 
 		private void Update()
 		{
-			if (Speakers.get_clip() != null && (double)Speakers.get_time() >= (double)Speakers.get_clip().get_length() - 0.01)
+			if (Speakers != null && Speakers.get_clip() != null && (double)Speakers.get_time() >= (double)Speakers.get_clip().get_length() - 0.01)
 			{
 				PlayNextSong();
 			}
@@ -72,8 +72,11 @@ namespace VRCSDK2
 				SongLog.Add(PlayingSong);
 				val = Songs[PlayingSong];
 			}
-			Speakers.set_clip(val);
-			Speakers.Play();
+			if (Speakers != null)
+			{
+				Speakers.set_clip(val);
+				Speakers.Play();
+			}
 		}
 
 		private void PlayPreviousSong(int Instigator = 0)
@@ -89,8 +92,11 @@ namespace VRCSDK2
 			{
 				PlayingSong = -1;
 			}
-			Speakers.set_clip(Songs[SongLog[SongLog.Count - 1 + PlayingSong]]);
-			Speakers.Play();
+			if (Speakers != null)
+			{
+				Speakers.set_clip(Songs[SongLog[SongLog.Count - 1 + PlayingSong]]);
+				Speakers.Play();
+			}
 		}
 	}
 }

@@ -8,7 +8,6 @@ namespace VRCSDK2
     [CustomPropertyDrawer(typeof(VRCSDK2.VRC_DataStorage.VrcDataElement))]
     public class CustomDataElementDrawer : PropertyDrawer
     {
-        static VRC_DataStorage.VrcDataType[] allowedTypes = new VRC_DataStorage.VrcDataType[] { VRC_DataStorage.VrcDataType.Bool, VRC_DataStorage.VrcDataType.Float, VRC_DataStorage.VrcDataType.Int, VRC_DataStorage.VrcDataType.String };
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
         {
             if (property == null)
@@ -56,10 +55,10 @@ namespace VRCSDK2
             {
                 case (int)VRC_DataStorage.VrcDataMirror.None:
                     if (valueProperty == null)
-                        VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeValueRect, typeProperty, t => allowedTypes.Contains(t));
+                        VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeValueRect, typeProperty, t => true);
                     else
                     {
-                        VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeRect, typeProperty, t => allowedTypes.Contains(t));
+                        VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeRect, typeProperty, t => true);
                         EditorGUI.PropertyField(valueRect, valueProperty, GUIContent.none);
                     }
                     break;
@@ -68,7 +67,7 @@ namespace VRCSDK2
                     EditorGUI.PropertyField(typeValueRect, valueProperty, GUIContent.none);
                     break;
                 default:
-                    VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeValueRect, typeProperty, t => allowedTypes.Contains(t));
+                    VRC_EditorTools.FilteredEnumPopup<VRC_DataStorage.VrcDataType>(typeValueRect, typeProperty, t => true);
                     break;
             }
 

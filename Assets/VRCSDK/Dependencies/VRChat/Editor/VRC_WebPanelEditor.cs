@@ -1,125 +1,209 @@
 ﻿#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using UnityEditor;
+using UnityEngine;
+using UnityEditor.Build;
+using System;
+using System.Linq;
 
 namespace VRCSDK2
 {
     [CustomEditor(typeof(VRC_WebPanel))]
     public class VRC_WebPanelEditor : Editor
     {
-        VRC_WebPanel web;
-
-
-        void OnEnable()
+        private void InspectorField(string propertyName, string humanName)
         {
-            web = (VRC_WebPanel)target;
-
-        }
-
-        private void InspectorField(string propertyName)
-        {
-            serializedObject.Update();
             SerializedProperty propertyField = serializedObject.FindProperty(propertyName);
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(propertyField, true);
-            if (EditorGUI.EndChangeCheck())
-                serializedObject.ApplyModifiedProperties();
+            EditorGUILayout.PropertyField(propertyField, new GUIContent(humanName), true);
         }
         
         bool showFiles = false;
+        bool showHelp = true;
+        System.Collections.Generic.List<string> directories = null;
+        System.Collections.Generic.List<string> files = null;
+
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+            EditorGUI.BeginChangeCheck();
+
             EditorGUILayout.BeginVertical();
 
-			InspectorField("defaultUrl");
+            showHelp = EditorGUILayout.Toggle("Show Help", showHelp);
             EditorGUILayout.Space();
 
-			InspectorField("webRoot");
-			InspectorField("virtualHost");
-            showFiles = web.webData != null && EditorGUILayout.Foldout(showFiles, web.webData.Count.ToString() + " files imported");
-            if (showFiles)
+            InspectorField("proximity", "Proximity for Interactivity");
+            EditorGUILayout.Space();
+
+            VRC_WebPanel web = (VRC_WebPanel)target;
+
+            if (Application.isPlaying)
             {
-                foreach (var file in web.webData)
+                InspectorField("webRoot", "Web Root");
+                InspectorField("defaultUrl", "URI");
+
+                showFiles = web.webData != null && EditorGUILayout.Foldout(showFiles, web.webData.Count.ToString() + " files imported");
+                if (showFiles)
+                    foreach (var file in web.webData)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.PrefixLabel(file.path);
+                        EditorGUILayout.LabelField(file.data.Length.ToString());
+                        EditorGUILayout.EndHorizontal();
+                    }
+            }
+            else
+            {
+                SerializedProperty webRoot = serializedObject.FindProperty("webRoot");
+                RenderDirectoryList(serializedObject, "webRoot", "Path To Web Content");
+
+                if (string.IsNullOrEmpty(webRoot.stringValue))
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.PrefixLabel(file.path);
-                    EditorGUILayout.LabelField(file.data.Length.ToString());
-                    EditorGUILayout.EndHorizontal();
+                    InspectorField("defaultUrl", "Start URI");
+                }
+                else
+                {
+                    RenderWebRootSelector(serializedObject, "defaultUrl", "Start Page");
+
+                    if (showHelp)
+                    {
+                        EditorGUILayout.HelpBox("Javascript API bindings are called with engine.call('methodName', ...), which returns a promise-like object.", MessageType.Info);
+                        EditorGUILayout.HelpBox("Javascript may call ListBindings() to discover available API bindings.", MessageType.Info);
+                        EditorGUILayout.HelpBox("Javascript may listen for the 'onBindingsReady' event to execute script when the page is fully loaded and API bindings are available.", MessageType.Info);
+                    }
                 }
             }
-            if (GUILayout.Button("Import Web Root"))
-                ImportWebData();
-            EditorGUILayout.Space();
-
-			InspectorField("interactive");
-
-			InspectorField("syncURI");
-
-			InspectorField("syncInput");
 
             EditorGUILayout.Space();
 
-            InspectorField("station");
+            InspectorField("cookiesEnabled", "Enable Cookies");
+
+            InspectorField("interactive", "Is Interactive");
+
+			InspectorField("localOnly", "Only Visible Locally");
+
+            if (!web.localOnly)
+            {
+                InspectorField("syncURI", "Synchronize URI");
+                InspectorField("syncInput", "Synchronize Mouse Position");
+            }
+
+            InspectorField("transparent", "Transparent Background");
+
             EditorGUILayout.Space();
 
-			InspectorField("cursor");
+            InspectorField("station", "Interaction Station");
+            EditorGUILayout.Space();
 
-			InspectorField("cookiesEnabled");
+			InspectorField("cursor", "Mouse Cursor Object");
 
             EditorGUILayout.Space();
 
-			InspectorField("resolutionWidth");
-			InspectorField("resolutionHeight");
-			InspectorField("displayRegion");
-			InspectorField("transparent");
+			InspectorField("resolutionWidth", "Resolution Width");
+			InspectorField("resolutionHeight", "Resolution Height");
+			InspectorField("displayRegion", "Display Region");
+
             EditorGUILayout.Space();
 
-            InspectorField("extraVideoScreens");
+            InspectorField("extraVideoScreens", "Duplicate Screens");
             EditorGUILayout.EndVertical();
+
+            if (EditorGUI.EndChangeCheck())
+                serializedObject.ApplyModifiedProperties();
         }
 
-        private void ReadData(string root)
+        private void AddSubDirectories(ref System.Collections.Generic.List<string> l, string root)
         {
-            string[] files = Directory.GetFiles(root);
-            foreach (string file in files)
+            if (!Directory.Exists(root))
             {
-                if (file.EndsWith(".meta"))
-                    continue;
-
-                string fixed_file = file.Replace('\\', '/');
-                web.webData.Add(new VRC_WebPanel.WebFile()
-                {
-                    path = fixed_file.Remove(0, Application.dataPath.Length + 1 + web.webRoot.Length),
-                    data = File.ReadAllBytes(fixed_file)
-                });
+                return;
             }
+
+            if (!root.StartsWith(Application.dataPath + Path.DirectorySeparatorChar + "VRCSDK")
+                || root == Application.dataPath + Path.DirectorySeparatorChar + "VRCSDK" + Path.DirectorySeparatorChar + "Examples" + Path.DirectorySeparatorChar + "Sample Assets" + Path.DirectorySeparatorChar + "WebRoot")
+                l.Add(root.Substring(Application.dataPath.Length));
 
             string[] subdirectories = Directory.GetDirectories(root);
-            foreach (string directory in subdirectories)
-            {
-                string fixed_directory = directory.Replace('\\', '/');
-                ReadData(fixed_directory);
-            }
+            foreach (string dir in subdirectories)
+                AddSubDirectories(ref l, dir);
         }
 
-        private void ImportWebData()
+        private void RenderDirectoryList(SerializedObject obj, string propertyName, string humanName)
         {
-            if (web.webRoot != null)
+            if (directories == null)
             {
-                string path = Application.dataPath + "/" + web.webRoot;
-                if (Directory.Exists(path))
+                directories = new System.Collections.Generic.List<string>();
+                directories.Add("No Web Content Directory");
+
+                AddSubDirectories(ref directories, Application.dataPath + Path.DirectorySeparatorChar);
+            }
+
+            SerializedProperty target = serializedObject.FindProperty(propertyName);
+
+            int selectedIdx = target.stringValue == null ? 0 : directories.IndexOf(target.stringValue);
+            if (selectedIdx < 0 || selectedIdx >= directories.Count)
+                selectedIdx = 0;
+
+            selectedIdx = EditorGUILayout.Popup(humanName, selectedIdx, directories.ToArray());
+            if (selectedIdx > 0 && selectedIdx < directories.Count)
+                target.stringValue = directories[selectedIdx];
+            else
+                target.stringValue = null;
+        }
+
+        private void AddSubDirectoryFiles(ref System.Collections.Generic.List<string> l, string root)
+        {
+            if (!Directory.Exists(root))
+                return;
+
+            string[] files = Directory.GetFiles(root);
+            foreach (string file in files.Where(f => f.ToLower().EndsWith(".html") || f.ToLower().EndsWith(".htm")))
+                l.Add(file.Substring(Application.dataPath.Length));
+
+            string[] subdirectories = Directory.GetDirectories(root);
+            foreach (string dir in subdirectories)
+                AddSubDirectoryFiles(ref l, dir);
+        }
+
+        private void RenderWebRootSelector(SerializedObject obj, string propertyName, string humanName)
+        {
+            SerializedProperty webRoot = obj.FindProperty("webRoot");
+            SerializedProperty target = serializedObject.FindProperty(propertyName);
+
+            if (files == null)
+            {
+                files = new System.Collections.Generic.List<string>();
+
+                AddSubDirectoryFiles(ref files, Application.dataPath + webRoot.stringValue);
+                if (files.Count == 0)
                 {
-                    web.webData = new List<VRC_WebPanel.WebFile>();
-
-                    ReadData(path);
-
-                    string files = string.Join("\n ", web.webData.ConvertAll(item => item.path + " [" + item.data.Length + "]").ToArray());
-                    Debug.Log("Web Panel has files: \n" + files);
+                    EditorGUILayout.HelpBox("No suitable html files found in Web Content path.", MessageType.Error);
+                    return;
                 }
+            }
+
+            int selectedIdx = 0;
+
+            try
+            {
+                System.Uri uri = string.IsNullOrEmpty(target.stringValue) ? null : new Uri(target.stringValue);
+
+                selectedIdx = uri == null ? 0 : files.IndexOf(uri.AbsolutePath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+                if (selectedIdx < 0 || selectedIdx >= files.Count)
+                    selectedIdx = 0;
+            }
+            catch { }
+
+            selectedIdx = EditorGUILayout.Popup(humanName, selectedIdx, files.ToArray());
+            if (selectedIdx >= 0 && selectedIdx < files.Count)
+            {
+                System.UriBuilder builder = new UriBuilder()
+                {
+                    Scheme = "file",
+                    Path = files[selectedIdx].Replace(System.IO.Path.DirectorySeparatorChar, '/'),
+                    Host = ""
+                };
+                target.stringValue = builder.Uri.ToString();
             }
         }
     }

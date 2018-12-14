@@ -48,6 +48,17 @@ namespace VRCSDK2
 
 		public static class TypeCollections
 		{
+			public static TriggerType[] KeyTypes = new TriggerType[2]
+			{
+				TriggerType.OnKeyDown,
+				TriggerType.OnKeyUp
+			};
+
+			public static TriggerType[] TimerTypes = new TriggerType[1]
+			{
+				TriggerType.OnTimer
+			};
+
 			public static TriggerType[] InteractiveTypes = new TriggerType[1]
 			{
 				TriggerType.OnInteract
@@ -143,12 +154,18 @@ namespace VRCSDK2
 
 		public bool isHidden;
 
+		private VRC_DataStorage dataStorage;
+
+		private Collider collider;
+
+		public bool UsesAdvancedOptions = true;
+
 		[SerializeField]
 		public List<TriggerEvent> Triggers = new List<TriggerEvent>();
 
-		private List<OccupantInfo> occupants = new List<OccupantInfo>();
+		private HashSet<OccupantInfo> occupants = new HashSet<OccupantInfo>();
 
-		private List<Collider> stayOccupants = new List<Collider>();
+		private HashSet<Collider> stayOccupants = new HashSet<Collider>();
 
 		private VRC_EventHandler _handler;
 
@@ -182,11 +199,17 @@ namespace VRCSDK2
 			}
 		}
 
+		public bool HasKeyTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.KeyTypes.Contains(t.TriggerType));
+
+		public bool HasTimerTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.TimerTypes.Contains(t.TriggerType));
+
 		public bool HasColliderTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.ColliderTypes.Contains(t.TriggerType));
 
 		public bool HasInteractiveTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
 
 		public bool HasPickupTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
+
+		private event Action deferredForReady;
 
 		public static void TriggerCustom(CustomTriggerTarget target)
 		{
@@ -266,7 +289,8 @@ namespace VRCSDK2
 
 		public override void Start()
 		{
-			//IL_00ba: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0086: Unknown result type (might be due to invalid IL or missing references)
+			collider = this.GetComponent<Collider>();
 			if (Handler == null)
 			{
 				Debug.LogError((object)("VRC_Trigger on " + this.get_gameObject().get_name() + " requires an Event Handler; destroying it."));
@@ -274,11 +298,7 @@ namespace VRCSDK2
 			}
 			else
 			{
-				if (Handler.Events != null && Handler.Events.Count > 0)
-				{
-					Debug.LogWarning((object)("VRC_Trigger is clearing events from event handler on " + this.get_gameObject().get_name()));
-					Handler.Events.Clear();
-				}
+				Handler.Events = new List<VRC_EventHandler.VrcEvent>();
 				if (interactTextPlacement != null && interactTextGO != null)
 				{
 					interactTextGO.get_transform().set_position(interactTextPlacement.get_position());
@@ -310,12 +330,12 @@ namespace VRCSDK2
 						item2.DataStorageShadowValues.RemoveAt(item2.DataStorageShadowValues.Count - 1);
 					}
 				}
-				VRC_DataStorage component = this.get_gameObject().GetComponent<VRC_DataStorage>();
-				if (component != null)
+				dataStorage = this.get_gameObject().GetComponent<VRC_DataStorage>();
+				if (dataStorage != null)
 				{
-					component.ElementChanged += OnDataStorageChanged;
-					component.ElementAdded += OnDataStorageAdded;
-					component.ElementRemoved += OnDataStorageRemoved;
+					dataStorage.ElementChanged += OnDataStorageChanged;
+					dataStorage.ElementAdded += OnDataStorageAdded;
+					dataStorage.ElementRemoved += OnDataStorageRemoved;
 				}
 			}
 		}
@@ -353,6 +373,10 @@ namespace VRCSDK2
 		private void OnNetworkReady()
 		{
 			ExecuteTriggerType(TriggerType.OnNetworkReady);
+			if (this.deferredForReady != null)
+			{
+				this.deferredForReady();
+			}
 		}
 
 		private void OnSpawn()
@@ -444,49 +468,90 @@ namespace VRCSDK2
 
 		private void Update()
 		{
-			if (Input.get_anyKeyDown())
+			//IL_0059: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0075: Unknown result type (might be due to invalid IL or missing references)
+			bool flag = false;
+			foreach (TriggerEvent trigger in Triggers)
 			{
-				ExecuteTriggers(from t in Triggers
-				where (t.TriggerType == TriggerType.OnKeyDown && Input.GetKeyDown(t.Key)) || (t.TriggerType == TriggerType.OnKeyUp && Input.GetKeyUp(t.Key))
-				select t);
+				switch (trigger.TriggerType)
+				{
+				case TriggerType.OnKeyDown:
+					if (Input.GetKeyDown(trigger.Key))
+					{
+						ExecuteTrigger(trigger);
+					}
+					break;
+				case TriggerType.OnKeyUp:
+					if (Input.GetKeyUp(trigger.Key))
+					{
+						ExecuteTrigger(trigger);
+					}
+					break;
+				case TriggerType.OnTimer:
+					if (!trigger.EventFired)
+					{
+						trigger.Timer += Time.get_deltaTime();
+						if (trigger.Timer > trigger.Duration)
+						{
+							ExecuteTrigger(trigger);
+							if (trigger.Repeat)
+							{
+								ResetClock(trigger);
+							}
+							else
+							{
+								trigger.EventFired = true;
+							}
+						}
+					}
+					break;
+				case TriggerType.OnEnterTrigger:
+				case TriggerType.OnExitTrigger:
+				case TriggerType.OnEnterCollider:
+				case TriggerType.OnExitCollider:
+					flag = true;
+					break;
+				}
 			}
-			ExecuteTriggers(UpdateTimers());
-			CheckTriggerStay();
+			if (flag)
+			{
+				CheckTriggerStay();
+			}
 		}
 
 		private void CheckTriggerStay()
 		{
-			if ((occupants != null && occupants.Count != 0) || (stayOccupants != null && stayOccupants.Count != 0))
+			if (!(collider == null) && ((occupants != null && occupants.Count != 0) || (stayOccupants != null && stayOccupants.Count != 0)))
 			{
-				Collider component = this.GetComponent<Collider>();
-				OccupantInfo[] source = occupants.ToArray();
-				using (IEnumerator<OccupantInfo> enumerator = (from o in source
-				where o.collider != null
-				select o).GetEnumerator())
+				using (HashSet<OccupantInfo>.Enumerator enumerator = occupants.GetEnumerator())
 				{
 					OccupantInfo occupant;
 					while (enumerator.MoveNext())
 					{
 						occupant = enumerator.Current;
-						if (stayOccupants.Contains(occupant.collider))
+						if (!(occupant.collider == null))
 						{
-							occupant.time = Time.get_time();
-							stayOccupants.RemoveAll((Collider o) => o == occupant.collider);
-						}
-						else if (!(Time.get_time() - occupant.time < 0.5f))
-						{
-							if (component.get_isTrigger())
+							if (stayOccupants.Contains(occupant.collider))
 							{
-								ExecuteTriggerType(TriggerType.OnExitTrigger);
+								occupant.time = Time.get_time();
+								stayOccupants.RemoveWhere((Collider o) => o == occupant.collider);
 							}
-							else
+							else if (!(Time.get_time() - occupant.time < 0.5f))
 							{
-								ExecuteTriggerType(TriggerType.OnExitCollider);
+								if (collider.get_isTrigger())
+								{
+									ExecuteTriggerType(TriggerType.OnExitTrigger);
+								}
+								else
+								{
+									ExecuteTriggerType(TriggerType.OnExitCollider);
+								}
+								occupant.collider = null;
 							}
-							occupants.RemoveAll((OccupantInfo i) => i.collider == occupant.collider);
 						}
 					}
 				}
+				occupants.RemoveWhere((OccupantInfo i) => i.collider == null);
 				stayOccupants.Clear();
 			}
 		}
@@ -506,7 +571,7 @@ namespace VRCSDK2
 					collider = other,
 					time = Time.get_time()
 				});
-				stayOccupants.RemoveAll((Collider c) => c == other);
+				stayOccupants.RemoveWhere((Collider c) => c == other);
 				int currentOccupants = occupants.Count;
 				ExecuteTriggers(from t in Triggers
 				where (t.TriggerIndividuals || currentOccupants == 1) && t.TriggerType == TriggerType.OnEnterTrigger && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)
@@ -519,8 +584,8 @@ namespace VRCSDK2
 			int maskable = 1 << other.get_gameObject().get_layer();
 			if (Triggers.Any((TriggerEvent t) => t.TriggerType == TriggerType.OnExitTrigger && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)))
 			{
-				occupants.RemoveAll((OccupantInfo o) => o.collider == other);
-				stayOccupants.RemoveAll((Collider c) => c == other);
+				occupants.RemoveWhere((OccupantInfo o) => o.collider == other);
+				stayOccupants.RemoveWhere((Collider c) => c == other);
 				int currentOccupants = occupants.Count;
 				ExecuteTriggers(from t in Triggers
 				where (t.TriggerIndividuals || currentOccupants == 0) && t.TriggerType == TriggerType.OnExitTrigger && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)
@@ -531,10 +596,7 @@ namespace VRCSDK2
 		private IEnumerator OnTriggerStay(Collider other)
 		{
 			yield return (object)new WaitForFixedUpdate();
-			if (!stayOccupants.Contains(other))
-			{
-				stayOccupants.Add(other);
-			}
+			stayOccupants.Add(other);
 		}
 
 		private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -554,7 +616,7 @@ namespace VRCSDK2
 					collider = other.get_collider(),
 					time = Time.get_time()
 				});
-				stayOccupants.RemoveAll((Collider c) => c == other.get_collider());
+				stayOccupants.RemoveWhere((Collider c) => c == other.get_collider());
 				int currentOccupants = occupants.Count;
 				ExecuteTriggers(from t in Triggers
 				where (t.TriggerIndividuals || currentOccupants == 1) && t.TriggerType == TriggerType.OnEnterCollider && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)
@@ -567,8 +629,8 @@ namespace VRCSDK2
 			int maskable = 1 << other.get_gameObject().get_layer();
 			if (Triggers.Any((TriggerEvent t) => t.TriggerType == TriggerType.OnExitCollider && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)))
 			{
-				occupants.RemoveAll((OccupantInfo o) => o.collider == other.get_collider());
-				stayOccupants.RemoveAll((Collider c) => c == other.get_collider());
+				occupants.RemoveWhere((OccupantInfo o) => o.collider == other.get_collider());
+				stayOccupants.RemoveWhere((Collider c) => c == other.get_collider());
 				int currentOccupants = occupants.Count;
 				ExecuteTriggers(from t in Triggers
 				where (t.TriggerIndividuals || currentOccupants == 0) && t.TriggerType == TriggerType.OnExitCollider && 0 != (LayerMask.op_Implicit(t.Layers) & maskable)
@@ -579,34 +641,7 @@ namespace VRCSDK2
 		private IEnumerator OnCollisionStay(Collision other)
 		{
 			yield return (object)new WaitForFixedUpdate();
-			if (!stayOccupants.Contains(other.get_collider()))
-			{
-				stayOccupants.Add(other.get_collider());
-			}
-		}
-
-		private IEnumerable<TriggerEvent> UpdateTimers()
-		{
-			List<TriggerEvent> list = new List<TriggerEvent>();
-			foreach (TriggerEvent item in from t in Triggers
-			where t.TriggerType == TriggerType.OnTimer && !t.EventFired
-			select t)
-			{
-				item.Timer += Time.get_deltaTime();
-				if (item.Timer > item.Duration)
-				{
-					list.Add(item);
-					if (item.Repeat)
-					{
-						ResetClock(item);
-					}
-					else
-					{
-						item.EventFired = true;
-					}
-				}
-			}
-			return list;
+			stayOccupants.Add(other.get_collider());
 		}
 
 		private void ResetClock(TriggerEvent timer)
@@ -646,49 +681,70 @@ namespace VRCSDK2
 
 		private void ExecuteTrigger(TriggerEvent trigger)
 		{
-			VRC_DataStorage component = this.get_gameObject().GetComponent<VRC_DataStorage>();
-			for (int i = 0; i < trigger.Events.Count; i++)
+			if (trigger != null)
 			{
-				VRC_EventHandler.VrcEvent vrcEvent = trigger.Events[i];
-				if (trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count && component != null)
+				if ((trigger.TriggerType == TriggerType.OnKeyDown || trigger.TriggerType == TriggerType.OnKeyUp) && (this.GetComponentInParent<VRC_PlayerApi>() != null || this.GetComponent<VRC_PlayerApi>() != null))
 				{
-					DataStorageShadow shadow = trigger.DataStorageShadowValues[i];
-					if (shadow.ParameterBoolOp != null)
-					{
-						VRC_DataStorage.VrcDataElement vrcDataElement = component.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterBoolOp);
-						if (vrcDataElement != null)
-						{
-							vrcEvent.ParameterBoolOp = (vrcDataElement.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
-						}
-					}
-					if (shadow.ParameterFloat != null)
-					{
-						VRC_DataStorage.VrcDataElement vrcDataElement2 = component.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterFloat);
-						if (vrcDataElement2 != null)
-						{
-							vrcEvent.ParameterFloat = vrcDataElement2.valueFloat;
-						}
-					}
-					if (shadow.ParameterInt != null)
-					{
-						VRC_DataStorage.VrcDataElement vrcDataElement3 = component.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterInt);
-						if (vrcDataElement3 != null)
-						{
-							vrcEvent.ParameterInt = vrcDataElement3.valueInt;
-						}
-					}
-					if (shadow.ParameterString != null)
-					{
-						VRC_DataStorage.VrcDataElement vrcDataElement4 = component.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterString);
-						if (vrcDataElement4 != null)
-						{
-							vrcEvent.ParameterString = vrcDataElement4.valueString;
-						}
-					}
+					Debug.LogError((object)"Cannot execute key triggers on non-player objects.");
 				}
-				Handler.TriggerEvent(vrcEvent, trigger.BroadcastType, LocalUser);
+				else if (!Networking.IsNetworkSettled)
+				{
+					Debug.Log((object)"Deferred trigger because network is not settled.");
+					this.deferredForReady = (Action)Delegate.Combine(this.deferredForReady, (Action)delegate
+					{
+						ExecuteTrigger(trigger);
+					});
+				}
+				else
+				{
+					for (int i = 0; i < trigger.Events.Count; i++)
+					{
+						VRC_EventHandler.VrcEvent vrcEvent = trigger.Events[i];
+						if (dataStorage != null && trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count)
+						{
+							DataStorageShadow shadow = trigger.DataStorageShadowValues[i];
+							if (shadow.ParameterBoolOp != null)
+							{
+								VRC_DataStorage.VrcDataElement vrcDataElement = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterBoolOp);
+								if (vrcDataElement != null)
+								{
+									vrcEvent.ParameterBoolOp = (vrcDataElement.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
+								}
+							}
+							if (shadow.ParameterFloat != null)
+							{
+								VRC_DataStorage.VrcDataElement vrcDataElement2 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterFloat);
+								if (vrcDataElement2 != null)
+								{
+									vrcEvent.ParameterFloat = vrcDataElement2.valueFloat;
+								}
+							}
+							if (shadow.ParameterInt != null)
+							{
+								VRC_DataStorage.VrcDataElement vrcDataElement3 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterInt);
+								if (vrcDataElement3 != null)
+								{
+									vrcEvent.ParameterInt = vrcDataElement3.valueInt;
+								}
+							}
+							if (shadow.ParameterString != null)
+							{
+								VRC_DataStorage.VrcDataElement vrcDataElement4 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterString);
+								if (vrcDataElement4 != null)
+								{
+									vrcEvent.ParameterString = vrcDataElement4.valueString;
+								}
+							}
+						}
+						if (vrcEvent.ParameterObject == null && (vrcEvent.ParameterObjects == null || vrcEvent.ParameterObjects.Length == 0))
+						{
+							vrcEvent.ParameterObject = this.get_gameObject();
+						}
+						Handler.TriggerEvent(vrcEvent, trigger.BroadcastType, LocalUser);
+					}
+					RelayTrigger(trigger);
+				}
 			}
-			RelayTrigger(trigger);
 		}
 
 		private void RelayTrigger(TriggerEvent trigger)

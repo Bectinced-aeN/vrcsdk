@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,6 +25,14 @@ namespace VRCSDK2
 
 		public static TeleportDelegate TeleportHandler;
 
+		public static Func<VRC_ObjectSync, bool> GetUseGravity;
+
+		public static Func<VRC_ObjectSync, bool> GetIsKinematic;
+
+		public static Action<VRC_ObjectSync, bool> SetUseGravity;
+
+		public static Action<VRC_ObjectSync, bool> SetIsKinematic;
+
 		[HideInInspector]
 		public int NetworkID
 		{
@@ -34,6 +43,44 @@ namespace VRCSDK2
 			set
 			{
 				networkId = value;
+			}
+		}
+
+		public bool useGravity
+		{
+			get
+			{
+				if (GetUseGravity != null)
+				{
+					return GetUseGravity(this);
+				}
+				return false;
+			}
+			set
+			{
+				if (SetUseGravity != null)
+				{
+					SetUseGravity(this, value);
+				}
+			}
+		}
+
+		public bool isKinematic
+		{
+			get
+			{
+				if (GetIsKinematic != null)
+				{
+					return GetIsKinematic(this);
+				}
+				return false;
+			}
+			set
+			{
+				if (SetIsKinematic != null)
+				{
+					SetIsKinematic(this, value);
+				}
 			}
 		}
 
@@ -66,6 +113,7 @@ namespace VRCSDK2
 			VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "EnableKinematic";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "EnableKinematic";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -75,6 +123,7 @@ namespace VRCSDK2
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "DisableKinematic";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "DisableKinematic";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -84,6 +133,7 @@ namespace VRCSDK2
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "EnableGravity";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "EnableGravity";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -93,6 +143,7 @@ namespace VRCSDK2
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "DisableGravity";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "DisableGravity";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -102,6 +153,7 @@ namespace VRCSDK2
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "ReapObject";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "ReapObject";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{

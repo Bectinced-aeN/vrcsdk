@@ -22,11 +22,10 @@ public class PipelineSaver : MonoBehaviour
 
 	private void Update()
 	{
-		//IL_00b2: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00c8: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00a2: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00b8: Unknown result type (might be due to invalid IL or missing references)
 		if (!EditorApplication.get_isPlaying() && !EditorApplication.get_isPlayingOrWillChangePlaymode())
 		{
-			pipeline.assetBundleUnityVersion = Application.get_unityVersion();
 			if (EditorPrefs.HasKey("blueprintID-" + pipeline.GetInstanceID().ToString()))
 			{
 				string @string = EditorPrefs.GetString("blueprintID-" + pipeline.GetInstanceID().ToString());

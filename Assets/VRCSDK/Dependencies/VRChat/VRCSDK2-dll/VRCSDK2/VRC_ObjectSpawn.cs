@@ -40,6 +40,10 @@ namespace VRCSDK2
 		{
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
 		public void SpawnObject()
 		{
 			//IL_0007: Unknown result type (might be due to invalid IL or missing references)
@@ -47,6 +51,10 @@ namespace VRCSDK2
 			SpawnObject(this.get_transform().get_position(), this.get_transform().get_rotation());
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
 		public void SpawnObject(Vector3 position, Quaternion rotation)
 		{
 			//IL_0011: Unknown result type (might be due to invalid IL or missing references)
@@ -55,8 +63,16 @@ namespace VRCSDK2
 			{
 				Instantiate(position, rotation);
 			}
+			else
+			{
+				Debug.LogError((object)"Spawner not initialized.", this.get_gameObject());
+			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
 		public void DestroySpawnedObjects()
 		{
 			if (ReapObjects != null)
@@ -79,6 +95,7 @@ namespace VRCSDK2
 			VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "SpawnObject";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 3;
 			vrcEvent.ParameterString = "SpawnObject";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -88,6 +105,7 @@ namespace VRCSDK2
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "DestroySpawnedObjects";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "DestroySpawnedObjects";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{

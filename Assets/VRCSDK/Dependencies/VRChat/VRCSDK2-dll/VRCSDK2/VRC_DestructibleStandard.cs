@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using UnityEngine;
 
@@ -154,14 +153,17 @@ namespace VRCSDK2
 			}
 		}
 
-		public byte[] GetState()
+		public object[] GetState()
 		{
-			return BitConverter.GetBytes(currentHealth);
+			return new object[1]
+			{
+				currentHealth
+			};
 		}
 
-		public void SetState(byte[] state)
+		public void SetState(object[] state)
 		{
-			currentHealth = BitConverter.ToSingle(state, 0);
+			currentHealth = (float)state[0];
 		}
 
 		private void HandleCallbackTrigger(VRC_Trigger trigger, VRC_EventHandler.VrcEvent e)

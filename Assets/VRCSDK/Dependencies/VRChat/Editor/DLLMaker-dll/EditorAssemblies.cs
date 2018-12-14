@@ -91,11 +91,14 @@ public class EditorAssemblies
 		{
 			OnAssemblyReloadCallbacks = new List<SerializableFunction>();
 		}
-		SerializableFunction item = new SerializableFunction(className, staticFunctionName);
-		OnAssemblyReloadCallbacks.Add(item);
-		if (autoSerialize)
+		if (!OnAssemblyReloadCallbacks.Any((SerializableFunction sf) => sf.methodName == staticFunctionName && sf.className == className))
 		{
-			SerializeCallbacks();
+			SerializableFunction item = new SerializableFunction(className, staticFunctionName);
+			OnAssemblyReloadCallbacks.Add(item);
+			if (autoSerialize)
+			{
+				SerializeCallbacks();
+			}
 		}
 	}
 

@@ -1,4 +1,4 @@
-internal class SerializableFunction
+public class SerializableFunction
 {
 	public string className;
 

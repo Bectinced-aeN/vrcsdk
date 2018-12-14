@@ -1,7 +1,6 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using VRC;
 using VRC.Core;
 
 [CustomEditor(typeof(PipelineManager), true)]
@@ -11,6 +10,8 @@ public class VRCPipelineManagerEditor : Editor
 
 	private string tmpBlueprintId;
 
+	private bool loggingIn;
+
 	public VRCPipelineManagerEditor()
 		: this()
 	{
@@ -18,20 +19,32 @@ public class VRCPipelineManagerEditor : Editor
 
 	public override void OnInspectorGUI()
 	{
-		//IL_013c: Unknown result type (might be due to invalid IL or missing references)
-		//IL_014d: Unknown result type (might be due to invalid IL or missing references)
-		PipelineManager pipelineManager = (PipelineManager)this.get_target();
+		//IL_0185: Unknown result type (might be due to invalid IL or missing references)
+		//IL_019b: Unknown result type (might be due to invalid IL or missing references)
+		PipelineManager pipeline = (PipelineManager)this.get_target();
 		EditorGUILayout.LabelField("Unity Version", Application.get_unityVersion(), (GUILayoutOption[])new GUILayoutOption[0]);
-		if (!APIUser.IsLoggedInWithCredentials && APIUser.IsCached)
+		if (!loggingIn)
 		{
-			pipelineManager.user = APIUser.CachedLogin(null, null, shouldFetch: false);
+			bool flag = ApiCredentials.Load();
+			if (!APIUser.IsLoggedInWithCredentials && flag)
+			{
+				loggingIn = true;
+				APIUser.Login(delegate(APIUser user)
+				{
+					loggingIn = false;
+					pipeline.user = user;
+				}, delegate
+				{
+					loggingIn = false;
+				});
+			}
+			else if (APIUser.IsLoggedInWithCredentials && !flag)
+			{
+				pipeline.user = null;
+			}
 		}
-		else if (APIUser.IsLoggedInWithCredentials && !APIUser.IsCached)
-		{
-			pipelineManager.user = null;
-		}
-		pipelineManager.launchedFromSDKPipeline = launchedFromSDKPipeline;
-		string text = (!APIUser.IsLoggedInWithCredentials) ? "None" : pipelineManager.blueprintId;
+		pipeline.launchedFromSDKPipeline = launchedFromSDKPipeline;
+		string text = (!APIUser.IsLoggedInWithCredentials) ? "None" : pipeline.blueprintId;
 		if (string.IsNullOrEmpty(text))
 		{
 			tmpBlueprintId = EditorGUILayout.TextField("Blueprint ID (Optional)", tmpBlueprintId, (GUILayoutOption[])new GUILayoutOption[0]);
@@ -45,20 +58,19 @@ public class VRCPipelineManagerEditor : Editor
 		{
 			if (string.IsNullOrEmpty(text))
 			{
-				text = (pipelineManager.blueprintId = tmpBlueprintId);
-				pipelineManager.assetBundleUnityVersion = Application.get_unityVersion();
+				text = (pipeline.blueprintId = tmpBlueprintId);
 			}
 			else
 			{
-				pipelineManager.blueprintId = string.Empty;
+				pipeline.blueprintId = string.Empty;
 			}
-			EditorUtility.SetDirty(pipelineManager);
-			EditorSceneManager.MarkSceneDirty(pipelineManager.get_gameObject().get_scene());
-			EditorSceneManager.SaveScene(pipelineManager.get_gameObject().get_scene());
+			EditorUtility.SetDirty(pipeline);
+			EditorSceneManager.MarkSceneDirty(pipeline.get_gameObject().get_scene());
+			EditorSceneManager.SaveScene(pipeline.get_gameObject().get_scene());
 		}
-		if (!APIUser.IsLoggedInWithCredentials && GUILayout.Button("Login", (GUILayoutOption[])new GUILayoutOption[0]))
+		if (!APIUser.IsLoggedInWithCredentials)
 		{
-			AccountEditorWindow.Init();
+			GUILayout.Label("Use the settings menu to log in.", EditorStyles.get_boldLabel(), (GUILayoutOption[])new GUILayoutOption[0]);
 		}
 	}
 }

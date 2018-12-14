@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{3D25C723-CA48-4E10-9E98-25F30D4BA74E}</ProjectGuid>
+    <ProjectGuid>{E23D66B8-9DCC-4108-A2FD-6175D64E696E}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -974,12 +974,18 @@
     <Compile Include="VRC.Core.BestHTTP\OnUploadProgressDelegate.cs" />
     <Compile Include="VRC.Core.BestHTTP\StreamList.cs" />
     <Compile Include="VRC.Core.BestHTTP\SupportedProtocols.cs" />
+    <Compile Include="VRC.Core\ApiAnalyticEvent.cs" />
     <Compile Include="VRC.Core\ApiAvatar.cs" />
+    <Compile Include="VRC.Core\ApiCredentials.cs" />
+    <Compile Include="VRC.Core\ApiFile.cs" />
     <Compile Include="VRC.Core\ApiModel.cs" />
+    <Compile Include="VRC.Core\ApiModeration.cs" />
     <Compile Include="VRC.Core\ApiNotification.cs" />
+    <Compile Include="VRC.Core\ApiPlayerModeration.cs" />
     <Compile Include="VRC.Core\APIResponseHandler.cs" />
     <Compile Include="VRC.Core\APIUser.cs" />
     <Compile Include="VRC.Core\ApiWorld.cs" />
+    <Compile Include="VRC.Core\AssetVersion.cs" />
     <Compile Include="VRC.Core\DebugLevel.cs" />
     <Compile Include="VRC.Core\EditorAPIResponseHandler.cs" />
     <Compile Include="VRC.Core\Logger.cs" />
@@ -989,7 +995,7 @@
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCPipelineManagerEditor.cs" />
     <Compile Include="VRCProjectSettings.cs" />
-    <Compile Include="VRC\AccountEditorWindow.cs" />
+    <Compile Include="VRC\HttpRequest.cs" />
     <Compile Include="VRC\Tools.cs" />
     <Compile Include="WebSocketSample.cs" />
   </ItemGroup>

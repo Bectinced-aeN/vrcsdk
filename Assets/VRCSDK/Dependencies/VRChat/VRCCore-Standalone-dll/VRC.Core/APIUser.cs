@@ -17,10 +17,6 @@ namespace VRC.Core
 			Internal
 		}
 
-		protected const string SECURE_PLAYER_PREFS_PW = "vl9u1grTnvXA";
-
-		protected bool mIsFresh;
-
 		protected string mBlob;
 
 		protected string mDisplayName;
@@ -31,7 +27,15 @@ namespace VRC.Core
 
 		protected string mAvatarId;
 
-		protected DeveloperType mDeveloperType;
+		protected bool mVerified;
+
+		protected bool mHasEmail;
+
+		protected bool mHasBirthday;
+
+		protected int mAcceptedTOSVersion;
+
+		protected DeveloperType? mDeveloperType;
 
 		protected List<VRCEvent> mEvents;
 
@@ -43,19 +47,9 @@ namespace VRC.Core
 
 		public string currentAvatarThumbnailImageUrl;
 
-		protected static APIUser mCurrentUser;
+		private static Dictionary<string, APIUser> cachedUsers;
 
-		public bool isFresh
-		{
-			get
-			{
-				return mIsFresh;
-			}
-			set
-			{
-				mIsFresh = value;
-			}
-		}
+		protected static APIUser mCurrentUser;
 
 		public string blob => mBlob;
 
@@ -67,41 +61,51 @@ namespace VRC.Core
 
 		public string avatarId => mAvatarId;
 
-		public DeveloperType developerType => mDeveloperType;
+		public bool verified => mVerified;
+
+		public bool hasEmail => mHasEmail;
+
+		public bool hasBirthday => mHasBirthday;
+
+		public int acceptedTOSVersion => mAcceptedTOSVersion;
+
+		public DeveloperType? developerType => mDeveloperType;
 
 		public List<VRCEvent> events => mEvents;
 
 		public string location => mLocation;
 
-		public bool hasScriptingAccess => mDeveloperType == DeveloperType.Trusted || mDeveloperType == DeveloperType.Internal;
+		public bool defaultMute
+		{
+			get;
+			set;
+		}
 
-		public static bool IsCached => SecurePlayerPrefs.HasKey("userId");
+		public bool hasScriptingAccess => mDeveloperType == DeveloperType.Trusted || mDeveloperType == DeveloperType.Internal;
 
 		public static bool IsLoggedIn => CurrentUser != null;
 
 		public static bool IsLoggedInWithCredentials => IsLoggedIn && CurrentUser.mId != null;
 
-		public static bool IsAnonymous => IsLoggedIn && CurrentUser.mId == null;
-
 		public static APIUser CurrentUser => mCurrentUser;
 
-		public static void Register(string username, string email, string password, Action<APIUser> successCallback = null, Action<string> errorCallback = null, bool cacheUser = true)
+		public static void Register(string username, string email, string password, string birthday, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
 		{
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			dictionary["username"] = username;
 			dictionary["password"] = password;
 			dictionary["email"] = email;
+			dictionary["birthday"] = birthday;
+			dictionary["acceptedTOSVersion"] = "0";
 			ApiModel.SendPostRequest("auth/register", dictionary, delegate(Dictionary<string, object> obj)
 			{
 				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
 				aPIUser.Init(obj);
-				aPIUser.mIsFresh = true;
-				aPIUser.mPassword = password;
-				mCurrentUser = aPIUser;
-				if (cacheUser)
+				if (!aPIUser.developerType.HasValue)
 				{
-					CacheUser(aPIUser);
+					Debug.LogError((object)"auth/register did not provide a developerType");
 				}
+				mCurrentUser = aPIUser;
 				if (successCallback != null)
 				{
 					successCallback(aPIUser);
@@ -115,76 +119,70 @@ namespace VRC.Core
 			});
 		}
 
-		public static void Login(string usernameOrEmail, string password, Action<APIUser> successCallback = null, Action<string> errorCallback = null, bool cacheUser = true)
+		public static void UpdateAccountInfo(string id, string email, string birthday, string acceptedTOSVersion, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
 		{
-			Logger.Log("Logging in with " + usernameOrEmail + " and password: " + password, DebugLevel.All);
-			FetchLocal(usernameOrEmail, password, delegate(APIUser user)
+			if (IsLoggedInWithCredentials)
 			{
-				user.mPassword = password;
-				mCurrentUser = user;
-				if (cacheUser)
+				Dictionary<string, string> dictionary = new Dictionary<string, string>();
+				if (!string.IsNullOrEmpty(email))
 				{
-					CacheUser(user);
+					dictionary["email"] = email;
 				}
-				if (successCallback != null)
+				if (!string.IsNullOrEmpty(birthday))
 				{
-					successCallback(user);
+					dictionary["birthday"] = birthday;
 				}
-			}, errorCallback);
-		}
-
-		public static APIUser CachedLogin(Action<APIUser> onFetchSuccess = null, Action<string> onFetchError = null, bool shouldFetch = true)
-		{
-			Logger.Log("Cached Login", DebugLevel.All);
-			APIUser user = GetCachedUser();
-			mCurrentUser = user;
-			if (user != null && shouldFetch)
-			{
-				user.FetchCachedLocal(delegate
+				if (!string.IsNullOrEmpty(acceptedTOSVersion))
 				{
-					if (onFetchSuccess != null)
+					int result = -1;
+					if (int.TryParse(acceptedTOSVersion, out result))
 					{
-						mCurrentUser = user;
-						onFetchSuccess(user);
+						dictionary["acceptedTOSVersion"] = result.ToString();
 					}
-				}, delegate(string obj)
+					else
+					{
+						Debug.LogError((object)("UpdateAccountInfo: invalid acceptedTOSVersion string: " + acceptedTOSVersion));
+					}
+				}
+				ApiModel.SendPutRequest("users/" + id, dictionary, delegate(Dictionary<string, object> obj)
 				{
-					if (onFetchError != null)
+					APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+					aPIUser.Init(obj);
+					if (!aPIUser.developerType.HasValue)
 					{
-						onFetchError(obj);
+						Debug.LogError((object)"user/:id did not provide a developerType");
 					}
-				});
+					mCurrentUser = aPIUser;
+					if (successCallback != null)
+					{
+						successCallback(mCurrentUser);
+					}
+				}, errorCallback);
 			}
-			return user;
-		}
-
-		public static void AnonymousLogin()
-		{
-			mCurrentUser = ScriptableObject.CreateInstance<APIUser>();
-			mCurrentUser.Init();
-		}
-
-		public static void Logout()
-		{
-			mCurrentUser = null;
-			ClearCachedUser();
-		}
-
-		private static void FetchLocal(string username, string password, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
-		{
-			ApiModel.SendRequest(username, password, "auth/user", HTTPMethods.Get, null, null, delegate(Dictionary<string, object> obj)
+			else
 			{
-				Logger.Log("Authenticated", DebugLevel.All);
+				Logger.Log("Cannot update anonyomus user account info!");
+			}
+		}
+
+		public static void Login(Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		{
+			Logger.Log("Logging in", DebugLevel.All);
+			ApiModel.SendGetRequest("auth/user", delegate(Dictionary<string, object> obj)
+			{
 				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
 				aPIUser.Init(obj);
-				aPIUser.mIsFresh = true;
-				aPIUser.mPassword = password;
-				CacheUser(aPIUser);
+				if (!aPIUser.developerType.HasValue)
+				{
+					Debug.LogError((object)"auth/user did not provide a developerType");
+				}
+				Logger.Log("Authenticated: " + aPIUser.displayName, DebugLevel.All);
+				mCurrentUser = aPIUser;
 				if (successCallback != null)
 				{
 					successCallback(aPIUser);
 				}
-			}, null, delegate(string message)
+			}, delegate(string message)
 			{
 				Logger.Log("NOT Authenticated", DebugLevel.All);
 				if (errorCallback != null)
@@ -194,27 +192,63 @@ namespace VRC.Core
 			});
 		}
 
-		public void FetchCachedLocal(Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		public static void ThirdPartyLogin(string endpoint, Dictionary<string, string> parameters, Action<string, APIUser> onFetchSuccess = null, Action<string> onFetchError = null)
 		{
-			FetchLocal(username, password, delegate(APIUser user)
+			Logger.Log("Third Party Login: " + endpoint, DebugLevel.All);
+			ApiModel.SendRequest("auth/" + endpoint, HTTPMethods.Post, parameters, null, delegate(Dictionary<string, object> obj)
 			{
-				Fill(user);
-				if (successCallback != null)
+				Logger.Log("Authenticated", DebugLevel.All);
+				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+				if (obj.ContainsKey("emailVerified"))
 				{
-					successCallback(user);
+					obj["emailVerified"] = "true";
 				}
-			}, errorCallback);
+				else
+				{
+					obj.Add("emailVerified", "true");
+				}
+				aPIUser.Init(obj);
+				mCurrentUser = aPIUser;
+				if (onFetchSuccess != null)
+				{
+					onFetchSuccess(obj["authToken"].ToString(), aPIUser);
+				}
+			}, null, delegate(string message)
+			{
+				Logger.Log("NOT Authenticated", DebugLevel.All);
+				if (onFetchError != null)
+				{
+					onFetchError(message);
+				}
+			});
+		}
+
+		public static void Logout()
+		{
+			mCurrentUser = null;
 		}
 
 		public static void Fetch(string id, Action<APIUser> successCallback, Action<string> errorCallback)
 		{
 			ApiModel.SendGetRequest("users/" + id, delegate(Dictionary<string, object> obj)
 			{
-				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
-				aPIUser.InitBrief(obj);
-				if (successCallback != null)
+				try
 				{
-					successCallback(aPIUser);
+					APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+					aPIUser.InitBrief(obj);
+					if (!aPIUser.developerType.HasValue)
+					{
+						Debug.LogError((object)("users/" + id + " did not provide a developerType"));
+					}
+					if (successCallback != null)
+					{
+						successCallback(aPIUser);
+					}
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError((object)"users/ provided a malformed or incomplete user record");
+					Debug.LogException(ex);
 				}
 			}, delegate(string message)
 			{
@@ -222,21 +256,62 @@ namespace VRC.Core
 			});
 		}
 
+		public static void CacheUser(string id, APIUser user)
+		{
+			if (cachedUsers == null)
+			{
+				cachedUsers = new Dictionary<string, APIUser>();
+			}
+			if (user.developerType.HasValue)
+			{
+				cachedUsers[id] = user;
+			}
+		}
+
+		public static APIUser GetCachedUser(string id)
+		{
+			APIUser result = null;
+			if (cachedUsers != null && cachedUsers.ContainsKey(id))
+			{
+				result = cachedUsers[id];
+			}
+			return result;
+		}
+
 		public static void FetchUsersInWorldInstance(string worldId, string instanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback)
 		{
 			ApiModel.SendGetRequest("worlds/" + worldId + "/" + instanceId, delegate(Dictionary<string, object> jsonDict)
 			{
 				List<object> list = jsonDict["users"] as List<object>;
-				Debug.Log((object)("jsonObjects: " + list));
 				List<APIUser> list2 = new List<APIUser>();
 				if (list != null)
 				{
+					Debug.LogFormat("Discovered {0} users in world {1}", new object[2]
+					{
+						list.Count,
+						instanceId
+					});
 					foreach (object item in list)
 					{
-						Dictionary<string, object> jsonObject = item as Dictionary<string, object>;
-						APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
-						aPIUser.InitBrief(jsonObject);
-						list2.Add(aPIUser);
+						if (item != null)
+						{
+							try
+							{
+								Dictionary<string, object> jsonObject = item as Dictionary<string, object>;
+								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								aPIUser.InitBrief(jsonObject);
+								if (!aPIUser.developerType.HasValue)
+								{
+									Debug.LogError((object)("worlds/" + worldId + "/" + instanceId + " did not provide a developerType"));
+								}
+								list2.Add(aPIUser);
+							}
+							catch (Exception ex)
+							{
+								Debug.LogError((object)"worlds/ provided a malformed or incomplete user record");
+								Debug.LogException(ex);
+							}
+						}
 					}
 				}
 				if (successCallback != null)
@@ -259,10 +334,25 @@ namespace VRC.Core
 				{
 					foreach (object @object in objects)
 					{
-						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
-						aPIUser.InitBrief(jsonObject);
-						list.Add(aPIUser);
+						if (@object != null)
+						{
+							try
+							{
+								Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
+								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								aPIUser.InitBrief(jsonObject);
+								if (!aPIUser.developerType.HasValue)
+								{
+									Debug.LogError((object)("users?searc=" + searchQuery + " did not provide a developerType"));
+								}
+								list.Add(aPIUser);
+							}
+							catch (Exception ex)
+							{
+								Debug.LogError((object)"users?search provided a malformed or incomplete user record");
+								Debug.LogException(ex);
+							}
+						}
 					}
 				}
 				if (successCallback != null)
@@ -276,7 +366,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchFriends(Action<List<APIUser>> successCallback, Action<string> errorCallback)
+		public static void FetchFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
 		{
 			ApiModel.SendGetRequest("auth/user/friends", delegate(List<object> objects)
 			{
@@ -285,10 +375,25 @@ namespace VRC.Core
 				{
 					foreach (object @object in objects)
 					{
-						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
-						aPIUser.InitBrief(jsonObject);
-						list.Add(aPIUser);
+						if (@object != null)
+						{
+							try
+							{
+								Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
+								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								aPIUser.InitBrief(jsonObject);
+								if (!aPIUser.developerType.HasValue)
+								{
+									Debug.LogError((object)"auth/user/friends did not provide a developerType");
+								}
+								list.Add(aPIUser);
+							}
+							catch (Exception ex)
+							{
+								Debug.LogError((object)"auth/user/friends provided a malformed or incomplete user record");
+								Debug.LogException(ex);
+							}
+						}
 					}
 				}
 				if (mCurrentUser != null)
@@ -308,7 +413,7 @@ namespace VRC.Core
 
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendPostRequest("user/" + userId + "/friendRequest", null, delegate(Dictionary<string, object> obj)
+			ApiModel.SendPostRequest("user/" + userId + "/friendRequest", delegate(Dictionary<string, object> obj)
 			{
 				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
 				apiNotification.Init(obj);
@@ -325,9 +430,14 @@ namespace VRC.Core
 			});
 		}
 
+		public static void AttemptVerification()
+		{
+			ApiModel.SendPostRequest("auth/user/resendEmail", (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)null, (Action<string>)null);
+		}
+
 		public static void AcceptFriendRequest(string notificationId, Action successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendPutRequest("/auth/user/notifications/" + notificationId + "/accept", null, delegate
+			ApiModel.SendPutRequest("/auth/user/notifications/" + notificationId + "/accept", delegate
 			{
 				if (successCallback != null)
 				{
@@ -344,7 +454,7 @@ namespace VRC.Core
 
 		public static void DeclineFriendRequest(string notificationId, Action successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendPutRequest("/auth/user/notifications/" + notificationId + "/hide", null, delegate
+			ApiModel.SendPutRequest("/auth/user/notifications/" + notificationId + "/hide", delegate
 			{
 				if (successCallback != null)
 				{
@@ -361,6 +471,10 @@ namespace VRC.Core
 
 		public static void UnfriendUser(string userId, Action successCallback, Action<string> errorCallback)
 		{
+			if (mCurrentUser != null && mCurrentUser.friends != null)
+			{
+				mCurrentUser.friends.Remove(mCurrentUser.friends.Single((APIUser u) => u.id == userId));
+			}
 			ApiModel.SendRequest("/auth/user/friends/" + userId, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
 			{
 				if (successCallback != null)
@@ -376,60 +490,95 @@ namespace VRC.Core
 			});
 		}
 
+		public static void LocalAddFriend(APIUser user)
+		{
+			if (CurrentUser != null && user != null)
+			{
+				if (CurrentUser.friends == null)
+				{
+					CurrentUser.friends = new List<APIUser>();
+				}
+				if (!CurrentUser.friends.Exists((APIUser u) => u.id == user.id))
+				{
+					CurrentUser.friends.Add(user);
+				}
+			}
+		}
+
+		public static void LocalRemoveFriend(APIUser user)
+		{
+			if (CurrentUser != null && user != null && CurrentUser.friends != null)
+			{
+				CurrentUser.friends.RemoveAll((APIUser u) => u.id == user.id);
+			}
+		}
+
 		public static bool IsFriendsWith(string userId)
 		{
 			bool result = false;
-			if (CurrentUser.friends != null)
+			if (CurrentUser != null && CurrentUser.friends != null)
 			{
 				result = (CurrentUser.friends.Find((APIUser u) => u.id == userId) != null);
 			}
 			return result;
 		}
 
-		private static void CacheUser(APIUser user)
+		public static void FetchOnlineModerators(bool onCallOnly, Action<List<APIUser>> successCallback, Action<string> errorCallback)
 		{
-			SecurePlayerPrefs.SetString("username", user.username, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("password", user.password, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("userBlob", user.mBlob, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("userId", user.id, "vl9u1grTnvXA");
-			PlayerPrefs.Save();
-		}
-
-		public void CacheUser()
-		{
-			CacheUser(this);
-		}
-
-		private static APIUser GetCachedUser()
-		{
-			string @string = SecurePlayerPrefs.GetString("username", "vl9u1grTnvXA");
-			string string2 = SecurePlayerPrefs.GetString("password", "vl9u1grTnvXA");
-			string string3 = SecurePlayerPrefs.GetString("userBlob", "vl9u1grTnvXA");
-			APIUser aPIUser = null;
-			try
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			dictionary["developerType"] = "internal";
+			ApiModel.SendRequest("users/active", HTTPMethods.Get, dictionary, delegate(List<object> objects)
 			{
-				Dictionary<string, object> jsonObject = Json.Decode(string3) as Dictionary<string, object>;
-				aPIUser = ScriptableObject.CreateInstance<APIUser>();
-				aPIUser.Init(jsonObject);
-				aPIUser.mPassword = string2;
-				aPIUser.isFresh = false;
-				return aPIUser;
-			}
-			catch (Exception)
+				List<APIUser> list = new List<APIUser>();
+				if (objects != null)
+				{
+					foreach (object @object in objects)
+					{
+						try
+						{
+							Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
+							APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+							aPIUser.InitBrief(jsonObject);
+							if (!aPIUser.developerType.HasValue)
+							{
+								Debug.LogError((object)"users/active did not provide a developerType");
+							}
+							list.Add(aPIUser);
+						}
+						catch (Exception ex)
+						{
+							Debug.LogError((object)"users/active provided a malformed or incomplete user record");
+							Debug.LogException(ex);
+						}
+					}
+				}
+				if (successCallback != null)
+				{
+					successCallback(list);
+				}
+			}, delegate(string message)
 			{
-				Debug.Log((object)("GetCachedUser Exception due to corrupted player pref user data. Wiping cached user info. User " + @string + " needs to relogin"));
-				ClearCachedUser();
-				return null;
-			}
+				Logger.Log("Could not fetch users with error - " + message);
+				errorCallback(message);
+			});
 		}
 
-		public static void ClearCachedUser()
+		public static void PostHelpRequest(string fromWorldId, string fromInstanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback)
 		{
-			SecurePlayerPrefs.DeleteKey("username");
-			SecurePlayerPrefs.DeleteKey("password");
-			SecurePlayerPrefs.DeleteKey("userBlob");
-			SecurePlayerPrefs.DeleteKey("userId");
-			PlayerPrefs.Save();
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			dictionary["worldId"] = fromWorldId;
+			dictionary["instanceId"] = fromInstanceId;
+			ApiModel.SendPostRequest("halp", dictionary, delegate
+			{
+				if (successCallback != null)
+				{
+					successCallback(null);
+				}
+			}, delegate(string message)
+			{
+				Logger.Log("Could not post Halp request - " + message);
+				errorCallback(message);
+			});
 		}
 
 		public static bool Exists(APIUser user)
@@ -439,7 +588,12 @@ namespace VRC.Core
 
 		public void Init(Dictionary<string, object> jsonObject)
 		{
+			Init();
 			Fill(jsonObject);
+			if (mDeveloperType.HasValue)
+			{
+				CacheUser(mId, this);
+			}
 		}
 
 		public void InitBrief(Dictionary<string, object> jsonObject)
@@ -460,6 +614,12 @@ namespace VRC.Core
 			{
 				currentAvatarImageUrl = (jsonObject["currentAvatarImageUrl"] as string);
 			}
+			if (jsonObject.ContainsKey("developerType"))
+			{
+				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["developerType"] as string).ToLower());
+				mDeveloperType = (DeveloperType)(int)Enum.Parse(typeof(DeveloperType), value);
+				CacheUser(mId, this);
+			}
 		}
 
 		public void Init(ApiNotification notification)
@@ -469,7 +629,7 @@ namespace VRC.Core
 			mDisplayName = notification.senderUsername;
 		}
 
-		protected void Init()
+		public void Init()
 		{
 			mId = null;
 			mBlob = null;
@@ -488,7 +648,10 @@ namespace VRC.Core
 			mDisplayName = fromUser.displayName;
 			mAvatarId = fromUser.mAvatarId;
 			mEvents = fromUser.events;
-			mIsFresh = fromUser.isFresh;
+			mVerified = fromUser.verified;
+			mHasEmail = fromUser.hasEmail;
+			mHasBirthday = fromUser.hasBirthday;
+			mAcceptedTOSVersion = fromUser.mAcceptedTOSVersion;
 			mDeveloperType = fromUser.developerType;
 		}
 
@@ -498,34 +661,31 @@ namespace VRC.Core
 			mBlob = Json.Encode(jsonObject);
 			mUsername = (jsonObject["username"] as string);
 			mDisplayName = (jsonObject["displayName"] as string);
-			mAvatarId = (jsonObject["currentAvatar"] as string);
-			mEvents = VRCEvent.VRCEvents(jsonObject["events"] as Dictionary<string, object>);
-			string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["developerType"] as string).ToLower());
-			mDeveloperType = (DeveloperType)(int)Enum.Parse(typeof(DeveloperType), value);
-		}
-
-		public void Save(Action<ApiModel> onSuccess = null, Action<string> onError = null)
-		{
-			if (IsLoggedInWithCredentials)
+			mVerified = Convert.ToBoolean(jsonObject["emailVerified"]);
+			if (jsonObject.ContainsKey("hasEmail"))
 			{
-				Dictionary<string, string> dictionary = new Dictionary<string, string>();
-				dictionary["userId"] = CurrentUser.id;
-				dictionary["username"] = username;
-				dictionary["displayName"] = displayName;
-				dictionary["currentAvatarBlueprintId"] = mAvatarId;
-				dictionary["eventIds"] = string.Join(",", ApiModel.GetIds(mEvents.Cast<ApiModel>()).ToArray());
-				ApiModel.SendPutRequest("user/" + mId, dictionary, delegate
-				{
-					CacheUser(mCurrentUser);
-					if (onSuccess != null)
-					{
-						onSuccess(mCurrentUser);
-					}
-				}, onError);
+				mHasEmail = Convert.ToBoolean(jsonObject["hasEmail"]);
 			}
-			else
+			if (jsonObject.ContainsKey("hasBirthday"))
 			{
-				Logger.Log("Cannot save anonyomus user!");
+				mHasBirthday = Convert.ToBoolean(jsonObject["hasBirthday"]);
+			}
+			if (jsonObject.ContainsKey("acceptedTOSVersion"))
+			{
+				mAcceptedTOSVersion = Convert.ToInt32(jsonObject["acceptedTOSVersion"]);
+			}
+			if (jsonObject.ContainsKey("currentAvatar"))
+			{
+				mAvatarId = (jsonObject["currentAvatar"] as string);
+			}
+			if (jsonObject.ContainsKey("events"))
+			{
+				mEvents = VRCEvent.VRCEvents(jsonObject["events"] as Dictionary<string, object>);
+			}
+			if (jsonObject.ContainsKey("developerType"))
+			{
+				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["developerType"] as string).ToLower());
+				mDeveloperType = (DeveloperType)(int)Enum.Parse(typeof(DeveloperType), value);
 			}
 		}
 
@@ -537,7 +697,6 @@ namespace VRC.Core
 		public virtual void SetDisplayName(string name)
 		{
 			mDisplayName = name;
-			Save();
 		}
 
 		public override string ToString()

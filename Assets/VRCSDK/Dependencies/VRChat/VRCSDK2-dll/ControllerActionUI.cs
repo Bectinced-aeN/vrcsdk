@@ -4,5 +4,7 @@ public enum ControllerActionUI
 	Use,
 	Drop,
 	ReleaseObject,
-	Move
+	Move,
+	UIMenu,
+	UISelect
 }

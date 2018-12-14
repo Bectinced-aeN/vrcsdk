@@ -44,6 +44,10 @@ namespace VRCSDK2
 
 		public AnimationSet Animations;
 
+		public AnimatorOverrideController CustomStandingAnims;
+
+		public AnimatorOverrideController CustomSittingAnims;
+
 		public bool ScaleIPD = true;
 
 		public LipSyncStyle lipSync;

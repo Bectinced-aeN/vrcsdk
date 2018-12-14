@@ -47,7 +47,6 @@ public class VRC_YouTubeSync : MonoBehaviour
 	private void SetupYoutube(string roomScreenName)
 	{
 		screenName = roomScreenName;
-		VRC_EventHandler component = this.GetComponent<VRC_EventHandler>();
 		string str = "?";
 		string str2 = string.Empty;
 		if (screenName != string.Empty)
@@ -60,61 +59,41 @@ public class VRC_YouTubeSync : MonoBehaviour
 			str = str + str2 + "v=" + videoID;
 			str2 = "&";
 		}
+		string str3 = WWW.EscapeURL(Networking.LocalPlayer.name);
+		str = str + str2 + "user=" + str3;
+		str2 = "&";
 		if (playlist != null && playlist.Length != 0)
 		{
 			str = str + str2 + "playlist=" + string.Join(",", playlist);
 			str2 = "&";
 		}
-		string str3 = "hide_ui=false";
+		string str4 = "hide_ui=false";
 		if (hideUI)
 		{
-			str3 = "hide_ui=true";
-		}
-		str = str + str2 + str3;
-		str2 = "&";
-		string str4 = "loop=false";
-		if (loop)
-		{
-			str4 = "loop=true";
+			str4 = "hide_ui=true";
 		}
 		str = str + str2 + str4;
 		str2 = "&";
-		string str5 = "autoplay=false";
-		if (autoplay)
+		string str5 = "loop=false";
+		if (loop)
 		{
-			str5 = "autoplay=true";
+			str5 = "loop=true";
 		}
 		str = str + str2 + str5;
 		str2 = "&";
-		str = str + str2 + "volume=" + volume.ToString();
-		VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
-		vrcEvent.EventType = VRC_EventHandler.VrcEventType.SetWebPanelURI;
-		vrcEvent.Name = "SetWebPanelURI";
-		vrcEvent.ParameterString = urlPrefix + str;
-		vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
+		string str6 = "autoplay=false";
+		if (autoplay)
 		{
-			this.get_gameObject()
-		};
-		component.TriggerEvent(vrcEvent, VRC_EventHandler.VrcBroadcastType.Local, 0, 0f);
-		Debug.Log((object)("Setting youtube URL: " + urlPrefix + str));
+			str6 = "autoplay=true";
+		}
+		str = str + str2 + str6;
+		str2 = "&";
+		str = str + str2 + "volume=" + volume.ToString();
+		web.NavigateTo(urlPrefix + str);
 	}
 
 	private void OnNetworkReady()
 	{
-		if (Networking.IsMaster)
-		{
-			string randomDigits = GetRandomDigits(8);
-			Networking.RPC(VRC_EventHandler.VrcTargetType.AllBuffered, this.get_gameObject(), "SetupYoutube", randomDigits);
-		}
-	}
-
-	private string GetRandomDigits(int digits)
-	{
-		string text = string.Empty;
-		for (int i = 0; i < digits; i++)
-		{
-			text += Random.Range(0, 9).ToString();
-		}
-		return text;
+		SetupYoutube(Networking.GetUniqueName(this.get_gameObject()));
 	}
 }

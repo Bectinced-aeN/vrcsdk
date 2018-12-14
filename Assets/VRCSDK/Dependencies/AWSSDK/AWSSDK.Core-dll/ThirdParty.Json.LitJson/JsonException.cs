@@ -1,0 +1,42 @@
+using System;
+
+namespace ThirdParty.Json.LitJson
+{
+	[Serializable]
+	public class JsonException : Exception
+	{
+		public JsonException()
+		{
+		}
+
+		internal JsonException(ParserToken token)
+			: base($"Invalid token '{token}' in input string")
+		{
+		}
+
+		internal JsonException(ParserToken token, Exception inner_exception)
+			: base($"Invalid token '{token}' in input string", inner_exception)
+		{
+		}
+
+		internal JsonException(int c)
+			: base($"Invalid character '{(char)c}' in input string")
+		{
+		}
+
+		internal JsonException(int c, Exception inner_exception)
+			: base($"Invalid character '{(char)c}' in input string", inner_exception)
+		{
+		}
+
+		public JsonException(string message)
+			: base(message)
+		{
+		}
+
+		public JsonException(string message, Exception inner_exception)
+			: base(message, inner_exception)
+		{
+		}
+	}
+}

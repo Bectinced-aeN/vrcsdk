@@ -5,5 +5,7 @@ public enum TutorialLabelType
 	Interactable,
 	Controller,
 	AreaMarker,
-	Popup
+	Popup,
+	PopupAttached,
+	UI
 }

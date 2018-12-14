@@ -16,6 +16,13 @@ namespace VRCSDK2
 			Demo
 		}
 
+		public enum SpawnOrientation
+		{
+			Default,
+			AlignPlayerWithSpawnPoint,
+			AlignRoomWithSpawnPoint
+		}
+
 		public enum RespawnHeightBehaviour
 		{
 			Respawn,
@@ -28,11 +35,23 @@ namespace VRCSDK2
 
 		public SpawnOrder spawnOrder = SpawnOrder.Random;
 
+		public SpawnOrientation spawnOrientation;
+
 		public GameObject ReferenceCamera;
 
 		public float RespawnHeightY = -100f;
 
 		public RespawnHeightBehaviour ObjectBehaviourAtRespawnHeight = RespawnHeightBehaviour.Destroy;
+
+		public bool ForbidFreeModification;
+
+		public bool ForbidUserPortals;
+
+		public bool UseCustomVoiceFalloffRange;
+
+		public float VoiceFalloffRangeNear = 4f;
+
+		public float VoiceFalloffRangeFar = 350f;
 
 		[HideInInspector]
 		public bool useAssignedLayers;
@@ -66,12 +85,12 @@ namespace VRCSDK2
 
 		public string unityVersion;
 
-		[Obsolete("Property is not used.")]
 		[HideInInspector]
+		[Obsolete("Property is not used.")]
 		public string Name;
 
-		[HideInInspector]
 		[Obsolete("Property is not used.")]
+		[HideInInspector]
 		public bool NSFW;
 
 		[HideInInspector]
@@ -102,9 +121,6 @@ namespace VRCSDK2
 
 		[HideInInspector]
 		public LightmapsMode LightMode;
-
-		[HideInInspector]
-		public bool LoadRenderSettings;
 
 		[HideInInspector]
 		public Color RenderAmbientEquatorColor;
@@ -177,6 +193,20 @@ namespace VRCSDK2
 		[HideInInspector]
 		public object apiWorld;
 
+		private static VRC_SceneDescriptor _instance;
+
+		public static VRC_SceneDescriptor Instance
+		{
+			get
+			{
+				if (_instance == null)
+				{
+					_instance = Object.FindObjectOfType<VRC_SceneDescriptor>();
+				}
+				return _instance;
+			}
+		}
+
 		public static GameObject GetPrefab(string name)
 		{
 			if (sDynamicPrefabs.ContainsKey(name))
@@ -217,6 +247,12 @@ namespace VRCSDK2
 
 		private void Awake()
 		{
+			if (_instance != null && _instance != this)
+			{
+				Debug.LogWarning((object)"Destroying existing Scene Descriptor");
+				Object.Destroy(_instance);
+			}
+			_instance = this;
 			sDynamicPrefabs = new Dictionary<string, GameObject>();
 			foreach (GameObject dynamicPrefab in DynamicPrefabs)
 			{

@@ -5,7 +5,11 @@ namespace VRCSDK2
 {
 	public static class Networking
 	{
+		public static Func<GameObject, string> _GetUniqueName;
+
 		public static Action<VRC_EventHandler.VrcTargetType, GameObject, string, object[]> _RPC;
+
+		public static Action<VRC_PlayerApi, GameObject, string, object[]> _RPCtoPlayer;
 
 		public static Action<VRC_EventHandler.VrcBroadcastType, GameObject, string> _Message;
 
@@ -28,6 +32,8 @@ namespace VRCSDK2
 		public static Func<object[], byte[]> _ParameterEncoder;
 
 		public static Func<byte[], object[]> _ParameterDecoder;
+
+		public static Action<GameObject> _Destroy;
 
 		public static bool IsNetworkSettled => _IsNetworkSettled == null || _IsNetworkSettled();
 
@@ -86,6 +92,14 @@ namespace VRCSDK2
 			}
 		}
 
+		public static void RPC(VRC_PlayerApi targetPlayer, GameObject targetObject, string methodName, params object[] parameters)
+		{
+			if (_RPCtoPlayer != null)
+			{
+				_RPCtoPlayer(targetPlayer, targetObject, methodName, parameters);
+			}
+		}
+
 		public static void SendMessage(VRC_EventHandler.VrcBroadcastType broadcast, GameObject target, string methodName)
 		{
 			if (_Message != null)
@@ -108,6 +122,23 @@ namespace VRCSDK2
 			if (_ParameterDecoder != null)
 			{
 				return _ParameterDecoder(encodedData);
+			}
+			return null;
+		}
+
+		public static void Destroy(GameObject obj)
+		{
+			if (_Destroy != null)
+			{
+				_Destroy(obj);
+			}
+		}
+
+		public static string GetUniqueName(GameObject obj)
+		{
+			if (_GetUniqueName != null)
+			{
+				return _GetUniqueName(obj);
 			}
 			return null;
 		}

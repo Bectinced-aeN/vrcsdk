@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VRC.Core.BestHTTP;
+using VRC.Core.BestHTTP.Caching;
 
 public class ImageDownloader : MonoBehaviour
 {
@@ -56,7 +57,7 @@ public class ImageDownloader : MonoBehaviour
 		ProcessLoadQueue();
 	}
 
-	public static void DownloadImage(string imageUrl, OnImageDownloaded onImageDownload, string fallbackImageUrl = "")
+	public static void DownloadImage(string imageUrl, OnImageDownloaded onImageDownload, string fallbackImageUrl = "", bool isRetry = false)
 	{
 		ImageDownloader imageDownloaderQueue = CreateInstanceIfNeeded();
 		if (!string.IsNullOrEmpty(imageUrl))
@@ -112,7 +113,19 @@ public class ImageDownloader : MonoBehaviour
 								DownloadFallbackOrUseErrorImage(fallbackImageUrl, onImageDownload);
 							}
 						};
-						imageDownloaderQueue.QueueImageLoad(loadImage2);
+						if (response.Data == null)
+						{
+							downloadingImages.Remove(imageUrl);
+							HTTPCacheService.DeleteEntity(request.CurrentUri);
+							if (!isRetry)
+							{
+								DownloadImage(imageUrl, onImageDownload, fallbackImageUrl, isRetry: true);
+							}
+						}
+						else
+						{
+							imageDownloaderQueue.QueueImageLoad(loadImage2);
+						}
 					});
 				}
 				catch (Exception ex)

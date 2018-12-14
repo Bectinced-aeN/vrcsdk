@@ -131,7 +131,6 @@ namespace VRC.Core.BestHTTP
 			{
 				IsCreated = false;
 				IsThreadRunning = true;
-				HTTPManager.OnQuit();
 			}
 		}
 	}

@@ -24,15 +24,27 @@ limitations under the License.
 #if UNITY_5 && !UNITY_5_0 && !UNITY_5_1
 // The spatialization API is only supported by the final Unity 5.2 version and newer.
 // If you get script compile errors in this file, comment out the line below.
+//
+// Note: When Unity 6 is a thing, we will need to add that into the mix
+//
 #define ENABLE_SPATIALIZER_API
 #endif
 
 using UnityEngine;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 public class ONSPAudioSource : MonoBehaviour
 {
 #if ENABLE_SPATIALIZER_API
+
+    // Import functions
+    public const string strONSPS = "AudioPluginOculusSpatializer";
+
+    [DllImport(strONSPS)]
+    private static extern void ONSP_GetGlobalRoomReflectionValues(ref bool reflOn, ref bool reverbOn, 
+                                                                  ref float width, ref float height, ref float length);
+
 	// Public
 
 	[SerializeField]
@@ -106,19 +118,18 @@ public class ONSPAudioSource : MonoBehaviour
 	}
 
 	[SerializeField]
-	private bool disableRfl = false;
-	public  bool DisableRfl
+	private bool enableRfl = false;
+	public  bool EnableRfl
 	{
 		get
 		{
-			return disableRfl;
+			return enableRfl;
 		}
 		set
 		{
-			disableRfl = value;
+			enableRfl = value;
 		}
 	}
-
 #endif
 
 	/// <summary>
@@ -126,9 +137,6 @@ public class ONSPAudioSource : MonoBehaviour
 	/// </summary>
 	void Awake()
 	{
-		// We might iterate through multiple sources / game object
-		var source = GetComponent<AudioSource>();
-		SetParameters(ref source);
 	}
 
 	/// <summary>
@@ -136,16 +144,41 @@ public class ONSPAudioSource : MonoBehaviour
 	/// </summary>
     void Start()
     {
+        // We might iterate through multiple sources / game object
+        var source = GetComponent<AudioSource>();
+        SetParameters(ref source);
     }
 
-	/// <summary>
-	/// Update this instance.
-	/// </summary>
+    /// <summary>
+    /// Update this instance.
+    /// </summary>
     void Update()
     {
 		// We might iterate through multiple sources / game object
 		var source = GetComponent<AudioSource>();
- 		SetParameters(ref source);	
+        if (source == null)
+            return;
+              
+        // Check to see if we should disable spatializion
+        if ((Application.isPlaying == false) || 
+            (AudioListener.pause == true) || 
+            (source.isPlaying == false) ||
+            (source.isActiveAndEnabled == false)
+#if VRC_CLIENT
+            ||
+            (VRCFlowManager.Instance.IsEnteringRoom() == true)
+           )
+#else
+           )
+#endif
+        {
+            source.spatialize = false;
+            return;
+        }
+        else
+        {
+            SetParameters(ref source);	
+        }
     }
 
 	/// <summary>
@@ -154,39 +187,126 @@ public class ONSPAudioSource : MonoBehaviour
 	/// <param name="source">Source.</param>
 	public void SetParameters(ref AudioSource source)
 	{
-#if ENABLE_SPATIALIZER_API 
+        try
+        {
+            if (source == null)
+                return;
 
-        // Check to see if we should disable spatializion
-        if ((Application.isPlaying == false) || 
-            (AudioListener.pause == true) || 
-            (source.isPlaying == false) ||
-            (source.isActiveAndEnabled == false)
-           )
-        {
-            source.spatialize = false;
-            return;
-        }
-        else
-        {
+#if ENABLE_SPATIALIZER_API
+
+            // See if we should enable spatialization
             source.spatialize = enableSpatialization;
+
+            source.SetSpatializerFloat(0, gain);
+            // All inputs are floats; convert bool to 0.0 and 1.0
+            if (useInvSqr == true)
+                source.SetSpatializerFloat(1, 1.0f);
+            else
+                source.SetSpatializerFloat(1, 0.0f);
+
+            source.SetSpatializerFloat(2, near);
+            source.SetSpatializerFloat(3, far);
+
+            if (enableRfl == true)
+                source.SetSpatializerFloat(4, 0.0f);
+            else
+                source.SetSpatializerFloat(4, 1.0f);
+
+#endif
+        }
+        catch (System.NullReferenceException)
+        {
+            // not sure why this throws sometimes
+        }
+	}
+
+    // Only draw gizmos if spatializer exists
+#if ENABLE_SPATIALIZER_API
+    private static ONSPAudioSource RoomReflectionGizmoAS = null; 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void OnDrawGizmos()
+    {
+        // Are we the first one created? make sure to set our static ONSPAudioSource
+        // for drawing out room parameters once
+        if(RoomReflectionGizmoAS == null)
+        {
+            RoomReflectionGizmoAS = this;
         }
 
-		source.SetSpatializerFloat(0, gain);
-		// All inputs are floats; convert bool to 0.0 and 1.0
-		if(useInvSqr == true)
-			source.SetSpatializerFloat(1, 1.0f);
-		else
-			source.SetSpatializerFloat(1, 0.0f);
+        Color c;
+        const float colorSolidAlpha = 0.1f;
 
-		source.SetSpatializerFloat(2, near);
-		source.SetSpatializerFloat(3, far);
+        // Draw the near/far spheres
 
-		if(disableRfl == true)
-			source.SetSpatializerFloat(4, 1.0f);
-		else
-			source.SetSpatializerFloat(4, 0.0f);
-		
+        // Near (orange)
+        c.r = 1.0f;
+        c.g = 0.5f;
+        c.b = 0.0f;
+        c.a = 1.0f;
+        Gizmos.color = c;
+        Gizmos.DrawWireSphere(transform.position, Near);
+        c.a = colorSolidAlpha;
+        Gizmos.color = c;
+        Gizmos.DrawSphere(transform.position, Near);
+
+        // Far (red)
+        c.r = 1.0f;
+        c.g = 0.0f;
+        c.b = 0.0f;
+        c.a = 1.0f;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, Far);
+        c.a = colorSolidAlpha;
+        Gizmos.color = c;
+        Gizmos.DrawSphere(transform.position, Far);
+
+        // Draw room parameters ONCE only, provided reflection engine is on
+        if (RoomReflectionGizmoAS == this)
+        {
+            // Get global room parameters (write new C api to get reflection values)
+            bool reflOn    = false;
+            bool reverbOn  = false;
+            float width    = 1.0f;
+            float height   = 1.0f;
+            float length   = 1.0f;
+
+            ONSP_GetGlobalRoomReflectionValues(ref reflOn, ref reverbOn, ref width, ref height, ref length);
+
+            // TO DO: Get the room reflection values and render those out as well (like we do in the VST)
+
+            if((Camera.main != null) && (reflOn == true))
+            {
+                // Set color of cube (cyan is early reflections only, white is with reverb on)
+                if(reverbOn == true)
+                    c = Color.white;
+                else
+                    c = Color.cyan;
+
+                Gizmos.color = c;
+                Gizmos.DrawWireCube(Camera.main.transform.position, new Vector3(width, height, length));
+                c.a = colorSolidAlpha;
+                Gizmos.color = c;
+                Gizmos.DrawCube(Camera.main.transform.position, new Vector3(width, height, length));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void OnDestroy() 
+    {
+        // We will null out single pointer instance
+        // of the room reflection gizmo since we are being destroyed.
+        // Any ONSPAS that is alive or born will re-set this pointer
+        // so that we only draw it once
+        if(RoomReflectionGizmoAS == this)
+        {
+            RoomReflectionGizmoAS = null;
+        }
+    }
 #endif
-	}
-		
 }

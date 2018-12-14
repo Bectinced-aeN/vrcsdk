@@ -11,7 +11,7 @@ public class SDKDLLMaker
 
 	public static string SOURCE_FULL_PATH = Application.get_dataPath() + "/WebPlayerTemplates/VRC/Source";
 
-	public static string DLL_MAKER_SOURCE_FULL_PATH = Application.get_dataPath() + "/DLLMaker";
+	public static string DLL_MAKER_SOURCE_FULL_PATH = Application.get_dataPath() + "/Scripts/DLLMaker";
 
 	public static string DLL_MAKER_OUTPUT_FULL_PATH = Application.get_dataPath() + "/../Temp";
 
@@ -21,7 +21,7 @@ public class SDKDLLMaker
 	{
 		try
 		{
-			MakeCoreDLLs(debug);
+			MakeCoreDLLs(debug, isInternal);
 		}
 		catch (Exception ex)
 		{
@@ -37,7 +37,7 @@ public class SDKDLLMaker
 		}
 		try
 		{
-			MakeDLLMakerDLL(debug);
+			MakeDLLMakerDLL(debug, isInternal);
 		}
 		catch (Exception ex3)
 		{
@@ -63,11 +63,11 @@ public class SDKDLLMaker
 		dLLMaker.createDLL();
 	}
 
-	public static void MakeCoreDLLs(bool debug)
+	public static void MakeCoreDLLs(bool debug, bool isInternal)
 	{
 		try
 		{
-			MakeEditorCoreDLL(debug);
+			MakeEditorCoreDLL(debug, isInternal);
 		}
 		catch (Exception ex)
 		{
@@ -75,7 +75,7 @@ public class SDKDLLMaker
 		}
 		try
 		{
-			MakeStandaloneCoreDLL(debug);
+			MakeStandaloneCoreDLL(debug, isInternal);
 		}
 		catch (Exception ex2)
 		{
@@ -83,7 +83,7 @@ public class SDKDLLMaker
 		}
 	}
 
-	public static void MakeEditorCoreDLL(bool debug)
+	public static void MakeEditorCoreDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -92,12 +92,16 @@ public class SDKDLLMaker
 		dLLMaker.sourcePaths.Add(SOURCE_FULL_PATH + "/VRCCore/Scripts");
 		dLLMaker.dllDependencies = new List<string>();
 		dLLMaker.dllDependencies.Add(DLLMaker.unityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
+		if (isInternal)
+		{
+			dLLMaker.defines.Add("INTERNAL_SDK");
+		}
 		dLLMaker.isEditor = true;
 		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCCore-Editor.dll";
 		dLLMaker.createDLL();
 	}
 
-	public static void MakeStandaloneCoreDLL(bool debug)
+	public static void MakeStandaloneCoreDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -106,13 +110,16 @@ public class SDKDLLMaker
 		dLLMaker.sourcePaths.Add(SOURCE_FULL_PATH + "/VRCCore/Scripts");
 		dLLMaker.dllDependencies = new List<string>();
 		dLLMaker.dllDependencies.Add(DLLMaker.unityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
-		dLLMaker.dllDependencies.Add(Application.get_dataPath() + "/External Assets/LOOM.dll");
+		if (isInternal)
+		{
+			dLLMaker.defines.Add("INTERNAL_SDK");
+		}
 		dLLMaker.isEditor = false;
 		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCCore-Standalone.dll";
 		dLLMaker.createDLL();
 	}
 
-	public static void MakeDLLMakerDLL(bool debug)
+	public static void MakeDLLMakerDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -120,6 +127,10 @@ public class SDKDLLMaker
 		dLLMaker.sourcePaths = new List<string>();
 		dLLMaker.sourcePaths.Add(DLL_MAKER_SOURCE_FULL_PATH);
 		dLLMaker.defines.Add("UNITY_EDITOR_WIN");
+		if (isInternal)
+		{
+			dLLMaker.defines.Add("INTERNAL_SDK");
+		}
 		dLLMaker.dllDependencies = new List<string>();
 		dLLMaker.dllDependencies.Add(SDK_OUTPUT_FULL_PATH + "/VRCCore-Editor.dll");
 		dLLMaker.dllDependencies.Add(SDK_OUTPUT_FULL_PATH + "/VRCSDK2.dll");

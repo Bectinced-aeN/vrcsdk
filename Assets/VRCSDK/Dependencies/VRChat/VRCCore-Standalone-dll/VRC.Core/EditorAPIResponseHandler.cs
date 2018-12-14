@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.JSON;
 
@@ -15,36 +16,37 @@ namespace VRC.Core
 			case HTTPRequestStates.Finished:
 			{
 				string dataAsText = resp.DataAsText;
-				Dictionary<string, object> dictionary = null;
+				Dictionary<string, object> obj = null;
 				if (successCallbackWithDict != null)
 				{
-					dictionary = (Json.Decode(dataAsText) as Dictionary<string, object>);
+					obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
 				}
-				List<object> obj = null;
+				List<object> obj2 = null;
 				if (successCallbackWithList != null)
 				{
-					obj = (Json.Decode(dataAsText) as List<object>);
+					obj2 = (Json.Decode(dataAsText) as List<object>);
 				}
 				if (resp.IsSuccess)
 				{
 					if (resp.StatusCode == 200 || resp.StatusCode == 304)
 					{
 						successCallbackWithResponse?.Invoke(dataAsText);
-						successCallbackWithDict?.Invoke(dictionary);
-						successCallbackWithList?.Invoke(obj);
+						successCallbackWithDict?.Invoke(obj);
+						successCallbackWithList?.Invoke(obj2);
 					}
 					else
 					{
-						string errorMessage = GetErrorMessage(dictionary);
+						obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
+						string errorMessage = GetErrorMessage(obj);
 						errorCallback?.Invoke(errorMessage);
-						Logger.LogError("[" + requestId + "] Response error - server returned status code " + resp.StatusCode + ", message - " + errorMessage);
+						Debug.LogError((object)("[" + requestId + "] Response error - server returned status code " + resp.StatusCode + ", message - " + errorMessage));
 					}
 				}
 				else
 				{
-					Logger.Log("[" + requestId + "] Response: " + dataAsText, DebugLevel.API);
-					Logger.LogWarning(string.Format("[" + requestId + "] Request finished Successfully, but the server sent an error. Status Code: {0}-{1} Message: {2}", resp.StatusCode, resp.Message, resp.DataAsText));
-					string errorMessage2 = GetErrorMessage(dictionary);
+					Debug.Log((object)string.Format("<color=red>[" + requestId + "] Request finished Successfully, but the server sent an error. Status Code: {0}-{1} Message: {2} </color>", resp.StatusCode, resp.Message, resp.DataAsText));
+					obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
+					string errorMessage2 = GetErrorMessage(obj);
 					errorCallback?.Invoke(errorMessage2);
 				}
 				break;

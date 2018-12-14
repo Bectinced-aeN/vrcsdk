@@ -248,7 +248,6 @@ public class CustomDLLMaker
 				Directory.CreateDirectory(INTERNAL_DLL_OUTPUT_FULL_PATH);
 			}
 			File.Copy(dLLMaker.buildTargetName, INTERNAL_DLL_OUTPUT_FULL_PATH + "/" + text + ".dll");
-			EditorUtility.DisplayProgressBar("Reloading Assemblies", "Waiting for Unity to finish asset import!", 1f);
 		}
 		return text;
 	}
@@ -341,10 +340,11 @@ public class CustomDLLMaker
 				}
 				else
 				{
-					string typeName2 = namespaceName + "." + type3.Name + ", " + namespaceName;
-					Type type4 = Type.GetType(typeName2);
+					string text2 = namespaceName + "." + type3.Name + ", " + namespaceName;
+					Type type4 = Type.GetType(text2);
 					if (type4 == null)
 					{
+						Debug.LogError((object)("Could not locate " + text2));
 						continue;
 					}
 					val5 = gameObject2.AddComponent(type4);
@@ -369,11 +369,11 @@ public class CustomDLLMaker
 
 	private static void MigrateObjectToNamespacedObject(object o, object nO, string namespaceName, Dictionary<GameObject, GameObject> prefabMap, Dictionary<Component, Component> componentMap)
 	{
-		//IL_0837: Unknown result type (might be due to invalid IL or missing references)
-		//IL_08dc: Unknown result type (might be due to invalid IL or missing references)
-		//IL_08e6: Expected O, but got Unknown
-		//IL_08ef: Unknown result type (might be due to invalid IL or missing references)
-		//IL_08f9: Expected O, but got Unknown
+		//IL_081e: Unknown result type (might be due to invalid IL or missing references)
+		//IL_08c0: Unknown result type (might be due to invalid IL or missing references)
+		//IL_08ca: Expected O, but got Unknown
+		//IL_08d3: Unknown result type (might be due to invalid IL or missing references)
+		//IL_08dd: Expected O, but got Unknown
 		if (o != null && nO != null)
 		{
 			BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -401,225 +401,235 @@ public class CustomDLLMaker
 			}
 			FieldInfo[] fields = type.GetFields(bindingAttr);
 			FieldInfo[] fields2 = type2.GetFields(bindingAttr);
-			for (int j = 0; j < fields.Length; j++)
+			FieldInfo[] array = fields;
+			foreach (FieldInfo fieldInfo in array)
 			{
-				if (fields[j].GetType() != fields2[j].GetType())
-				{
-					Debug.LogError((object)"DLL and code field infos are out of sync.");
-				}
-				FieldInfo fieldInfo = fields[j];
 				object value = fieldInfo.GetValue(o);
 				Type fieldType = GetFieldType(o, fieldInfo);
 				if (fieldType == null)
 				{
 					fieldType = fieldInfo.FieldType;
 				}
-				FieldInfo fieldInfo2 = fields2[j];
-				Type fieldType2 = GetFieldType(nO, fieldInfo2);
-				if (fieldType2 == null)
+				FieldInfo fieldInfo2 = FindDstField(fieldInfo, fields2);
+				if (fieldInfo2 == null)
 				{
-					fieldType2 = fieldInfo2.FieldType;
+					Debug.LogError((object)("Could not find a destination field for " + fieldInfo.Name));
 				}
-				if (value != null)
+				else
 				{
-					if (fieldType == typeof(GameObject[]))
+					Type fieldType2 = GetFieldType(nO, fieldInfo2);
+					if (fieldType2 == null)
 					{
-						GameObject[] array = value as GameObject[];
-						GameObject[] array2 = (GameObject[])new GameObject[array.Length];
-						for (int k = 0; k < array.Length; k++)
-						{
-							GameObject val = array[k];
-							if (val != null && AssetDatabase.Contains(val.get_transform().get_root().get_gameObject()))
-							{
-								GameObject val2 = val;
-								GameObject val3 = val2;
-								if (prefabMap.ContainsKey(val2))
-								{
-									val3 = prefabMap[val2];
-								}
-								array2[k] = val3;
-							}
-							else
-							{
-								array2[k] = val;
-							}
-						}
-						fields2[j].SetValue(nO, array2);
-					}
-					else if (fieldType == typeof(List<GameObject>))
-					{
-						List<GameObject> list = value as List<GameObject>;
-						List<GameObject> list2 = new List<GameObject>();
 						fieldType2 = fieldInfo2.FieldType;
-						for (int l = 0; l < list.Count; l++)
+					}
+					try
+					{
+						if (value != null && fieldInfo.Attributes != FieldAttributes.Private)
 						{
-							GameObject val4 = list[l];
-							if (val4 != null && AssetDatabase.Contains(val4.get_transform().get_root().get_gameObject()))
+							if (fieldType == typeof(GameObject[]))
 							{
-								GameObject val5 = val4;
-								GameObject item = val5;
-								if (prefabMap.ContainsKey(val5))
+								GameObject[] array2 = value as GameObject[];
+								GameObject[] array3 = (GameObject[])new GameObject[array2.Length];
+								for (int k = 0; k < array2.Length; k++)
 								{
-									item = prefabMap[val5];
+									GameObject val = array2[k];
+									if (val != null && AssetDatabase.Contains(val.get_transform().get_root().get_gameObject()))
+									{
+										GameObject val2 = val;
+										GameObject val3 = val2;
+										if (prefabMap.ContainsKey(val2))
+										{
+											val3 = prefabMap[val2];
+										}
+										array3[k] = val3;
+									}
+									else
+									{
+										array3[k] = val;
+									}
 								}
-								list2.Add(item);
+								fieldInfo2.SetValue(nO, array3);
 							}
-							else
+							else if (fieldType == typeof(List<GameObject>))
 							{
-								list2.Add(val4);
-							}
-						}
-						fields2[j].SetValue(nO, list2);
-					}
-					else if (fieldType != null && typeof(Component[]).IsAssignableFrom(fieldType))
-					{
-						Component[] array3 = value as Component[];
-						fieldType2 = fieldInfo2.FieldType;
-						Array array4 = Array.CreateInstance(fieldType2.GetElementType(), array3.Length);
-						for (int m = 0; m < array3.Length; m++)
-						{
-							Component val6 = array3[m];
-							if (val6 != null && AssetDatabase.Contains(val6.get_transform().get_root().get_gameObject()))
-							{
-								GameObject gameObject = val6.get_transform().get_root().get_gameObject();
-								GameObject val7 = gameObject;
-								if (prefabMap.ContainsKey(gameObject))
+								List<GameObject> list = value as List<GameObject>;
+								List<GameObject> list2 = new List<GameObject>();
+								fieldType2 = fieldInfo2.FieldType;
+								for (int l = 0; l < list.Count; l++)
 								{
-									val7 = prefabMap[gameObject];
+									GameObject val4 = list[l];
+									if (val4 != null && AssetDatabase.Contains(val4.get_transform().get_root().get_gameObject()))
+									{
+										GameObject val5 = val4;
+										GameObject item = val5;
+										if (prefabMap.ContainsKey(val5))
+										{
+											item = prefabMap[val5];
+										}
+										list2.Add(item);
+									}
+									else
+									{
+										list2.Add(val4);
+									}
 								}
-								array4.SetValue(val7.GetComponent(fieldType2.GetElementType()), m);
+								fieldInfo2.SetValue(nO, list2);
 							}
-							else if (val6 == null)
+							else if (fieldType != null && typeof(Component[]).IsAssignableFrom(fieldType))
 							{
-								array4.SetValue(val6, m);
-							}
-							else
-							{
-								array4.SetValue(val6.GetComponent(fieldType2.GetElementType()), m);
-							}
-						}
-						fields2[j].SetValue(nO, array4);
-					}
-					else if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Component)))
-					{
-						IEnumerable source = value as IEnumerable;
-						IEnumerable<Component> enumerable = source.OfType<Component>();
-						fieldType2 = fieldInfo2.FieldType;
-						Type type3 = fieldType2.GetGenericArguments()[0];
-						Type type4 = typeof(List<>).MakeGenericType(type3);
-						IList list3 = (IList)Activator.CreateInstance(type4);
-						foreach (Component item2 in enumerable)
-						{
-							if (item2 != null && AssetDatabase.Contains(item2.get_gameObject().get_transform().get_root()
-								.get_gameObject()))
-							{
-								GameObject gameObject2 = item2.get_gameObject().get_transform().get_root()
-									.get_gameObject();
-								GameObject val8 = gameObject2;
-								if (prefabMap.ContainsKey(gameObject2))
+								Component[] array4 = value as Component[];
+								fieldType2 = fieldInfo2.FieldType;
+								Array array5 = Array.CreateInstance(fieldType2.GetElementType(), array4.Length);
+								for (int m = 0; m < array4.Length; m++)
 								{
-									val8 = prefabMap[gameObject2];
+									Component val6 = array4[m];
+									if (val6 != null && AssetDatabase.Contains(val6.get_transform().get_root().get_gameObject()))
+									{
+										GameObject gameObject = val6.get_transform().get_root().get_gameObject();
+										GameObject val7 = gameObject;
+										if (prefabMap.ContainsKey(gameObject))
+										{
+											val7 = prefabMap[gameObject];
+										}
+										array5.SetValue(val7.GetComponent(fieldType2.GetElementType()), m);
+									}
+									else if (val6 == null)
+									{
+										array5.SetValue(val6, m);
+									}
+									else
+									{
+										array5.SetValue(val6.GetComponent(fieldType2.GetElementType()), m);
+									}
 								}
-								Component component = val8.GetComponent(type3);
-								list3.Add(component);
+								fieldInfo2.SetValue(nO, array5);
 							}
-							else
+							else if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Component)))
 							{
-								list3.Add(item2.get_gameObject().GetComponent(type3));
-							}
-						}
-						fields2[j].SetValue(nO, list3);
-					}
-					else if (fieldType != null && fieldType.IsArray)
-					{
-						Type elementType = fieldInfo2.FieldType.GetElementType();
-						if (elementType.Namespace.Contains(namespaceName))
-						{
-							object[] array5 = value as object[];
-							if (array5 != null)
-							{
-								object obj = Activator.CreateInstance(fieldInfo2.FieldType, array5.Length);
-								object[] array6 = obj as object[];
-								for (int n = 0; n < array6.Length; n++)
+								IEnumerable source = value as IEnumerable;
+								IEnumerable<Component> enumerable = source.OfType<Component>();
+								fieldType2 = fieldInfo2.FieldType;
+								Type type3 = fieldType2.GetGenericArguments()[0];
+								Type type4 = typeof(List<>).MakeGenericType(type3);
+								IList list3 = (IList)Activator.CreateInstance(type4);
+								foreach (Component item2 in enumerable)
 								{
-									array6[n] = Activator.CreateInstance(elementType);
+									if (item2 != null && AssetDatabase.Contains(item2.get_gameObject().get_transform().get_root()
+										.get_gameObject()))
+									{
+										GameObject gameObject2 = item2.get_gameObject().get_transform().get_root()
+											.get_gameObject();
+										GameObject val8 = gameObject2;
+										if (prefabMap.ContainsKey(gameObject2))
+										{
+											val8 = prefabMap[gameObject2];
+										}
+										Component component = val8.GetComponent(type3);
+										list3.Add(component);
+									}
+									else
+									{
+										list3.Add(item2.get_gameObject().GetComponent(type3));
+									}
 								}
-								for (int num = 0; num < array5.Length; num++)
+								fieldInfo2.SetValue(nO, list3);
+							}
+							else if (fieldType != null && fieldType.IsArray)
+							{
+								Type elementType = fieldInfo2.FieldType.GetElementType();
+								if (elementType.Namespace.Contains(namespaceName))
 								{
-									MigrateObjectToNamespacedObject(array5[num], array6[num], namespaceName, prefabMap, componentMap);
+									object[] array6 = value as object[];
+									if (array6 != null)
+									{
+										object obj = Activator.CreateInstance(fieldInfo2.FieldType, array6.Length);
+										object[] array7 = obj as object[];
+										for (int n = 0; n < array7.Length; n++)
+										{
+											array7[n] = Activator.CreateInstance(elementType);
+										}
+										for (int num = 0; num < array6.Length; num++)
+										{
+											MigrateObjectToNamespacedObject(array6[num], array7[num], namespaceName, prefabMap, componentMap);
+										}
+										fieldInfo2.SetValue(nO, array7);
+									}
 								}
-								fields2[j].SetValue(nO, array6);
+								else
+								{
+									fieldInfo2.SetValue(nO, fieldInfo.GetValue(o));
+								}
 							}
-						}
-						else
-						{
-							fields2[j].SetValue(nO, fields[j].GetValue(o));
-						}
-					}
-					else if (fieldType != null && fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
-					{
-						Type type5 = fieldInfo2.FieldType.GetGenericArguments().Single();
-						if (type5.Namespace.Contains(namespaceName))
-						{
-							object obj2 = Activator.CreateInstance(fieldInfo2.FieldType);
-							IList list4 = value as IList;
-							IList list5 = obj2 as IList;
-							for (int num2 = 0; num2 < list4.Count; num2++)
+							else if (fieldType != null && fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
 							{
-								list5.Add(Activator.CreateInstance(type5));
+								Type type5 = fieldInfo2.FieldType.GetGenericArguments().Single();
+								if (type5.Namespace.Contains(namespaceName))
+								{
+									object obj2 = Activator.CreateInstance(fieldInfo2.FieldType);
+									IList list4 = value as IList;
+									IList list5 = obj2 as IList;
+									for (int num2 = 0; num2 < list4.Count; num2++)
+									{
+										list5.Add(Activator.CreateInstance(type5));
+									}
+									for (int num3 = 0; num3 < list4.Count; num3++)
+									{
+										MigrateObjectToNamespacedObject(list4[num3], list5[num3], namespaceName, prefabMap, componentMap);
+									}
+									fieldInfo2.SetValue(nO, list5);
+								}
+								else
+								{
+									fieldInfo2.SetValue(nO, fieldInfo.GetValue(o));
+								}
 							}
-							for (int num3 = 0; num3 < list4.Count; num3++)
+							else if (fieldType != null && typeof(Object[]).IsAssignableFrom(fieldType))
 							{
-								MigrateObjectToNamespacedObject(list4[num3], list5[num3], namespaceName, prefabMap, componentMap);
+								fieldInfo2.SetValue(nO, fieldInfo.GetValue(o));
 							}
-							fields2[j].SetValue(nO, list5);
+							else if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Object)))
+							{
+								fieldInfo2.SetValue(nO, fieldInfo.GetValue(o));
+							}
+							else if (fieldType != null && fieldType.IsGenericType)
+							{
+								Debug.LogError((object)("Unsupported generic type: " + fieldType + ". Tell graham!"));
+							}
+							else if (fieldType != null && fieldType.IsEnum)
+							{
+								fieldInfo2.SetValue(nO, (int)value);
+							}
+							else if (IsAssetFieldType(o, fieldInfo))
+							{
+								GameObject val9 = (GetFieldType(o, fieldInfo) != typeof(GameObject)) ? ((object)value.get_gameObject()) : ((object)(value as GameObject));
+								GameObject val10 = val9;
+								if (prefabMap.ContainsKey(val9))
+								{
+									val10 = prefabMap[val9];
+								}
+								object value2 = (fieldType == typeof(GameObject)) ? val10 : ((fieldType != typeof(Transform)) ? ((object)val10.GetComponent(fieldType2)) : ((object)val10.get_transform()));
+								fieldInfo2.SetValue(nO, value2);
+							}
+							else if (fieldType != null && fieldType.IsSubclassOf(typeof(Component)) && value != null && componentMap.ContainsKey(value))
+							{
+								Component value3 = componentMap[value];
+								fieldInfo2.SetValue(nO, value3);
+							}
+							else if (!fieldInfo2.FieldType.Namespace.Contains(namespaceName))
+							{
+								fieldInfo2.SetValue(nO, fieldInfo.GetValue(o));
+							}
+							else if (fieldInfo2.FieldType.Namespace.Contains(namespaceName))
+							{
+								object value4 = Activator.CreateInstance(fieldInfo2.FieldType);
+								fieldInfo2.SetValue(nO, value4);
+								MigrateObjectToNamespacedObject(value, fieldInfo2.GetValue(nO), namespaceName, prefabMap, componentMap);
+							}
 						}
-						else
-						{
-							fields2[j].SetValue(nO, fields[j].GetValue(o));
-						}
 					}
-					else if (fieldType != null && typeof(Object[]).IsAssignableFrom(fieldType))
+					catch (Exception ex2)
 					{
-						fields2[j].SetValue(nO, fields[j].GetValue(o));
-					}
-					else if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Object)))
-					{
-						fields2[j].SetValue(nO, fields[j].GetValue(o));
-					}
-					else if (fieldType != null && fieldType.IsGenericType)
-					{
-						Debug.LogError((object)("Unsupported generic type: " + fieldType + ". Tell graham!"));
-					}
-					else if (fieldType != null && fieldType.IsEnum)
-					{
-						fields2[j].SetValue(nO, (int)value);
-					}
-					else if (IsAssetFieldType(o, fieldInfo))
-					{
-						GameObject val9 = (GetFieldType(o, fieldInfo) != typeof(GameObject)) ? ((object)value.get_gameObject()) : ((object)(value as GameObject));
-						GameObject val10 = val9;
-						if (prefabMap.ContainsKey(val9))
-						{
-							val10 = prefabMap[val9];
-						}
-						object value2 = (fieldType == typeof(GameObject)) ? val10 : ((fieldType != typeof(Transform)) ? ((object)val10.GetComponent(fieldType2)) : ((object)val10.get_transform()));
-						fields2[j].SetValue(nO, value2);
-					}
-					else if (fieldType != null && fieldType.IsSubclassOf(typeof(Component)) && value != null && componentMap.ContainsKey(value))
-					{
-						Component value3 = componentMap[value];
-						fields2[j].SetValue(nO, value3);
-					}
-					else if (!fieldInfo2.FieldType.Namespace.Contains(namespaceName))
-					{
-						fields2[j].SetValue(nO, fields[j].GetValue(o));
-					}
-					else if (fieldInfo2.FieldType.Namespace.Contains(namespaceName))
-					{
-						object value4 = Activator.CreateInstance(fieldInfo2.FieldType);
-						fieldInfo2.SetValue(nO, value4);
-						MigrateObjectToNamespacedObject(value, fieldInfo2.GetValue(nO), namespaceName, prefabMap, componentMap);
+						Debug.LogException(ex2);
 					}
 				}
 			}
@@ -668,7 +678,7 @@ public class CustomDLLMaker
 
 	private static Type GetFieldType(object c, FieldInfo fieldInfo)
 	{
-		return (fieldInfo.GetValue(c) != null) ? fieldInfo.GetValue(c).GetType() : null;
+		return (fieldInfo != null && fieldInfo.GetValue(c) != null) ? fieldInfo.GetValue(c).GetType() : null;
 	}
 
 	private static void CreateNamespacedSourceFiles(DLLMaker maker, string namespaceName)
@@ -757,12 +767,17 @@ public class CustomDLLMaker
 
 	public static void CreateDirectories()
 	{
-		//IL_001f: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0025: Invalid comparison between Unknown and I4
-		if (!DoesScriptDirExist() && APIUser.get_CurrentUser() != null && (int)APIUser.get_CurrentUser().get_developerType() >= 1)
+		//IL_003e: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0044: Invalid comparison between Unknown and I4
+		if (!DoesScriptDirExist() && APIUser.get_CurrentUser() != null && APIUser.get_CurrentUser().get_developerType().HasValue && (int)APIUser.get_CurrentUser().get_developerType().Value >= 1)
 		{
 			Directory.CreateDirectory(SOURCE_FULL_PATH);
 			AssetDatabase.Refresh();
 		}
+	}
+
+	private static FieldInfo FindDstField(FieldInfo src, FieldInfo[] dsts)
+	{
+		return dsts.FirstOrDefault((FieldInfo dst) => dst.Name == src.Name);
 	}
 }

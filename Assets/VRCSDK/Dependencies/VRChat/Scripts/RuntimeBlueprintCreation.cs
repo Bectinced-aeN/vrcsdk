@@ -7,10 +7,8 @@ using VRC.Core;
 
 namespace VRCSDK2
 {
-    public class RuntimeBlueprintCreation : MonoBehaviour 
+    public class RuntimeBlueprintCreation : RuntimeAPICreation 
     {
-        public VRC.Core.PipelineManager pipelineManager;
-        
         public GameObject waitingPanel;
         public GameObject blueprintPanel;
         public GameObject errorPanel;
@@ -29,55 +27,27 @@ namespace VRCSDK2
 
         public UnityEngine.UI.Button uploadButton;
 
-        public string uploadVrcPath;
-        public string uploadPluginPath;
-        public string uploadUnityPackagePath;
-
-        public string cloudFrontAssetUrl;
-        public string cloudFrontImageUrl;
-        public string cloudFrontPluginUrl;
-        public string cloudFrontUnityPackageUrl;
-
         private ApiAvatar apiAvatar;
-        private string abExtension;
-        private CameraImageCapture imageCapture;
-        private string assetBundleUrl;
-        
-        private bool isUpdate { get { return !string.IsNullOrEmpty(pipelineManager.blueprintId); } } 
-        
-        public bool isUploading = false;
-        public float uploadProgress = 0f;
-        public string uploadMessage;
-        public string uploadTitle;
 
         #if UNITY_EDITOR       
-        void Start()
+        new void Start()
         {
-            if(Application.isEditor && Application.isPlaying)
-            {
-                Application.runInBackground = true;
-                UnityEngine.VR.VRSettings.enabled = false;
+            if (!Application.isEditor || !Application.isPlaying)
+                return;
 
-				PipelineSaver ps = GameObject.FindObjectOfType<PipelineSaver>();
-				pipelineManager = ps.gameObject.GetComponent<PipelineManager>();
+            base.Start();
 
-                imageCapture = GetComponent<CameraImageCapture>();
-                imageCapture.shotCamera = GameObject.Find("VRCCam").GetComponent<Camera>();
-                uploadButton.onClick.AddListener(SetupUpload);
+            Application.runInBackground = true;
+            UnityEngine.VR.VRSettings.enabled = false;
+
+            uploadButton.onClick.AddListener(SetupUpload);
                
-                shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
+            shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
                 
-                Login();
-                SetupUI();
-            }
+            Login();
+            SetupUI();
         }
         
-        void Update()
-        {
-            if(isUploading)
-                UnityEditor.EditorUtility.DisplayProgressBar(uploadTitle, uploadMessage, uploadProgress);
-        }
-
         void LoginErrorCallback(string obj)
         {
             VRC.Core.Logger.LogError("Could not fetch fresh user - " + obj, DebugLevel.Always);    
@@ -85,39 +55,35 @@ namespace VRCSDK2
 
         void Login()
         {
-            System.Action cachedLogin = delegate
-            {
-                pipelineManager.user = APIUser.CachedLogin(
-                    delegate(APIUser user) 
+            ApiCredentials.Load();
+            APIUser.Login(
+                delegate(APIUser user) 
+                {
+                    pipelineManager.user = user;
+                    if (isUpdate)
                     {
-                        pipelineManager.user = user;
-                        if (isUpdate)
-                        {
-                            ApiAvatar.Fetch(pipelineManager.blueprintId,
-                                delegate (ApiAvatar avatar)
-                                {
-                                    apiAvatar = avatar;
-                                    SetupUI();
-                                }, 
-                                delegate(string message) 
-                                {
-                                    pipelineManager.blueprintId = "";
-                                    SetupUI();
-                                });
-                        }
-                        else
-                        {
-                            SetupUI();
-                        }
-                    }, LoginErrorCallback, true);
-            };
-
-            cachedLogin();
+                        ApiAvatar.Fetch(pipelineManager.blueprintId, false,
+                            delegate (ApiAvatar avatar)
+                            {
+                                apiAvatar = avatar;
+                                SetupUI();
+                            }, 
+                            delegate(string message) 
+                            {
+                                pipelineManager.blueprintId = "";
+                                SetupUI();
+                            });
+                    }
+                    else
+                    {
+                        SetupUI();
+                    }
+                }, LoginErrorCallback);
         }
         
         void SetupUI()
         {
-            if(APIUser.Exists(pipelineManager.user) && pipelineManager.user.isFresh)
+            if( APIUser.Exists(pipelineManager.user) )
             {
                 waitingPanel.SetActive(false);
                 blueprintPanel.SetActive(true);
@@ -168,7 +134,7 @@ namespace VRCSDK2
                 errorPanel.SetActive(false);
             }
 
-			if(APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
+			if(APIUser.CurrentUser != null && APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
 				developerAvatar.gameObject.SetActive(true);
 			else
 				developerAvatar.gameObject.SetActive(false);
@@ -180,9 +146,6 @@ namespace VRCSDK2
             isUploading = true;
            
             string abPath = UnityEditor.EditorPrefs.GetString("currentBuildingAssetBundlePath");
-            abExtension = System.IO.Path.GetExtension(abPath);
-
-            string pluginPath = UnityEditor.EditorPrefs.GetString("externalPluginPath");
 
 			string unityPackagePath = UnityEditor.EditorPrefs.GetString("VRC_exportedUnityPackagePath");
 
@@ -194,158 +157,63 @@ namespace VRCSDK2
 
             string avatarId = isUpdate ? apiAvatar.id : "new_" + VRC.Tools.GetRandomDigits(6);
             int version = isUpdate ? apiAvatar.version+1 : 1;
-            PrepareVRCPathForS3(abPath, avatarId, version);
-
-			if(!string.IsNullOrEmpty(pluginPath) && System.IO.File.Exists(pluginPath))
-            {
-				Debug.Log("Found plugin path. Preparing to upload!");
-                PreparePluginPathForS3(pluginPath, avatarId, version);
-            }
-            else
-            {
-				Debug.Log("Did not find plugin path. No upload occuring!");
-            }
+            PrepareVRCPathForS3(abPath, avatarId, version, ApiAvatar.VERSION);
 
 			if(!string.IsNullOrEmpty(unityPackagePath) && System.IO.File.Exists(unityPackagePath))
 			{
 				Debug.Log("Found unity package path. Preparing to upload!");
-				PrepareUnityPackageForS3(unityPackagePath, avatarId, version);
+				PrepareUnityPackageForS3(unityPackagePath, avatarId, version, ApiAvatar.VERSION);
 			}
 
-            StartCoroutine(Upload());
+            if (useFileApi)
+                StartCoroutine(UploadNew());
+            else
+                StartCoroutine(Upload(blueprintName, "avatars"));
         }
 
-		void PrepareUnityPackageForS3(string packagePath, string avatarId, int version)
-		{
-			uploadUnityPackagePath = Application.temporaryCachePath + "/" + avatarId + "_" + version.ToString() + ".unitypackage";
-			uploadUnityPackagePath.Trim();
-			uploadUnityPackagePath.Replace(' ', '_');
-
-			if(System.IO.File.Exists(uploadUnityPackagePath))
-				System.IO.File.Delete(uploadUnityPackagePath);
-
-			System.IO.File.Copy(packagePath, uploadUnityPackagePath);
-		}
-
-        void PrepareVRCPathForS3(string abPath, string avatarId, int version)
-        {
-            uploadVrcPath = Application.temporaryCachePath + "/" + avatarId + "_" + version.ToString() + abExtension;
-            uploadVrcPath.Trim();
-            uploadVrcPath.Replace(' ', '_');
-            
-            if(System.IO.File.Exists(uploadVrcPath))
-                System.IO.File.Delete(uploadVrcPath);
-            
-            System.IO.File.Copy(abPath, uploadVrcPath);
-        }
-
-        void PreparePluginPathForS3(string pluginPath, string avatarId, int version)
-        {
-            uploadPluginPath = Application.temporaryCachePath + "/" + avatarId + "_" + version.ToString() + ".dll";
-            uploadPluginPath.Trim();
-            uploadPluginPath.Replace(' ', '_');
-            
-            if(System.IO.File.Exists(uploadPluginPath))
-                System.IO.File.Delete(uploadPluginPath);
-            
-            System.IO.File.Copy(pluginPath, uploadPluginPath);
-        }
-        
-        IEnumerator Upload()
+        IEnumerator UploadNew()
         {
             bool caughtInvalidInput = false;
-            if(!ValidateNameInput(blueprintName))
+            if (!ValidateNameInput(blueprintName))
                 caughtInvalidInput = true;
 
-            if(!caughtInvalidInput)
+            if (caughtInvalidInput)
+                yield break;
+
+            // upload unity package
+            if (!string.IsNullOrEmpty(uploadUnityPackagePath))
             {
-				if(!string.IsNullOrEmpty(uploadUnityPackagePath))
-					yield return StartCoroutine(UploadUnityPackage());
-				
-                if(!string.IsNullOrEmpty(uploadPluginPath))
-                    yield return StartCoroutine(UploadDLL());
-                
-                yield return StartCoroutine(UploadVRCFile());
-                
-                if(isUpdate)
-                    yield return StartCoroutine(UpdateBlueprint());
-                else
-                    yield return StartCoroutine(CreateBlueprint());
-                
-                OnSDKPipelineComplete();
+                yield return StartCoroutine(UploadFile(uploadUnityPackagePath, isUpdate ? apiAvatar.unityPackageUrl : "", GetFriendlyAvatarFileName("Unity package"), "Unity package",
+                    delegate (string fileUrl)
+                    {
+                        cloudFrontUnityPackageUrl = fileUrl;
+                    }
+                ));
             }
-        }
 
-		IEnumerator UploadUnityPackage()
-		{
-			Debug.Log("Uploading Unity Package...");
-			SetUploadProgress("Uploading Unity Package...","Future proofing your content!",  0.05f);
-			bool doneUploading = false;
-
-			string filePath = uploadUnityPackagePath;
-			string s3FolderName = "unitypackages";
-			Uploader.UploadFile(filePath, s3FolderName, delegate(string obj) {
-				string fileName = s3FolderName + "/" + System.IO.Path.GetFileName(filePath);
-				cloudFrontUnityPackageUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-				doneUploading = true;
-			});
-
-			while(!doneUploading)
-				yield return null;
-		}
-
-        IEnumerator UploadDLL()
-        {
-            Debug.Log("Uploading Plugin...");
-            SetUploadProgress("Uploading plugin...","Pushing those upload speeds!!",  0.05f);
-            bool doneUploading = false;
-
-            string filePath = uploadPluginPath;
-            string s3FolderName = "plugins";
-            Uploader.UploadFile(filePath, s3FolderName, delegate(string obj) {
-                string fileName = s3FolderName + "/" + System.IO.Path.GetFileName(filePath);
-                cloudFrontPluginUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-                doneUploading = true;
-            });
-
-            while(!doneUploading)
-                yield return null;
-        }
-
-        IEnumerator UploadVRCFile()
-        {
-            Debug.Log("Uploading VRC File...");
-            SetUploadProgress("Uploading asset...","Pushing those upload speeds!!",  0.1f);
-            bool doneUploading = false;
-            
-            string filePath = uploadVrcPath;
-            string s3FolderName = "avatars";
-            Uploader.UploadFile(filePath, s3FolderName, delegate(string obj) {
-                string fileName = s3FolderName + "/" + System.IO.Path.GetFileName(filePath);
-                cloudFrontAssetUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-                doneUploading = true;
-            });
-
-            while(!doneUploading)
-                yield return null;
-        }
-
-        IEnumerator UploadImage()
-        {
-            Debug.Log("Uploading Image...");
-
-            bool doneUploading = false;
-            SetUploadProgress("Uploading Image...","That's a nice looking preview image ;)", 0.3f);
-            string imagePath = imageCapture.TakePicture();
-            Uploader.UploadFile(imagePath, "images", delegate(string imageUrl)
+            // upload asset bundle
+            if (!string.IsNullOrEmpty(uploadVrcPath))
             {
-                cloudFrontImageUrl = imageUrl;
-                doneUploading = true;
-                VRC.Core.Logger.Log("Successfully uploaded image.", DebugLevel.All);
-            });
+                yield return StartCoroutine(UploadFile(uploadVrcPath, isUpdate ? apiAvatar.assetUrl : "", GetFriendlyAvatarFileName("Asset bundle"), "Asset bundle",
+                    delegate (string fileUrl)
+                    {
+                        cloudFrontAssetUrl = fileUrl;
+                    }
+                ));
+            }
 
-            while(!doneUploading)
-                yield return null;
+            if (isUpdate)
+                yield return StartCoroutine(UpdateBlueprint());
+            else
+                yield return StartCoroutine(CreateBlueprint());
+
+            OnSDKPipelineComplete();
+        }
+
+        private string GetFriendlyAvatarFileName(string type)
+        {
+            return "Avatar - " + blueprintName.text + " - " + type + " - " + Application.unityVersion + "_" + ApiWorld.VERSION.ApiVersion +
+                   "_" + ApiModel.GetAssetPlatformString() + (IsUsingDevAPI() ? "_dev" : "_release");
         }
 
         List<string> BuildTags()
@@ -360,7 +228,7 @@ namespace VRCSDK2
             if (contentOther.isOn)
                 tags.Add("content_other");
 
-            if(APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
+            if(APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
             {
                 if (developerAvatar.isOn)
                     tags.Add("developer");
@@ -368,13 +236,13 @@ namespace VRCSDK2
 
             return tags;
         }
-        
-        IEnumerator CreateBlueprint()
-        {
-            yield return StartCoroutine(UploadImage());
 
-            ApiAvatar apiAvatar = ScriptableObject.CreateInstance<ApiAvatar>();
-            apiAvatar.Init(
+        protected override IEnumerator CreateBlueprint()
+        {
+            yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
+
+            ApiAvatar avatar = ScriptableObject.CreateInstance<ApiAvatar>();
+            avatar.Init(
                 pipelineManager.user,
                 blueprintName.text,
                 cloudFrontImageUrl,
@@ -386,11 +254,10 @@ namespace VRCSDK2
 
             bool doneUploading = false;
 
-            apiAvatar.Save(delegate(ApiModel model)
+            avatar.Save(delegate(ApiModel model)
             {
                 ApiAvatar savedBP = (ApiAvatar)model;
                 pipelineManager.blueprintId = savedBP.id;
-                pipelineManager.assetBundleUnityVersion = Application.unityVersion;
                 UnityEditor.EditorPrefs.SetString("blueprintID-" + pipelineManager.GetInstanceID().ToString(), savedBP.id);
                 doneUploading = true;
             });
@@ -398,8 +265,8 @@ namespace VRCSDK2
             while (!doneUploading)
                 yield return null;
         }
-        
-        IEnumerator UpdateBlueprint()
+
+        protected override IEnumerator UpdateBlueprint()
         {
             bool doneUploading = false;
 
@@ -408,10 +275,11 @@ namespace VRCSDK2
             apiAvatar.assetUrl = cloudFrontAssetUrl;
             apiAvatar.tags = BuildTags();
             apiAvatar.unityPackageUrl = cloudFrontUnityPackageUrl;
+			apiAvatar.UpdateVersionAndPlatform();
 
             if (shouldUpdateImageToggle.isOn)
             {
-                yield return StartCoroutine(UploadImage());
+                yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
                 apiAvatar.imageUrl = cloudFrontImageUrl;
                 SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
                 apiAvatar.Save(delegate(ApiModel model) 
@@ -432,17 +300,6 @@ namespace VRCSDK2
                 yield return null;
         }
         
-        void OnSDKPipelineComplete()
-        {
-            VRC.Core.Logger.Log("OnSDKPipelineComplete", DebugLevel.All);
-            isUploading = false;
-            pipelineManager.completedSDKPipeline = true;
-            UnityEditor.EditorApplication.isPaused = false;
-            UnityEditor.EditorApplication.isPlaying = false;
-            UnityEditor.EditorUtility.ClearProgressBar();
-            UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Update Complete! Launch VRChat to see your upl content.", "Okay");
-        }
-        
         void ToggleUpdateImage(bool isOn)
         {
             if(isOn)
@@ -460,47 +317,6 @@ namespace VRCSDK2
             }
         }
         
-        void SetUploadProgress(string title, string message, float progress)
-        {
-            uploadTitle = title;
-            uploadMessage = message;
-            uploadProgress = progress;
-        }
-        
-        public static string GetGenericFileName(string ext)
-        {
-            System.DateTime D = System.DateTime.Now;
-            string day = D.Day.ToString( "00" );
-            string month = D.Month.ToString( "00" );
-            string year = D.Year.ToString();
-            string version = year + "_" + month + "_" + day;
-            return version + "." + ext;
-        }
-
-        bool ValidateURLInput(InputField urlInput)
-        {
-            bool isValid = true;
-            if(!string.IsNullOrEmpty(urlInput.text) && !VRC.Tools.IsValidURL(urlInput.text))
-            {
-                isUploading = false;
-                UnityEditor.EditorUtility.DisplayDialog("Invalid Input", "Inputted plugin url is invalid. Please enter a valid plugin url or leave it empty", "OK");
-                isValid = false;
-            }
-            return isValid;
-        }
-
-        bool ValidateNameInput(InputField nameInput)
-        {
-            bool isValid = true;
-            if(string.IsNullOrEmpty(nameInput.text))
-            {
-                isUploading = false;
-                UnityEditor.EditorUtility.DisplayDialog("Invalid Input", "Cannot leave the name field empty.", "OK");
-                isValid = false;
-            }  
-            return isValid;
-        }
-
         void OnDestroy()
         {
             UnityEditor.EditorUtility.ClearProgressBar();

@@ -38,6 +38,131 @@ namespace VRC.Core
 			Hidden
 		}
 
+		public class WorldInstance
+		{
+			public struct Tag
+			{
+				public string Value;
+
+				public string Data;
+			}
+
+			public enum Type
+			{
+				Public,
+				Friends,
+				Private,
+				PrivatePopCounter
+			}
+
+			public string idWithTags;
+
+			public int count;
+
+			public string idOnly
+			{
+				get
+				{
+					string[] array = idWithTags.Split('~');
+					if (array == null)
+					{
+						return idWithTags;
+					}
+					return array[0];
+				}
+			}
+
+			public bool isPublic => GetWorldType() == Type.Public;
+
+			public WorldInstance(string _idWithTags, int _count)
+			{
+				idWithTags = _idWithTags;
+				count = _count;
+			}
+
+			private List<Tag> ParseTags(string id)
+			{
+				List<Tag> list = null;
+				string[] array = idWithTags.Split('~');
+				if (array == null || array.Length > 1)
+				{
+					list = new List<Tag>();
+					for (int i = 1; i < array.Length; i++)
+					{
+						Tag item = default(Tag);
+						if (array[i].Contains('('))
+						{
+							string[] array2 = array[i].Split('(');
+							string value = array2[0];
+							string data = array2[1].TrimEnd(')');
+							item.Value = value;
+							item.Data = data;
+						}
+						else
+						{
+							item.Value = array[i];
+							item.Data = null;
+						}
+						list.Add(item);
+					}
+				}
+				return list;
+			}
+
+			public Type GetWorldType()
+			{
+				List<Tag> list = ParseTags(idWithTags);
+				if (list != null)
+				{
+					foreach (Tag item in list)
+					{
+						Tag current = item;
+						if (current.Value == "private")
+						{
+							return Type.Private;
+						}
+						if (current.Value == "friends")
+						{
+							return Type.Friends;
+						}
+						if (current.Value == "privpop")
+						{
+							return Type.PrivatePopCounter;
+						}
+					}
+				}
+				return Type.Public;
+			}
+
+			public string GetInstanceCreator()
+			{
+				List<Tag> list = ParseTags(idWithTags);
+				if (list != null)
+				{
+					foreach (Tag item in list)
+					{
+						Tag current = item;
+						if (current.Value == "private" || current.Value == "friends")
+						{
+							return current.Data;
+						}
+					}
+				}
+				return null;
+			}
+		}
+
+		public enum WorldData
+		{
+			Metadata
+		}
+
+		private static AssetVersion _VERSION = null;
+
+		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.5.0f1", 0);
+
+		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.6.1p4", 0);
+
 		protected string mName;
 
 		protected string mImageUrl;
@@ -64,13 +189,37 @@ namespace VRC.Core
 
 		private int mOccupants;
 
+		private AssetVersion mAssetVersion;
+
+		private string mPlatform;
+
 		private Dictionary<string, int> mInstances;
 
+		private List<WorldInstance> mWorldInstances;
+
 		private string mThumbnailImageUrl;
+
+		public string currentInstanceIdWithTags;
+
+		public string currentInstanceIdOnly;
+
+		public string currentInstanceType;
 
 		public bool isCurated;
 
 		private static Dictionary<string, ApiWorld> localWorlds = new Dictionary<string, ApiWorld>();
+
+		public static AssetVersion VERSION
+		{
+			get
+			{
+				if (_VERSION == null)
+				{
+					_VERSION = new AssetVersion(Application.get_unityVersion(), 1);
+				}
+				return _VERSION;
+			}
+		}
 
 		public new string id
 		{
@@ -220,7 +369,33 @@ namespace VRC.Core
 			}
 		}
 
+		public AssetVersion assetVersion
+		{
+			get
+			{
+				return mAssetVersion;
+			}
+			set
+			{
+				mAssetVersion = value;
+			}
+		}
+
+		public string platform
+		{
+			get
+			{
+				return mPlatform;
+			}
+			set
+			{
+				mPlatform = value;
+			}
+		}
+
 		public Dictionary<string, int> instances => mInstances;
+
+		public List<WorldInstance> worldInstances => mWorldInstances;
 
 		public string thumbnailImageUrl
 		{
@@ -248,6 +423,8 @@ namespace VRC.Core
 			mPluginUrl = pluginUrl;
 			mUnityPackageUrl = unityPackageUrl;
 			mOccupants = occupants;
+			mWorldInstances = new List<WorldInstance>();
+			UpdateVersionAndPlatform();
 		}
 
 		public void Init()
@@ -260,10 +437,13 @@ namespace VRC.Core
 			mTags = new List<string>();
 			mAuthorName = string.Empty;
 			mAuthorId = string.Empty;
+			mPluginUrl = string.Empty;
 			mVersion = -1;
 			mReleaseStatus = "private";
 			mCapacity = 32;
 			mOccupants = 0;
+			mWorldInstances = new List<WorldInstance>();
+			UpdateVersionAndPlatform();
 		}
 
 		private void InitBrief(Dictionary<string, object> jsonObject)
@@ -284,7 +464,6 @@ namespace VRC.Core
 			if (jsonObject == null)
 			{
 				Init();
-				Debug.LogError((object)"Could not Init ApiWorld from jsonObject bc jsonObject is null.");
 			}
 			else
 			{
@@ -303,7 +482,10 @@ namespace VRC.Core
 				List<string> source = list;
 				if (source.Any((string s) => !jsonObject.ContainsKey(s)))
 				{
-					Debug.LogError((object)"Could not initialize blueprint due to insufficient json parameters");
+					Debug.LogError((object)("Could not initialize blueprint due to insufficient json parameters, missing: " + string.Join(",", (from s in source
+					where !jsonObject.ContainsKey(s)
+					select s).ToArray())));
+					Init();
 				}
 				else
 				{
@@ -321,16 +503,22 @@ namespace VRC.Core
 					mTags = Tools.ObjListToStringList((List<object>)jsonObject["tags"]);
 					mVersion = (int)(double)jsonObject["version"];
 					mPluginUrl = (jsonObject["pluginUrl"] as string);
+					if (jsonObject.ContainsKey("unityPackageUrl"))
+					{
+						mUnityPackageUrl = (jsonObject["unityPackageUrl"] as string);
+					}
 					if (jsonObject.ContainsKey("instances"))
 					{
+						mWorldInstances = new List<WorldInstance>();
 						mInstances = new Dictionary<string, int>();
 						List<object> list2 = jsonObject["instances"] as List<object>;
 						foreach (object item in list2)
 						{
 							List<object> list3 = item as List<object>;
-							string key = list3[0].ToString();
-							int value = Convert.ToInt32(list3[1].ToString());
-							mInstances.Add(key, value);
+							string text = list3[0].ToString();
+							int num = Convert.ToInt32(list3[1].ToString());
+							mInstances.Add(text, num);
+							mWorldInstances.Add(new WorldInstance(text, num));
 						}
 					}
 					mReleaseStatus = (jsonObject["releaseStatus"] as string);
@@ -339,11 +527,37 @@ namespace VRC.Core
 					{
 						mOccupants = Convert.ToInt16(jsonObject["occupants"]);
 					}
+					string unityVersion = DefaultAssetVersion.UnityVersion;
+					if (jsonObject.ContainsKey("unityVersion"))
+					{
+						unityVersion = (jsonObject["unityVersion"] as string);
+					}
+					int result = DefaultAssetVersion.ApiVersion;
+					if (jsonObject.ContainsKey("assetVersion"))
+					{
+						string text2 = jsonObject["assetVersion"] as string;
+						if (string.IsNullOrEmpty(text2) || !int.TryParse(text2, out result))
+						{
+							Debug.LogError((object)("Invalid assetVersion string: " + text2));
+						}
+					}
+					mAssetVersion = new AssetVersion(unityVersion, result);
+					mPlatform = "standalonewindows";
+					if (jsonObject.ContainsKey("platform"))
+					{
+						mPlatform = (jsonObject["platform"] as string);
+					}
 				}
 			}
 		}
 
-		protected new Dictionary<string, string> BuildWebParameters()
+		public void UpdateVersionAndPlatform(string platform = null)
+		{
+			mAssetVersion = VERSION;
+			mPlatform = ((platform != null) ? platform : ApiModel.GetAssetPlatformString());
+		}
+
+		protected override Dictionary<string, string> BuildWebParameters()
 		{
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			dictionary["userId"] = APIUser.CurrentUser.id;
@@ -361,6 +575,9 @@ namespace VRC.Core
 			}
 			dictionary["releaseStatus"] = releaseStatus;
 			dictionary["capacity"] = capacity.ToString();
+			dictionary["unityVersion"] = mAssetVersion.UnityVersion.ToString();
+			dictionary["assetVersion"] = mAssetVersion.ApiVersion.ToString();
+			dictionary["platform"] = mPlatform;
 			if (APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
 			{
 				dictionary["featured"] = isCurated.ToString().ToLower();
@@ -417,15 +634,60 @@ namespace VRC.Core
 			}
 		}
 
+		public static void FetchData(string id, WorldData data, Action<Dictionary<string, object>> successCallback, Action<string> errorCallback)
+		{
+			if (id == null)
+			{
+				errorCallback("APIWorld.FetchData called with null id.");
+			}
+			else
+			{
+				string str = null;
+				if (data == WorldData.Metadata)
+				{
+					str = "/metadata";
+				}
+				Dictionary<string, string> requestParams = new Dictionary<string, string>();
+				ApiModel.SendRequest("worlds/" + id + str, HTTPMethods.Get, requestParams, delegate(Dictionary<string, object> obj)
+				{
+					if (successCallback != null)
+					{
+						successCallback(obj);
+					}
+				}, delegate(string message)
+				{
+					errorCallback(message);
+				});
+			}
+		}
+
 		public static void Fetch(string id, Action<ApiWorld> successCallback, Action<string> errorCallback)
 		{
-			if (localWorlds.ContainsKey(id))
+			Fetch(id, compatibleVersionsOnly: true, successCallback, errorCallback);
+		}
+
+		public static void Fetch(string id, bool compatibleVersionsOnly, Action<ApiWorld> successCallback, Action<string> errorCallback)
+		{
+			if (id == null)
+			{
+				errorCallback("APIWorld.Fetch called with null id.");
+			}
+			else if (localWorlds.ContainsKey(id))
 			{
 				successCallback(localWorlds[id]);
 			}
 			else
 			{
-				ApiModel.SendGetRequest("worlds/" + id, delegate(Dictionary<string, object> obj)
+				Dictionary<string, string> dictionary = new Dictionary<string, string>();
+				if (compatibleVersionsOnly)
+				{
+					dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
+					dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
+					dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
+					dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+				}
+				dictionary.Add("platform", ApiModel.GetAssetPlatformString());
+				ApiModel.SendRequest("worlds/" + id, HTTPMethods.Get, dictionary, delegate(Dictionary<string, object> obj)
 				{
 					ApiWorld apiWorld = ScriptableObject.CreateInstance<ApiWorld>();
 					apiWorld.Init(obj);
@@ -440,14 +702,14 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public)
+		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true)
 		{
 			string endpoint = "worlds";
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			switch (heading)
 			{
 			case SortHeading.Featured:
-				dictionary.Add("sort", "popularity");
+				dictionary.Add("sort", "order");
 				dictionary.Add("featured", "true");
 				break;
 			case SortHeading.Trending:
@@ -496,6 +758,14 @@ namespace VRC.Core
 				dictionary.Add("tag", string.Join(",", tags));
 			}
 			dictionary.Add("releaseStatus", releaseStatus.ToString().ToLower());
+			if (compatibleVersionsOnly)
+			{
+				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
+				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
+				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
+				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+			}
+			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
 			ApiModel.SendRequest(endpoint, HTTPMethods.Get, dictionary, delegate(List<object> objs)
 			{
 				List<ApiWorld> list = new List<ApiWorld>();
@@ -539,27 +809,48 @@ namespace VRC.Core
 			localWorlds.Add(world.id, world);
 		}
 
-		public string GetBestInstance()
+		public WorldInstance GetBestInstance(List<string> instanceIdsToIgnore = null)
 		{
-			if (mInstances == null)
+			if (instanceIdsToIgnore == null)
 			{
-				return "1";
+				instanceIdsToIgnore = new List<string>();
 			}
-			KeyValuePair<string, int>[] array = mInstances.ToArray();
-			for (int i = 0; i < array.Length; i++)
+			string tags = string.Empty;
+			if (mReleaseStatus == "private")
 			{
-				KeyValuePair<string, int> keyValuePair = array[i];
-				if (keyValuePair.Value < capacity)
+				tags = "~private(" + mAuthorId + ")";
+			}
+			WorldInstance newInstance = GetNewInstance(tags);
+			if (mWorldInstances != null)
+			{
+				foreach (WorldInstance mWorldInstance in mWorldInstances)
 				{
-					return keyValuePair.Key;
+					if (mWorldInstance.count < capacity && !instanceIdsToIgnore.Contains(mWorldInstance.idWithTags))
+					{
+						return mWorldInstance;
+					}
+				}
+				return newInstance;
+			}
+			return newInstance;
+		}
+
+		public WorldInstance GetNewInstance(string tags = "")
+		{
+			WorldInstance result = new WorldInstance("1" + tags, 0);
+			if (mWorldInstances != null)
+			{
+				int i;
+				for (i = 1; i < 10000; i++)
+				{
+					if (!mWorldInstances.Any((WorldInstance wi) => wi.idOnly == i.ToString()))
+					{
+						result = new WorldInstance(i.ToString() + tags, 0);
+						break;
+					}
 				}
 			}
-			int num = 1;
-			while (mInstances.ContainsKey(num.ToString()))
-			{
-				num++;
-			}
-			return num.ToString();
+			return result;
 		}
 
 		public void SaveAndAddToUser(Action<ApiModel> onSuccess = null, Action<string> onError = null)

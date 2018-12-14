@@ -172,19 +172,18 @@ namespace VRC.Core.BestHTTP
 
 		private unsafe void OnApplicationQuit()
 		{
-			//IL_0028: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0032: Expected O, but got Unknown
-			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
-			//IL_003c: Expected O, but got Unknown
-			//IL_0048: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0052: Expected O, but got Unknown
-			//IL_0052: Unknown result type (might be due to invalid IL or missing references)
-			//IL_005c: Expected O, but got Unknown
+			//IL_0023: Unknown result type (might be due to invalid IL or missing references)
+			//IL_002d: Expected O, but got Unknown
+			//IL_002d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0037: Expected O, but got Unknown
+			//IL_0043: Unknown result type (might be due to invalid IL or missing references)
+			//IL_004d: Expected O, but got Unknown
+			//IL_004d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0057: Expected O, but got Unknown
 			if (IsCreated)
 			{
 				IsCreated = false;
 				IsThreadRunning = true;
-				HTTPManager.OnQuit();
 				EditorApplication.update = Delegate.Remove((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 				EditorApplication.playmodeStateChanged = Delegate.Remove((Delegate)EditorApplication.playmodeStateChanged, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 			}

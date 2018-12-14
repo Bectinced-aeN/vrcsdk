@@ -33,7 +33,7 @@ public class AutoAddONSPAudioSourceComponents
 
 	static void RegisterCallbacks()
 	{
-		VRCSdkControlPanel._EnableSpatialization = VRCSDKControlPanel_EnableSpatialization;
+		VRC_SdkControlPanel._EnableSpatialization = VRCSDKControlPanel_EnableSpatialization;
 	}
 
 	// callback from VrcSdkControlPanel in dll

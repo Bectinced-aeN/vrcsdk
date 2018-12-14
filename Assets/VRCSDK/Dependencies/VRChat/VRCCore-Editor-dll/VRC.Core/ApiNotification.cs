@@ -1,24 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
+using VRC.Core.BestHTTP;
+using VRC.Core.BestHTTP.JSON;
 
 namespace VRC.Core
 {
 	public class ApiNotification : ApiModel
 	{
+		public enum NotificationType
+		{
+			All,
+			Message,
+			Friendrequest,
+			Invite,
+			Requestinvite,
+			VoteToKick,
+			Halp,
+			Hidden
+		}
+
 		public string senderUserId;
 
 		public string receiverUserId;
 
 		public string senderUsername;
 
-		public string notificationType;
+		public NotificationType notificationType;
 
 		public string message;
 
-		public Dictionary<string, string> details;
+		public Dictionary<string, object> details;
 
 		public bool seen;
+
+		public DateTime? localCeationTime;
+
+		public bool isLocal => localCeationTime.HasValue;
 
 		public void Init(Dictionary<string, object> jsonObject)
 		{
@@ -32,20 +51,119 @@ namespace VRC.Core
 			{
 				senderUsername = (jsonObject["senderUsername"] as string);
 			}
-			notificationType = (jsonObject["type"] as string);
+			string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["type"] as string).ToLower());
+			notificationType = (NotificationType)(int)Enum.Parse(typeof(NotificationType), value);
 			if (jsonObject.ContainsKey("message"))
 			{
 				message = (jsonObject["message"] as string);
 			}
 			if (jsonObject.ContainsKey("seen"))
 			{
-				seen = ((jsonObject["seen"] == "true") ? true : false);
+				seen = ((jsonObject["seen"] as string== "true") ? true : false);
+			}
+			if (jsonObject.ContainsKey("details"))
+			{
+				details = (Json.Decode(jsonObject["details"] as string) as Dictionary<string, object>);
 			}
 		}
 
-		public static void Fetch(Action<List<ApiNotification>> successCallback, Action<string> errorCallback)
+		public void LocalInit(string _senderUserId, string _senderUsername, NotificationType _type, string _message, Dictionary<string, object> _details)
 		{
-			ApiModel.SendGetRequest("auth/user/notifications", delegate(List<object> objects)
+			mId = Tools.GetRandomDigits(8);
+			senderUserId = _senderUserId;
+			senderUsername = _senderUsername;
+			notificationType = _type;
+			message = _message;
+			details = _details;
+			localCeationTime = DateTime.Now;
+		}
+
+		public static void SendNotification(string targetUserId, NotificationType nType, string message, Dictionary<string, object> details, Action<ApiNotification> successCallback, Action<string> errorCallback)
+		{
+			string value = nType.ToString().ToLower();
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			dictionary["type"] = value;
+			dictionary["message"] = message;
+			if (details != null)
+			{
+				dictionary["details"] = Json.Encode(details);
+			}
+			ApiModel.SendPostRequest("user/" + targetUserId + "/notification", dictionary, delegate(Dictionary<string, object> obj)
+			{
+				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+				apiNotification.Init(obj);
+				if (successCallback != null)
+				{
+					successCallback(apiNotification);
+				}
+			}, delegate(string obj)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(obj);
+				}
+			});
+		}
+
+		public static void MarkNotificationAsSeen(string notificationId, Action<ApiNotification> successCallback, Action<string> errorCallback)
+		{
+			ApiModel.SendPutRequest("auth/user/notifications/" + notificationId + "/see", delegate(Dictionary<string, object> obj)
+			{
+				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+				apiNotification.Init(obj);
+				if (successCallback != null)
+				{
+					successCallback(apiNotification);
+				}
+			}, delegate(string obj)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(obj);
+				}
+			});
+		}
+
+		public static void DeleteNotification(string notificationId, Action successCallback, Action<string> errorCallback)
+		{
+			ApiModel.SendPutRequest("/auth/user/notifications/" + notificationId + "/hide", delegate
+			{
+				if (successCallback != null)
+				{
+					successCallback();
+				}
+			}, delegate(string obj)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(obj);
+				}
+			});
+		}
+
+		public static void FetchAll(NotificationType t, bool sentMessages, string afterString, Action<List<ApiNotification>> successCallback, Action<string> errorCallback)
+		{
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			switch (t)
+			{
+			case NotificationType.Friendrequest:
+				dictionary["type"] = "friendRequest";
+				break;
+			default:
+				dictionary["type"] = t.ToString().ToLower();
+				break;
+			case NotificationType.All:
+				break;
+			}
+			if (sentMessages)
+			{
+				dictionary["sent"] = "true";
+			}
+			if (!string.IsNullOrEmpty(afterString))
+			{
+				dictionary["after"] = afterString;
+			}
+			ApiModel.SendRequest("auth/user/notifications", HTTPMethods.Get, dictionary, delegate(List<object> objects)
 			{
 				List<ApiNotification> list = new List<ApiNotification>();
 				if (objects != null)

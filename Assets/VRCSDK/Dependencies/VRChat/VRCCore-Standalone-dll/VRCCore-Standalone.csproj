@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{7DF91DA0-2E35-4523-9A66-EBAEB2CCEA44}</ProjectGuid>
+    <ProjectGuid>{DBCA7BE9-60AD-4A67-9A85-4AC96F2416FD}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -34,7 +34,6 @@
     <Reference Include="System.Core">
       <HintPath>C:\WINDOWS\assembly\GAC_MSIL\System.Core\3.5.0.0__b77a5c561934e089\System.Core.dll</HintPath>
     </Reference>
-    <Reference Include="LOOM" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AuthenticationSample.cs" />
@@ -973,13 +972,18 @@
     <Compile Include="VRC.Core.BestHTTP\OnUploadProgressDelegate.cs" />
     <Compile Include="VRC.Core.BestHTTP\StreamList.cs" />
     <Compile Include="VRC.Core.BestHTTP\SupportedProtocols.cs" />
+    <Compile Include="VRC.Core\ApiAnalyticEvent.cs" />
     <Compile Include="VRC.Core\ApiAvatar.cs" />
+    <Compile Include="VRC.Core\ApiCredentials.cs" />
+    <Compile Include="VRC.Core\ApiFile.cs" />
     <Compile Include="VRC.Core\ApiModel.cs" />
+    <Compile Include="VRC.Core\ApiModeration.cs" />
     <Compile Include="VRC.Core\ApiNotification.cs" />
+    <Compile Include="VRC.Core\ApiPlayerModeration.cs" />
     <Compile Include="VRC.Core\APIResponseHandler.cs" />
     <Compile Include="VRC.Core\APIUser.cs" />
     <Compile Include="VRC.Core\ApiWorld.cs" />
-    <Compile Include="VRC.Core\ClientAPIResponseHandler.cs" />
+    <Compile Include="VRC.Core\AssetVersion.cs" />
     <Compile Include="VRC.Core\DebugLevel.cs" />
     <Compile Include="VRC.Core\EditorAPIResponseHandler.cs" />
     <Compile Include="VRC.Core\Logger.cs" />
@@ -987,6 +991,7 @@
     <Compile Include="VRC.Core\RemoteConfig.cs" />
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCProjectSettings.cs" />
+    <Compile Include="VRC\HttpRequest.cs" />
     <Compile Include="VRC\Tools.cs" />
     <Compile Include="WebSocketSample.cs" />
   </ItemGroup>

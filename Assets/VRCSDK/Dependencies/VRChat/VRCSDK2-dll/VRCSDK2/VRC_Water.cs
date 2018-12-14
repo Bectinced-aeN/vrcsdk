@@ -354,7 +354,7 @@ namespace VRCSDK2
 
 		private WaterMode FindHardwareWaterSupport()
 		{
-			if (!SystemInfo.get_supportsRenderTextures() || !Object.op_Implicit(this.GetComponent<Renderer>()))
+			if (!Object.op_Implicit(this.GetComponent<Renderer>()))
 			{
 				return WaterMode.Simple;
 			}

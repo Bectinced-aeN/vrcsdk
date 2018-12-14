@@ -148,7 +148,7 @@ namespace VRCSDK2
                         EditorGUILayout.LabelField("Message");
 
                         // sorry for this shit show. Below allows us to show a list of public methods, but also allow custom messages
-                        var methods = VRC_EditorTools.GetPublicMethodsOnGameObject(myTarget.Events[i].ParameterObject);
+                        var methods = VRC_EditorTools.GetAccessibleMethodsOnGameObject(myTarget.Events[i].ParameterObject);
                         List<string> methodList = methods.Values.Aggregate(new List<string>(), (acc, lst) => { acc.AddRange(lst.Select(mi => mi.Name)); return acc; });
                         methodList.Add("Custom Message");
 
@@ -200,6 +200,10 @@ namespace VRCSDK2
                         EditorGUILayout.LabelField("Location");
                         myTarget.Events[i].ParameterObject = (GameObject)EditorGUILayout.ObjectField(myTarget.Events[i].ParameterObject, typeof(GameObject), true);
                         EditorGUILayout.EndHorizontal();
+						EditorGUILayout.BeginHorizontal();
+						EditorGUILayout.LabelField("Align Room To Destination");
+						myTarget.Events[i].ParameterBoolOp = (VRCSDK2.VRC_EventHandler.VrcBooleanOp)EditorGUILayout.EnumPopup(myTarget.Events[i].ParameterBoolOp);
+						EditorGUILayout.EndHorizontal();
                         break;
                     case VRCSDK2.VRC_EventHandler.VrcEventType.SetWebPanelURI:
                         EditorGUILayout.BeginHorizontal();

@@ -39,8 +39,7 @@ namespace interfaces
 		public List<string> defines = new List<string>
 		{
 			"UNITY_5_0",
-			"UNITY_5",
-			"UNITY_5_3"
+			"UNITY_5"
 		};
 
 		private readonly UnityDirectoryAdapter directory = new UnityDirectoryAdapter();
@@ -149,6 +148,10 @@ namespace interfaces
 
 		public string createDLL()
 		{
+			if (File.Exists(buildTargetName))
+			{
+				FileUtil.DeleteFileOrDirectory(buildTargetName);
+			}
 			ShowErrorIfCannotOverwriteDLL(finalDllOutputPath());
 			if (blackList == null)
 			{
@@ -217,7 +220,7 @@ namespace interfaces
 				StringBuilder stringBuilder2 = new StringBuilder();
 				foreach (CompilerError error in compilerResults.Errors)
 				{
-					if (!error.IsWarning)
+					if (!error.IsWarning && !string.IsNullOrEmpty(error.ErrorNumber))
 					{
 						stringBuilder.Append(error);
 						Debug.LogError((object)error.ToString());

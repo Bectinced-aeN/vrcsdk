@@ -104,8 +104,9 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100000}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -.222706795, y: .754186749, z: -.0051074028}
-  m_LocalScale: {x: .400000006, y: .400000006, z: .5}
+  m_LocalPosition: {x: -0.2227068, y: 0.75418675, z: -0.005107403}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.5}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 400008}
   m_RootOrder: 3
@@ -116,8 +117,9 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100002}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -.222706795, y: .196035534, z: -.0051074028}
-  m_LocalScale: {x: .400000006, y: .449999988, z: .5}
+  m_LocalPosition: {x: -0.2227068, y: 0.19603553, z: -0.005107403}
+  m_LocalScale: {x: 0.4, y: 0.45, z: 0.5}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 400008}
   m_RootOrder: 0
@@ -127,9 +129,10 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100004}
-  m_LocalRotation: {x: 0, y: -.707106888, z: 0, w: .707106769}
-  m_LocalPosition: {x: -.320134163, y: .00881308317, z: -.0051074028}
+  m_LocalRotation: {x: 0, y: -0.7071069, z: 0, w: 0.70710677}
+  m_LocalPosition: {x: -0.32013416, y: 0.008813083, z: -0.005107403}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 400008}
   m_RootOrder: 2
@@ -139,9 +142,10 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100006}
-  m_LocalRotation: {x: 0, y: -.707106888, z: 0, w: .707106769}
-  m_LocalPosition: {x: -1.03347111, y: .584849536, z: -.0051074028}
-  m_LocalScale: {x: .400000006, y: .400000006, z: .5}
+  m_LocalRotation: {x: 0, y: -0.7071069, z: 0, w: 0.70710677}
+  m_LocalPosition: {x: -1.0334711, y: 0.58484954, z: -0.005107403}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.5}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 400008}
   m_RootOrder: 4
@@ -152,8 +156,9 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100008}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.4327497, y: .0380974412, z: 7.9634676}
+  m_LocalPosition: {x: 13.43275, y: 0.03809744, z: 7.9634676}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children:
   - {fileID: 400002}
   - {fileID: 400010}
@@ -169,8 +174,9 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100010}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -.00165081024, y: .470124155, z: -.0051074028}
-  m_LocalScale: {x: .0500000007, y: 1, z: .5}
+  m_LocalPosition: {x: -0.0016508102, y: 0.47012416, z: -0.005107403}
+  m_LocalScale: {x: 0.05, y: 1, z: 0.5}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 400008}
   m_RootOrder: 1
@@ -195,7 +201,7 @@ MeshRenderer:
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: .5
+  m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
@@ -221,7 +227,7 @@ MeshRenderer:
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: .5
+  m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
@@ -257,6 +263,7 @@ MonoBehaviour:
   proximity: 2
   EventName: Use
   isHidden: 0
+  BroadcastType: 7
 --- !u!114 &11400002
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -270,8 +277,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shouldImmobolizePlayer: 1
   canUseStationFromStation: 0
-  animatorController: {fileID: 9100000, guid: d5c1dc1662fbaa042b51be13aecb6667, type: 2}
+  animatorController: {fileID: 0}
   disableStationExit: 0
+  seated: 1
   stationEnterPlayerLocation: {fileID: 400004}
   stationExitPlayerLocation: {fileID: 400006}
   controlsObject: {fileID: 0}
@@ -286,7 +294,6 @@ MonoBehaviour:
   m_Script: {fileID: -339397700, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkId: 1801001642
   Events:
   - Name: Use
     EventType: 6
@@ -294,14 +301,23 @@ MonoBehaviour:
     ParameterBoolOp: 0
     ParameterBool: 0
     ParameterFloat: 0
+    ParameterInt: 1
     ParameterObject: {fileID: 100008}
+    ParameterObjects: []
+    ParameterBytes: 
   - Name: Exit
     EventType: 6
     ParameterString: ExitStation
     ParameterBoolOp: 0
     ParameterBool: 0
     ParameterFloat: 0
+    ParameterInt: 1
     ParameterObject: {fileID: 100008}
+    ParameterObjects: []
+    ParameterBytes: 
+  CombinedNetworkId: -1
+  _dispatcher: {fileID: 0}
+  _registered: 0
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1

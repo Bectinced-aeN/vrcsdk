@@ -1,5 +1,4 @@
 using UnityEngine;
-using VRC.Core;
 
 public class UserTest : MonoBehaviour
 {
@@ -15,9 +14,5 @@ public class UserTest : MonoBehaviour
 
 	private void Run()
 	{
-		if (APIUser.IsLoggedInWithCredentials)
-		{
-			APIUser.CurrentUser.Save();
-		}
 	}
 }

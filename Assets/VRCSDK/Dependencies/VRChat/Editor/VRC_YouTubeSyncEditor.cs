@@ -15,16 +15,14 @@ namespace VRCSDK2
 		SerializedProperty videoId;
 		SerializedProperty hideUi;
 		SerializedProperty loop;
-    SerializedProperty playlist;
-    SerializedProperty autoplay;
-   	SerializedProperty volume;
+        SerializedProperty autoplay;
+   	    SerializedProperty volume;
 
 		void OnEnable()
 		{
 			videoId = serializedObject.FindProperty("videoID");
 			hideUi = serializedObject.FindProperty("hideUI");
 			loop = serializedObject.FindProperty("loop");
-			playlist = serializedObject.FindProperty("playlist");
 			autoplay = serializedObject.FindProperty("autoplay");
 			volume = serializedObject.FindProperty("volume");
 		}

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Authentication;
@@ -9,6 +10,23 @@ namespace VRC.Core
 {
 	public class ApiModel : ScriptableObject
 	{
+		protected class RequestInfo
+		{
+			public string endpoint;
+
+			public HTTPMethods method = HTTPMethods.Post;
+
+			public Dictionary<string, object> requestParams;
+
+			public Action<string> errorCallback;
+
+			public Action<string> successCallbackWithResponse;
+
+			public Action<Dictionary<string, object>> successCallbackWithDict;
+
+			public Action<List<object>> successCallbackWithList;
+		}
+
 		public const string releaseApiUrl = "https://api.vrchat.cloud/api/1/";
 
 		public const string devApiUrl = "https://dev-api.vrchat.cloud/api/1/";
@@ -44,6 +62,8 @@ namespace VRC.Core
 		public DateTime updatedAt => mUpdatedAt;
 
 		public DateTime FetchedAt => mFetchedAt;
+
+		public static string DeviceID => SystemInfo.get_deviceUniqueIdentifier();
 
 		public ApiModel()
 			: this()
@@ -96,6 +116,18 @@ namespace VRC.Core
 			}
 		}
 
+		protected static void AppendQuery(ref UriBuilder baseUri, string queryToAppend)
+		{
+			if (baseUri.Query != null && baseUri.Query.Length > 1)
+			{
+				baseUri.Query = baseUri.Query.Substring(1) + "&" + queryToAppend;
+			}
+			else
+			{
+				baseUri.Query = queryToAppend;
+			}
+		}
+
 		protected static void SendGetRequest(string endpoint, Action<List<object>> successCallback = null, Action<string> errorCallback = null)
 		{
 			SendRequest(endpoint, HTTPMethods.Get, null, successCallback, errorCallback);
@@ -103,7 +135,7 @@ namespace VRC.Core
 
 		protected static void SendGetRequest(string endpoint, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<string> errorCallback = null, bool needsAPIKey = true)
 		{
-			SendRequest(null, null, endpoint, HTTPMethods.Get, null, successCallbackWithResponse, successCallbackWithDict, null, errorCallback, needsAPIKey);
+			SendRequest(endpoint, HTTPMethods.Get, (Dictionary<string, string>)null, successCallbackWithResponse, successCallbackWithDict, (Action<List<object>>)null, errorCallback, needsAPIKey);
 		}
 
 		protected static void SendGetRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
@@ -111,9 +143,24 @@ namespace VRC.Core
 			SendRequest(endpoint, HTTPMethods.Get, null, successCallback, errorCallback);
 		}
 
+		protected static void SendPostRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
+		{
+			SendRequest(endpoint, HTTPMethods.Post, null, successCallback, errorCallback);
+		}
+
 		protected static void SendPostRequest(string endpoint, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
 		{
 			SendRequest(endpoint, HTTPMethods.Post, requestParams, successCallback, errorCallback);
+		}
+
+		protected static void SendPostRequest(string endpoint, Dictionary<string, object> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
+		{
+			SendRequest(endpoint, HTTPMethods.Post, requestParams, null, successCallback, null, errorCallback);
+		}
+
+		protected static void SendPutRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
+		{
+			SendRequest(endpoint, HTTPMethods.Put, null, successCallback, errorCallback);
 		}
 
 		protected static void SendPutRequest(string endpoint, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
@@ -121,78 +168,118 @@ namespace VRC.Core
 			SendRequest(endpoint, HTTPMethods.Put, requestParams, successCallback, errorCallback);
 		}
 
+		protected static void SendPutRequest(string endpoint, Dictionary<string, object> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
+		{
+			SendRequest(endpoint, HTTPMethods.Put, requestParams, null, successCallback, null, errorCallback);
+		}
+
 		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
 		{
-			SendRequest(null, null, endpoint, method, requestParams, null, successCallback, null, errorCallback);
+			SendRequest(endpoint, method, requestParams, null, successCallback, null, errorCallback);
 		}
 
 		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<List<object>> successCallback = null, Action<string> errorCallback = null)
 		{
-			SendRequest(null, null, endpoint, method, requestParams, null, null, successCallback, errorCallback);
+			SendRequest(endpoint, method, requestParams, null, null, successCallback, errorCallback);
 		}
 
-		protected static void SendRequest(string username, string password, string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, bool needsAPIKey = true)
+		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, bool needsAPIKey = true)
 		{
-			if (string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password) && APIUser.CurrentUser != null)
+			Dictionary<string, object> dictionary = null;
+			if (requestParams != null)
 			{
-				username = APIUser.CurrentUser.username;
-				password = APIUser.CurrentUser.password;
+				dictionary = new Dictionary<string, object>();
+				foreach (KeyValuePair<string, string> requestParam in requestParams)
+				{
+					dictionary[requestParam.Key] = requestParam.Value;
+				}
 			}
-			string apiUrl = API_URL;
+			SendRequest(endpoint, method, dictionary, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, needsAPIKey);
+		}
+
+		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, object> requestParams = null, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, bool needsAPIKey = true)
+		{
+			string apiUrl = GetApiUrl();
 			int requestId = Random.Range(100, 999);
 			Action action = delegate
 			{
-				//IL_016b: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0172: Expected O, but got Unknown
-				string text = apiUrl + endpoint + "?requestId=" + requestId.ToString() + "&apiKey=" + ApiKey;
-				Logger.Log("[" + requestId + "] Sending " + method + " request to " + text, DebugLevel.API);
+				string uri = apiUrl + endpoint;
+				UriBuilder baseUri = new UriBuilder(uri);
+				AppendQuery(ref baseUri, "requestId=" + requestId.ToString());
+				AppendQuery(ref baseUri, "apiKey=" + ApiKey);
+				if (ApiCredentials.GetAuthToken() != null)
+				{
+					if (requestParams == null)
+					{
+						requestParams = new Dictionary<string, object>();
+					}
+					requestParams["authToken"] = ApiCredentials.GetAuthToken();
+				}
+				Logger.Log("[" + requestId + "] Sending " + method + " request to " + baseUri.Uri + DebugLevel.API);
+				string text = null;
 				if (requestParams != null)
 				{
-					string text2 = "&";
-					int num = 0;
-					foreach (KeyValuePair<string, string> requestParam in requestParams)
+					if (method == HTTPMethods.Get)
 					{
-						text2 = text2 + requestParam.Key + "=" + requestParam.Value;
-						if (++num != requestParams.Count)
+						foreach (KeyValuePair<string, object> requestParam in requestParams)
 						{
-							text2 += "&";
+							AppendQuery(ref baseUri, requestParam.Key + "=" + requestParam.Value);
 						}
 					}
-					text += text2;
+					else
+					{
+						text = Json.Encode(requestParams);
+					}
 				}
-				HTTPRequest hTTPRequest = new HTTPRequest(new Uri(text), delegate(HTTPRequest req, HTTPResponse resp)
+				HTTPRequest hTTPRequest = new HTTPRequest(baseUri.Uri, delegate(HTTPRequest req, HTTPResponse resp)
 				{
 					APIResponseHandler aPIResponseHandler = new EditorAPIResponseHandler();
 					aPIResponseHandler.HandleReponse(req, resp, requestId, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, 2);
 				});
 				hTTPRequest.AddHeader("X-Requested-With", "XMLHttpRequest");
+				hTTPRequest.AddHeader("X-MacAddress", DeviceID);
+				hTTPRequest.AddHeader("Content-Type", (method != 0) ? "application/json" : "application/x-www-form-urlencoded");
 				hTTPRequest.MethodType = method;
-				hTTPRequest.Credentials = new Credentials(AuthenticationTypes.Basic, username, password);
-				WWWForm val = new WWWForm();
-				if (requestParams != null)
-				{
-					foreach (KeyValuePair<string, string> requestParam2 in requestParams)
-					{
-						string text3 = (!string.IsNullOrEmpty(requestParam2.Value)) ? requestParam2.Value : string.Empty;
-						val.AddField(requestParam2.Key, text3);
-					}
-				}
-				Logger.Log("Request Params: " + Json.Encode(requestParams), DebugLevel.API);
+				hTTPRequest.Credentials = (ApiCredentials.GetWebCredentials() as Credentials);
 				hTTPRequest.ConnectTimeout = TimeSpan.FromSeconds(20.0);
 				hTTPRequest.Timeout = TimeSpan.FromSeconds(20.0);
-				hTTPRequest.SetFields(val);
+				if (!string.IsNullOrEmpty(text))
+				{
+					hTTPRequest.RawData = Encoding.UTF8.GetBytes(text);
+				}
 				hTTPRequest.Send();
 			};
 			if (needsAPIKey)
 			{
 				FetchApiKey(action, delegate(string message)
 				{
-					Logger.LogError("[" + requestId + "] Error sending request - " + message, DebugLevel.API);
+					Debug.LogError((object)("[" + requestId + "] Error sending request - " + message));
 				});
 			}
 			else
 			{
 				action();
+			}
+		}
+
+		protected static void SendRequestBatch(IEnumerable<RequestInfo> requests, bool needsAPIKey = true)
+		{
+			if (needsAPIKey)
+			{
+				FetchApiKey(delegate
+				{
+					SendRequestBatch(requests, needsAPIKey: false);
+				}, delegate(string message)
+				{
+					Debug.LogError((object)("Error sending request - " + message));
+				});
+			}
+			else
+			{
+				foreach (RequestInfo request in requests)
+				{
+					SendRequest(request.endpoint, request.method, request.requestParams, request.successCallbackWithResponse, request.successCallbackWithDict, request.successCallbackWithList, request.errorCallback, needsAPIKey: false);
+				}
 			}
 		}
 
@@ -204,6 +291,32 @@ namespace VRC.Core
 				list.Add(model.id);
 			}
 			return list;
+		}
+
+		public static string GetAssetPlatformString()
+		{
+			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0005: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0008: Invalid comparison between Unknown and I4
+			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_000f: Invalid comparison between Unknown and I4
+			RuntimePlatform platform = Application.get_platform();
+			if ((int)platform == 2 || (int)platform == 7)
+			{
+				return "standalonewindows";
+			}
+			return "unknownplatform";
+		}
+
+		public static bool IsDevApi()
+		{
+			return API_URL == "https://dev-api.vrchat.cloud/api/1/";
+		}
+
+		public static string GetApiUrl()
+		{
+			return API_URL;
 		}
 
 		protected virtual Dictionary<string, string> BuildWebParameters()

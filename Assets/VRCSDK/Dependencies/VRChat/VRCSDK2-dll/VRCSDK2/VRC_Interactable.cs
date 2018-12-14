@@ -6,6 +6,8 @@ namespace VRCSDK2
 	{
 		public delegate void InitializationDelegate(VRC_Interactable obj);
 
+		public delegate bool ValidDelegate(VRC_Interactable obj, VRC_PlayerApi player);
+
 		public Transform interactTextPlacement;
 
 		public string interactText = "Use";
@@ -13,9 +15,12 @@ namespace VRCSDK2
 		[HideInInspector]
 		public GameObject interactTextGO;
 
-		public float proximity = 0.1f;
+		[Range(0f, 100f)]
+		public float proximity = 3.40282347E+38f;
 
 		public static InitializationDelegate Initialize;
+
+		public static ValidDelegate CheckValid;
 
 		protected VRC_Interactable()
 			: this()
@@ -35,5 +40,14 @@ namespace VRCSDK2
 		}
 
 		public abstract void Interact();
+
+		public virtual bool IsInteractiveForPlayer(VRC_PlayerApi player)
+		{
+			if (CheckValid != null)
+			{
+				return CheckValid(this, player);
+			}
+			return true;
+		}
 	}
 }

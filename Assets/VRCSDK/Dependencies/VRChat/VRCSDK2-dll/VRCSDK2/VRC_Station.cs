@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,15 +7,27 @@ namespace VRCSDK2
 	[RequireComponent(typeof(VRC_EventHandler))]
 	public class VRC_Station : MonoBehaviour, IVRCEventProvider, IVRCEventReceiver
 	{
+		public enum Mobility
+		{
+			Mobile,
+			Immobilize,
+			ImmobilizeForVehicle
+		}
+
 		public delegate void InitializationDelegate(VRC_Station obj);
 
-		public bool shouldImmobolizePlayer;
+		[Obsolete("Please set the PlayerMobility value instead")]
+		private bool? shouldImmobolizePlayer;
 
-		public bool canUseStationFromStation;
+		public Mobility PlayerMobility = Mobility.Immobilize;
+
+		public bool canUseStationFromStation = true;
 
 		public RuntimeAnimatorController animatorController;
 
 		public bool disableStationExit;
+
+		public bool seated = true;
 
 		public Transform stationEnterPlayerLocation;
 
@@ -31,6 +44,10 @@ namespace VRCSDK2
 
 		private void Awake()
 		{
+			if (shouldImmobolizePlayer.HasValue)
+			{
+				PlayerMobility = (shouldImmobolizePlayer.Value ? Mobility.Immobilize : Mobility.Mobile);
+			}
 			if (Initialize != null)
 			{
 				Initialize(this);
@@ -43,6 +60,7 @@ namespace VRCSDK2
 			VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "UseStation";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 6;
 			vrcEvent.ParameterString = "UseStation";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
@@ -52,6 +70,7 @@ namespace VRCSDK2
 			VRC_EventHandler.VrcEvent vrcEvent2 = new VRC_EventHandler.VrcEvent();
 			vrcEvent2.Name = "ExitStation";
 			vrcEvent2.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent2.ParameterInt = 6;
 			vrcEvent2.ParameterString = "ExitStation";
 			vrcEvent2.ParameterObjects = (GameObject[])new GameObject[1]
 			{

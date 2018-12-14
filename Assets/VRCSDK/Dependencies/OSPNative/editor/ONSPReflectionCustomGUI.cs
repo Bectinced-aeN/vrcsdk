@@ -25,7 +25,7 @@ public class OculusSpatializerReflectionCustomGUI : IAudioEffectPluginGUI
 		bool  bval = false;
 
 		Separator();
-		Label ("Global Scale (Range: 0.00001 - 10000.0f)");
+		Label ("GLOBAL SCALE (0.00001 - 10000.0)");
 		plugin.GetFloatParameter("GScale", out fval);
 		plugin.SetFloatParameter("GScale", EditorGUILayout.FloatField(" ", Mathf.Clamp (fval, 0.00001f, 10000.0f)));
 
@@ -34,26 +34,26 @@ public class OculusSpatializerReflectionCustomGUI : IAudioEffectPluginGUI
 		// Treat these floats as bools in the inspector
 		plugin.GetFloatParameter("E.Rflt On", out fval);
 		bval = (fval == 0.0f) ? false : true;
-		bval = EditorGUILayout.Toggle("Early Refl. On", bval);
+		bval = EditorGUILayout.Toggle("Reflections Engine On", bval);
 		plugin.SetFloatParameter("E.Rflt On", (bval == false) ? 0.0f : 1.0f);
 
 		plugin.GetFloatParameter("E.Rflt Rev On", out fval);
 		bval = (fval == 0.0f) ? false : true;
-		bval = EditorGUILayout.Toggle("Reverb On", bval);
+		bval = EditorGUILayout.Toggle("Late Reverberation", bval);
 		plugin.SetFloatParameter("E.Rflt Rev On", (bval == false) ? 0.0f : 1.0f);
 
 		Separator();
 		Label("ROOM DIMENSIONS (meters)");
 		Label("");
 		plugin.GetFloatParameter("Room X", out fval);
-		plugin.SetFloatParameter("Room X", EditorGUILayout.Slider("Room Size X", fval, 1.0f, 200.0f));
+		plugin.SetFloatParameter("Room X", EditorGUILayout.Slider("Width", fval, 1.0f, 200.0f));
 		plugin.GetFloatParameter("Room Y", out fval);
-		plugin.SetFloatParameter("Room Y", EditorGUILayout.Slider("Room Size Y", fval, 1.0f, 200.0f));
+		plugin.SetFloatParameter("Room Y", EditorGUILayout.Slider("Height", fval, 1.0f, 200.0f));
 		plugin.GetFloatParameter("Room Z", out fval);
-		plugin.SetFloatParameter("Room Z", EditorGUILayout.Slider("Room Size Z", fval, 1.0f, 200.0f));
+		plugin.SetFloatParameter("Room Z", EditorGUILayout.Slider("Length", fval, 1.0f, 200.0f));
 
 		Separator();
-		Label("WALL REFLECTION VALUES (0-0.97)");
+		Label("WALL REFLECTION COEFFICIENTS (0.0 - 0.97)");
 		Label("");
 
 		plugin.GetFloatParameter("Left", out fval);
@@ -65,9 +65,17 @@ public class OculusSpatializerReflectionCustomGUI : IAudioEffectPluginGUI
 		plugin.GetFloatParameter("Down", out fval);
 		plugin.SetFloatParameter("Down", EditorGUILayout.Slider("Down", fval, 0.0f, 0.97f));
 		plugin.GetFloatParameter("Behind", out fval);
-		plugin.SetFloatParameter("Behind", EditorGUILayout.Slider("Behind", fval, 0.0f, 0.97f));
+		plugin.SetFloatParameter("Behind", EditorGUILayout.Slider("Back", fval, 0.0f, 0.97f));
 		plugin.GetFloatParameter("Front", out fval);
 		plugin.SetFloatParameter("Front", EditorGUILayout.Slider("Front", fval, 0.0f, 0.97f));
+
+        Separator();
+        Label("SHARED REVERB ATTENUATION RANGE (1.0 - 10000.0 meters)");
+        Label("");
+        plugin.GetFloatParameter("Shared Rev Min", out fval);
+        plugin.SetFloatParameter("Shared Rev Min", EditorGUILayout.Slider("Minimum", fval, 1.0f, 10000.0f));
+        plugin.GetFloatParameter("Shared Rev Max", out fval);
+        plugin.SetFloatParameter("Shared Rev Max", EditorGUILayout.Slider("Maximum", fval, 1.0f, 10000.0f));
 
 		// We will override the controls with our own, so return false
 		return false;

@@ -29,7 +29,7 @@ namespace VRCSDK2
 
 		public abstract void SetParticlePlaying(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject MeshObject, VRC_EventHandler.VrcBooleanOp Vis);
 
-		public abstract void TeleportPlayer(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject Destination);
+		public abstract void TeleportPlayer(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject Destination, VRC_EventHandler.VrcBooleanOp alignRoomWithDestination);
 
 		public abstract void RunConsoleCommand(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string ConsoleCommand);
 
@@ -59,11 +59,18 @@ namespace VRCSDK2
 
 		public abstract void AddDamage(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject targetObject, float damage);
 
+		public abstract void SetComponentActive(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject targetObject, string componentTypeName, VRC_EventHandler.VrcBooleanOp enable);
+
 		public abstract void RegisterEventHandler(VRC_EventHandler handler);
 
 		public abstract void UnregisterEventHandler(VRC_EventHandler handler);
 
-		public abstract GameObject FindGameObject(string path);
+		public virtual GameObject FindGameObject(string path)
+		{
+			return FindGameObject(path, suppressErrors: false);
+		}
+
+		public abstract GameObject FindGameObject(string path, bool suppressErrors);
 
 		public abstract string GetGameObjectPath(GameObject go);
 	}

@@ -9,6 +9,11 @@ namespace VRC.Core
 {
 	public class SDKClientUtilities
 	{
+		public static bool IsInternalSDK()
+		{
+			return false;
+		}
+
 		public static string LoadRegistryVRCInstallPath()
 		{
 			RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("Software\\VRChat", writable: false);

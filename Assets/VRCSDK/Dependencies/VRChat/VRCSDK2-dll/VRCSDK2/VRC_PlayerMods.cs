@@ -61,6 +61,7 @@ namespace VRCSDK2
 			List<VRC_EventHandler.VrcEvent> list = new List<VRC_EventHandler.VrcEvent>();
 			VRC_EventHandler.VrcEvent vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "AddPlayerMods";
+			vrcEvent.ParameterInt = 7;
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
 			vrcEvent.ParameterString = "AddPlayerMods";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
@@ -70,6 +71,7 @@ namespace VRCSDK2
 			list.Add(vrcEvent);
 			vrcEvent = new VRC_EventHandler.VrcEvent();
 			vrcEvent.Name = "RemovePlayerMods";
+			vrcEvent.ParameterInt = 7;
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
 			vrcEvent.ParameterString = "RemovePlayerMods";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
