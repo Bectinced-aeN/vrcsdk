@@ -1,9 +1,7 @@
-﻿Shader "Video/EmissiveGamma" {
+﻿Shader "Video/RealtimeEmissiveGamma" {
   Properties {
     _MainTex ("Emissive (RGB)", 2D) = "white" {}
-    _EmissionScale ("Emission Scale", Float) = 1
-    _EmissionLM ("Emission (Lightmapper)", Float) = 1
-    [Toggle] _DynamicEmissionLM ("Dynamic Emission (Lightmapper)", Int) = 0
+    _Emission ("Emission Scale", Float) = 1
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
   }
   SubShader {
@@ -19,9 +17,7 @@
 #pragma shader_feature _EMISSION
 #pragma multi_compile APPLY_GAMMA_OFF APPLY_GAMMA
 
-    fixed _EmissionScale;
-    fixed _EmissionLM;
-    int _DynamicEmissionLM;
+    fixed _Emission;
     sampler2D _MainTex;
 
     struct Input {
@@ -44,11 +40,12 @@
 #if APPLY_GAMMA
         e.rgb = pow(e.rgb,2.2);
 #endif
-        o.Emission = e * _EmissionScale;
+        o.Emission = e * _Emission;
         o.Metallic = 0;
         o.Smoothness = 0;
       }
     ENDCG
   }
   FallBack "Diffuse"
+  CustomEditor "RealtimeEmissiveGammaGUI"
 }

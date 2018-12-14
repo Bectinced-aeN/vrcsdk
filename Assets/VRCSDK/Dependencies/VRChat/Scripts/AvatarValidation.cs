@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
@@ -68,7 +69,8 @@ namespace VRCSDK2
             "UnityEngine.MeshParticleEmitter",
             "UnityEngine.LineRenderer",
             "VRCSDK2.VRC_IKFollower",
-            "VRC_IKFollowerInternal"
+            "VRC_IKFollowerInternal",
+            "RealisticEyeMovements.EyeAndHeadAnimator"
         };
 
         public static bool ps_limiter_enabled = false;
@@ -82,155 +84,64 @@ namespace VRCSDK2
         public static int ps_collision_penalty_med = 60;
         public static int ps_collision_penalty_low = 10;
         public static int ps_trails_penalty = 10;
-
-        private static IEnumerable<System.Type> FindTypes()
-        {
-            Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-
-            return ComponentTypeWhiteList.Select((name) =>
-            {
-                foreach (Assembly a in assemblies)
-                {
-                    System.Type found = a.GetType(name);
-                    if (found != null)
-                        return found;
-                }
-
-                //This is really verbose for some SDK scenes, eg.
-                //If they don't have FinalIK installed
-#if VRC_CLIENT && UNITY_EDITOR
-                Debug.LogError("Could not find type " + name);
-#endif
-                return null;
-            }).Where(t => t != null);
-        }
-
+        
         public static IEnumerable<Component> FindIllegalComponents(string Name, GameObject currentAvatar)
         {
-            HashSet<System.Type> typesInUse = new HashSet<System.Type>();
-            List<Component> componentsInUse = new List<Component>();
-            Queue<GameObject> children = new Queue<GameObject>();
-            children.Enqueue(currentAvatar.gameObject);
-            while (children.Count > 0)
-            {
-                GameObject child = children.Dequeue();
-                int childCount = child.transform.childCount;
-                for (int idx = 0; idx < child.transform.childCount; ++idx)
-                    children.Enqueue(child.transform.GetChild(idx).gameObject);
-                foreach (Component c in child.transform.GetComponents<Component>())
-                {
-                    if (c == null)
-                        continue;
-
-                    if (typesInUse.Contains(c.GetType()) == false)
-                        typesInUse.Add(c.GetType());
-                    componentsInUse.Add(c);
-                }
-            }
-
-            IEnumerable<System.Type> foundTypes = FindTypes();
-            return componentsInUse.Where(c => !foundTypes.Any(allowedType => c != null && (c.GetType() == allowedType || c.GetType().IsSubclassOf(allowedType))));
-        }
-
-        public static void RemoveDependancies(Component component)
-        {
-            Component[] components = component.GetComponents<Component>();
-            System.Type compType = component.GetType();
-            foreach (var c in components)
-            {
-                bool deleteMe = false;
-                object[] requires = c.GetType().GetCustomAttributes(typeof(RequireComponent), true);
-                foreach (var r in requires)
-                {
-                    RequireComponent rc = r as RequireComponent;
-                    if (rc.m_Type0 == compType ||
-                        rc.m_Type1 == compType ||
-                        rc.m_Type2 == compType)
-                    {
-                        deleteMe = true;
-                    }
-                }
-
-                if (deleteMe)
-                {
-                    Debug.LogErrorFormat("Deleting component dependency {0} found on {1}", c.GetType().Name, component.gameObject.name);
-
-                    RemoveDependancies(c);
-
-                    #if VRC_CLIENT
-                        Object.DestroyImmediate(c,true);
-                    #else
-                        Object.DestroyImmediate(c,false);
-                    #endif
-                }
-            }
-        }
-
-        public static void RemoveCameras( GameObject currentAvatar, bool localPlayer, bool friend )
-        {
-            if (!localPlayer)
-            {
-                foreach (Camera camera in currentAvatar.GetComponentsInChildren<Camera>(true))
-                {
-                    Debug.LogWarning("Removing camera from " + camera.gameObject.name);
-
-                    if ( friend && camera.targetTexture != null)
-                    {
-                        camera.enabled = false;
-                    }
-                    else
-                    {
-                        RemoveDependancies(camera);
-
-                        camera.enabled = false;
-                        if (camera.targetTexture != null)
-                            camera.targetTexture = new RenderTexture(16, 16, 24);
-                        MonoBehaviour.DestroyImmediate(camera);
-                    }
-                }
-            }
+            List<Component> bad = new List<Component>();
+            IEnumerator seeker = FindIllegalComponentsEnumerator(Name, currentAvatar, (c) => bad.Add(c));
+            while (seeker.MoveNext()) ;
+            return bad;
         }
 
         public static void RemoveIllegalComponents(string Name, GameObject currentAvatar, bool retry = true)
         {
-            IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(Name, currentAvatar);
+            IEnumerator remover = RemoveIllegalComponentsEnumerator(Name, currentAvatar, retry);
+            while (remover.MoveNext()) ;
+        }
 
-            HashSet<string> componentsToRemoveNames = new HashSet<string>();
-            foreach (Component c in componentsToRemove)
-            {
-                if(c == null)
-                    continue;
+        public static IEnumerator RemoveIllegalComponentsEnumerator(string Name, GameObject currentAvatar, bool retry = true)
+        {
+            bool foundBad = false;
+            yield return VRCSDK2.AvatarValidation.FindIllegalComponentsEnumerator(Name, currentAvatar, (c) => {
+                if (c != null)
+                {
+                    Debug.LogWarningFormat("Removed component of type {0}", c.GetType().Name);
+                    RemoveDependancies(c);
 
-                if (componentsToRemoveNames.Contains(c.GetType().Name) == false)
-                    componentsToRemoveNames.Add(c.GetType().Name);
+#if VRC_CLIENT
+                    Object.DestroyImmediate(c, true);
+#else
+                    Object.DestroyImmediate(c, false);
+#endif
+                    foundBad = true;
+                }
+            });
 
-                RemoveDependancies(c);
-
-                #if VRC_CLIENT
-                    Object.DestroyImmediate(c,true);
-                #else
-                    Object.DestroyImmediate(c,false);
-                #endif
-            }
-
-            if (retry && componentsToRemoveNames.Count > 0)
-            {
-                Debug.LogErrorFormat("Avatar {0} had components of the following types removed: {1}", Name, string.Join(", ", componentsToRemoveNames.ToArray()));
-
-                // Call again, to see if there's components that were prevented from being removed
-                RemoveIllegalComponents(Name, currentAvatar, false);
-            }
+            if (retry && foundBad)
+                yield return RemoveIllegalComponentsEnumerator(Name, currentAvatar, false);
         }
 
         public static List<AudioSource> EnforceAudioSourceLimits(GameObject currentAvatar)
         {
-            List<AudioSource> audioSources = new List<AudioSource>();
+            List<AudioSource> found = new List<AudioSource>();
+            IEnumerator enforcer = EnforceAudioSourceLimitsEnumerator(currentAvatar, (a) => found.Add(a));
+            while (enforcer.MoveNext()) ;
+            return found;
+        }
+
+        public static IEnumerator EnforceAudioSourceLimitsEnumerator(GameObject currentAvatar, System.Action<AudioSource> onFound)
+        {
+            if (currentAvatar == null)
+                yield break;
 
             Queue<GameObject> children = new Queue<GameObject>();
             children.Enqueue(currentAvatar.gameObject);
             while (children.Count > 0)
             {
                 GameObject child = children.Dequeue();
+                if (child == null)
+                    continue;
+
                 int childCount = child.transform.childCount;
                 for (int idx = 0; idx < child.transform.childCount; ++idx)
                     children.Enqueue(child.transform.GetChild(idx).gameObject);
@@ -244,6 +155,9 @@ namespace VRCSDK2
                 if (sources != null && sources.Length > 0)
                 {
                     AudioSource au = sources[0];
+                    if (au == null)
+                        continue;
+
 #if VRC_CLIENT
                     au.outputAudioMixerGroup = VRCAudioManager.GetAvatarGroup();
 #endif
@@ -287,7 +201,7 @@ namespace VRCSDK2
                     au.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curve);
 
                     // if we have an onsp component, also configure that
-                    ONSPAudioSource oa = sources[0].GetComponent<ONSPAudioSource>();
+                    ONSPAudioSource oa = au.GetComponent<ONSPAudioSource>();
                     if (oa)
                     {
                         if (oa.Gain > 10f) oa.Gain = 10f;
@@ -309,13 +223,16 @@ namespace VRCSDK2
                         oa.VolumetricRadius = 0f;
                     }
 
-                    audioSources.Add(au);
+                    onFound(au);
 
                     if (sources.Length > 1)
                     {
                         Debug.LogError("Disabling extra AudioSources on GameObject("+ child.name +"). Only one is allowed per GameObject.");
                         for (int i=1; i<sources.Length; i++)
                         {
+                            if (sources[i] == null)
+                                continue;
+
 #if VRC_CLIENT
                             sources[i].enabled = false;
                             sources[i].clip = null;
@@ -325,9 +242,113 @@ namespace VRCSDK2
                         }
                     }
                 }
-            }
 
-            return audioSources;
+                yield return null;
+            }
+        }
+
+        public static void EnforceRealtimeParticleSystemLimits(Dictionary<ParticleSystem, int> particleSystems, bool includeDisabled = false, bool stopSystems = true)
+        {
+            float totalEmission = 0;
+            ParticleSystem ps = null;
+            int max = 0;
+            int em_penalty = 1;
+            ParticleSystem.EmissionModule em;
+            float emission = 0;
+            ParticleSystem.Burst[] bursts;
+
+            foreach (KeyValuePair<ParticleSystem, int> kp in particleSystems)
+            {
+                if (!kp.Key.isPlaying && !includeDisabled)
+                    continue;
+                ps = kp.Key;
+                max = kp.Value;
+                em_penalty = 1;
+                if (ps.collision.enabled)
+                {
+                    switch (ps.collision.quality)
+                    {
+                        case ParticleSystemCollisionQuality.High:
+                            max = max / ps_collision_penalty_high;
+                            em_penalty += 3;
+                            break;
+                        case ParticleSystemCollisionQuality.Medium:
+                            max = max / ps_collision_penalty_med;
+                            em_penalty += 2;
+                            break;
+                        case ParticleSystemCollisionQuality.Low:
+                            max = max / ps_collision_penalty_low;
+                            em_penalty += 2;
+                            break;
+                    }
+                }
+                if (ps.trails.enabled)
+                {
+                    max = max / ps_trails_penalty;
+                    em_penalty += 3;
+                }
+                if (ps.emission.enabled)
+                {
+                    em = ps.emission;
+                    emission = 0;
+                    emission += GetCurveMax(em.rateOverTime);
+                    emission += GetCurveMax(em.rateOverDistance);
+
+                    bursts = new ParticleSystem.Burst[em.burstCount];
+                    em.GetBursts(bursts);
+                    for (int i = 0; i < bursts.Length; i++)
+                    {
+                        float adjMax = bursts[i].repeatInterval > 1 ? bursts[i].maxCount : bursts[i].maxCount * bursts[i].repeatInterval;
+                        if (adjMax > ps_max_emission)
+                            bursts[i].maxCount = (short)Mathf.Clamp(adjMax, 0, ps_max_emission);
+                    }
+                    em.SetBursts(bursts);
+
+                    emission *= em_penalty;
+                    totalEmission += emission;
+                    if ((emission > ps_max_emission || totalEmission > ps_max_total_emission) && stopSystems)
+                    {
+                        kp.Key.Stop();
+                        // Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle emission limits, it has been stopped");
+                    }
+                }
+                if (ps.main.maxParticles > Mathf.Clamp(max, 1, kp.Value))
+                {
+                    ParticleSystem.MainModule psm = ps.main;
+                    psm.maxParticles = Mathf.Clamp(psm.maxParticles, 1, max);
+                    if (stopSystems)
+                        kp.Key.Stop();
+                    Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle limits, it has been limited");
+                }
+            }
+        }
+
+        public static void RemoveCameras(GameObject currentAvatar, bool localPlayer, bool friend)
+        {
+            if (!localPlayer && currentAvatar != null)
+            {
+                foreach (Camera camera in currentAvatar.GetComponentsInChildren<Camera>(true))
+                {
+                    if (camera == null || camera.gameObject == null)
+                        continue;
+
+                    Debug.LogWarning("Removing camera from " + camera.gameObject.name);
+
+                    if (friend && camera.targetTexture != null)
+                    {
+                        camera.enabled = false;
+                    }
+                    else
+                    {
+                        RemoveDependancies(camera);
+
+                        camera.enabled = false;
+                        if (camera.targetTexture != null)
+                            camera.targetTexture = new RenderTexture(16, 16, 24);
+                        MonoBehaviour.DestroyImmediate(camera);
+                    }
+                }
+            }
         }
 
         public static void SetupParticleLimits()
@@ -359,63 +380,69 @@ namespace VRCSDK2
 
         public static Dictionary<ParticleSystem, int> EnforceParticleSystemLimits(GameObject currentAvatar)
         {
-            if(!ps_limiter_enabled)
+            if (!ps_limiter_enabled)
                 return new Dictionary<ParticleSystem, int>();
 
             Dictionary<ParticleSystem, int> particleSystems = new Dictionary<ParticleSystem, int>();
             int particleSystemCount = 0;
-            
-            foreach(ParticleSystem ps in currentAvatar.transform.GetComponentsInChildren<ParticleSystem>(true))
+
+            foreach (ParticleSystem ps in currentAvatar.transform.GetComponentsInChildren<ParticleSystem>(true))
             {
-                if(particleSystemCount > ps_max_systems)
+                if (particleSystemCount > ps_max_systems)
                 {
                     Debug.LogError("Too many particle systems, #" + particleSystemCount + " named " + ps.gameObject.name + " deleted");
                     Object.DestroyImmediate(ps);
-                } else {
+                }
+                else
+                {
                     var main = ps.main;
                     var collision = ps.collision;
                     var emission = ps.emission;
 
                     int realtime_max = ps_max_particles;
 
-                    if(ps.GetComponent<ParticleSystemRenderer>())
+                    if (ps.GetComponent<ParticleSystemRenderer>())
                     {
                         ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
-                        if(renderer.renderMode == ParticleSystemRenderMode.Mesh)
+                        if (renderer.renderMode == ParticleSystemRenderMode.Mesh)
                         {
                             Mesh[] meshes = new Mesh[0];
                             int heighestPoly = 0;
                             renderer.GetMeshes(meshes);
-                            if(meshes.Length == 0 && renderer.mesh != null)
+                            if (meshes.Length == 0 && renderer.mesh != null)
                             {
                                 meshes = new Mesh[] { renderer.mesh };
                             }
                             // Debug.Log(meshes.Length + " meshes possible emmited meshes from " + ps.gameObject.name);
-                            foreach(Mesh m in meshes)
+                            foreach (Mesh m in meshes)
                             {
-                                if(m.isReadable)
+                                if (m.isReadable)
                                 {
-                                    if(m.triangles.Length/3 > heighestPoly)
+                                    if (m.triangles.Length / 3 > heighestPoly)
                                     {
-                                        heighestPoly = m.triangles.Length/3;
+                                        heighestPoly = m.triangles.Length / 3;
                                     }
-                                } else {
-                                    if(1000 > heighestPoly)
+                                }
+                                else
+                                {
+                                    if (1000 > heighestPoly)
                                     {
                                         heighestPoly = 1000;
                                     }
                                 }
                             }
-                            if(heighestPoly > 0)
+                            if (heighestPoly > 0)
                             {
                                 heighestPoly = Mathf.Clamp(heighestPoly / ps_mesh_particle_divider, 1, heighestPoly);
-                                if(heighestPoly < realtime_max)
+                                if (heighestPoly < realtime_max)
                                 {
                                     realtime_max = realtime_max / heighestPoly;
-                                } else {
+                                }
+                                else
+                                {
                                     realtime_max = 1;
                                 }
-                                if(heighestPoly > ps_mesh_particle_poly_limit)
+                                if (heighestPoly > ps_mesh_particle_poly_limit)
                                 {
                                     Debug.LogError("Particle system named " + ps.gameObject.name + " breached polygon limits, it has been deleted");
                                     Object.DestroyImmediate(ps);
@@ -425,28 +452,36 @@ namespace VRCSDK2
                             }
                         }
                     }
-                    
-                    
+
+
                     ParticleSystem.MinMaxCurve rate = emission.rateOverTime;
 
-                    if(rate.mode == ParticleSystemCurveMode.Constant)
+                    if (rate.mode == ParticleSystemCurveMode.Constant)
                     {
                         rate.constant = Mathf.Clamp(rate.constant, 0, ps_max_emission);
-                    } else if(rate.mode == ParticleSystemCurveMode.TwoConstants) {
+                    }
+                    else if (rate.mode == ParticleSystemCurveMode.TwoConstants)
+                    {
                         rate.constantMax = Mathf.Clamp(rate.constantMax, 0, ps_max_emission);
-                    } else {
+                    }
+                    else
+                    {
                         rate.curveMultiplier = Mathf.Clamp(rate.curveMultiplier, 0, ps_max_emission);
                     }
 
                     emission.rateOverTime = rate;
                     rate = emission.rateOverDistance;
 
-                    if(rate.mode == ParticleSystemCurveMode.Constant)
+                    if (rate.mode == ParticleSystemCurveMode.Constant)
                     {
                         rate.constant = Mathf.Clamp(rate.constant, 0, ps_max_emission);
-                    } else if(rate.mode == ParticleSystemCurveMode.TwoConstants) {
+                    }
+                    else if (rate.mode == ParticleSystemCurveMode.TwoConstants)
+                    {
                         rate.constantMax = Mathf.Clamp(rate.constantMax, 0, ps_max_emission);
-                    } else {
+                    }
+                    else
+                    {
                         rate.curveMultiplier = Mathf.Clamp(rate.curveMultiplier, 0, ps_max_emission);
                     }
 
@@ -465,6 +500,101 @@ namespace VRCSDK2
             return particleSystems;
         }
 
+        private static IEnumerator FindIllegalComponentsEnumerator(string Name, GameObject currentAvatar, System.Action<Component> onFound)
+        {
+            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
+
+            IEnumerable<System.Type> foundTypes = FindTypes();
+            HashSet<System.Type> typesInUse = new HashSet<System.Type>();
+            List<Component> componentsInUse = new List<Component>();
+            Queue<GameObject> children = new Queue<GameObject>();
+            children.Enqueue(currentAvatar.gameObject);
+            while (children.Count > 0)
+            {
+                GameObject child = children.Dequeue();
+                int childCount = child.transform.childCount;
+                for (int idx = 0; idx < child.transform.childCount; ++idx)
+                    children.Enqueue(child.transform.GetChild(idx).gameObject);
+                foreach (Component c in child.transform.GetComponents<Component>())
+                {
+                    if (c == null)
+                        continue;
+
+                    if (typesInUse.Contains(c.GetType()) == false)
+                        typesInUse.Add(c.GetType());
+
+                    if (!foundTypes.Any(allowedType => c.GetType() == allowedType || c.GetType().IsSubclassOf(allowedType)))
+                    {
+                        onFound(c);
+                        yield return null;
+                    }
+
+                    if (watch.ElapsedMilliseconds > 1)
+                    {
+                        yield return null;
+                        watch.Reset();
+                    }
+                }
+            }
+        }
+
+        private static IEnumerable<System.Type> FindTypes()
+        {
+            Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+
+            return ComponentTypeWhiteList.Select((name) =>
+            {
+                foreach (Assembly a in assemblies)
+                {
+                    System.Type found = a.GetType(name);
+                    if (found != null)
+                        return found;
+                }
+
+                //This is really verbose for some SDK scenes, eg.
+                //If they don't have FinalIK installed
+#if VRC_CLIENT && UNITY_EDITOR
+                Debug.LogError("Could not find type " + name);
+#endif
+                return null;
+            }).Where(t => t != null);
+        }
+
+        private static void RemoveDependancies(Component component)
+        {
+            Component[] components = component.GetComponents<Component>();
+            System.Type compType = component.GetType();
+            foreach (var c in components)
+            {
+                bool deleteMe = false;
+                object[] requires = c.GetType().GetCustomAttributes(typeof(RequireComponent), true);
+                foreach (var r in requires)
+                {
+                    RequireComponent rc = r as RequireComponent;
+                    if (rc.m_Type0 == compType ||
+                        rc.m_Type1 == compType ||
+                        rc.m_Type2 == compType)
+                    {
+                        deleteMe = true;
+                    }
+                }
+
+                if (deleteMe)
+                {
+                    Debug.LogErrorFormat("Deleting component dependency {0} found on {1}", c.GetType().Name, component.gameObject.name);
+
+                    RemoveDependancies(c);
+
+#if VRC_CLIENT
+                    Object.DestroyImmediate(c, true);
+#else
+                        Object.DestroyImmediate(c,false);
+#endif
+                }
+            }
+        }
+
         private static float GetCurveMax(ParticleSystem.MinMaxCurve minMaxCurve)
         {
             switch(minMaxCurve.mode)
@@ -475,81 +605,6 @@ namespace VRCSDK2
                     return minMaxCurve.constantMax;
                 default:
                     return minMaxCurve.curveMultiplier;
-            }
-        }
-
-        public static void EnforceRealtimeParticleSystemLimits(Dictionary<ParticleSystem, int> particleSystems, bool includeDisabled = false, bool stopSystems = true)
-        {
-            float totalEmission = 0;
-            ParticleSystem ps = null;
-            int max = 0;
-            int em_penalty = 1;
-            ParticleSystem.EmissionModule em;
-            float emission = 0;
-            ParticleSystem.Burst[] bursts;
-
-            foreach (KeyValuePair<ParticleSystem, int> kp in particleSystems)
-            {
-                if(!kp.Key.isPlaying && !includeDisabled)
-                    continue;
-                ps = kp.Key;
-                max = kp.Value;
-                em_penalty = 1;
-                if(ps.collision.enabled)
-                {
-                    switch(ps.collision.quality)
-                    {
-                        case ParticleSystemCollisionQuality.High:
-                            max = max / ps_collision_penalty_high;
-                            em_penalty += 3;
-                            break;
-                        case ParticleSystemCollisionQuality.Medium:
-                            max = max / ps_collision_penalty_med;
-                            em_penalty += 2;
-                            break;
-                        case ParticleSystemCollisionQuality.Low:
-                            max = max / ps_collision_penalty_low;
-                            em_penalty += 2;
-                            break;
-                    }
-                }
-                if(ps.trails.enabled)
-                {
-                    max = max / ps_trails_penalty;
-                    em_penalty += 3;
-                }
-                if(ps.emission.enabled)
-                {
-                    em = ps.emission;
-                    emission = 0;
-                    emission += GetCurveMax(em.rateOverTime);
-                    emission += GetCurveMax(em.rateOverDistance);
-
-                    bursts = new ParticleSystem.Burst[em.burstCount];
-                    em.GetBursts(bursts);
-                    for(int i=0;i<bursts.Length;i++)
-                    {
-                        float adjMax = bursts[i].repeatInterval > 1 ? bursts[i].maxCount : bursts[i].maxCount * bursts[i].repeatInterval;
-                        if(adjMax > ps_max_emission)
-                            bursts[i].maxCount = (short)Mathf.Clamp(adjMax, 0, ps_max_emission);
-                    }
-                    em.SetBursts(bursts);
-                    
-                    emission *= em_penalty;
-                    totalEmission += emission;
-                    if((emission > ps_max_emission || totalEmission > ps_max_total_emission) && stopSystems)
-                    {
-                        kp.Key.Stop();
-                        // Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle emission limits, it has been stopped");
-                    }
-                }
-                if(ps.main.maxParticles > Mathf.Clamp(max, 1, kp.Value)){
-                    ParticleSystem.MainModule psm = ps.main;
-                    psm.maxParticles = Mathf.Clamp(psm.maxParticles, 1, max);
-                    if(stopSystems)
-                        kp.Key.Stop();
-                    Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle limits, it has been limited");
-                }
             }
         }
     }

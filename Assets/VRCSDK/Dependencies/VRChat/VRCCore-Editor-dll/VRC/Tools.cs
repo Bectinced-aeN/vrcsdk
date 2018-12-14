@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using VRC.Core;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Caching;
+using VRC.Core.BestHTTP.Cookies;
 using VRC.Core.BestHTTP.JSON;
 
 namespace VRC
@@ -180,6 +181,11 @@ namespace VRC
 			{
 				Directory.Delete(path, recursive: true);
 			}
+		}
+
+		public static void ClearCookies()
+		{
+			CookieJar.Clear();
 		}
 
 		public static DateTime UnixTimeStampToDateTime(double unixTimeStamp)

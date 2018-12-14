@@ -64,6 +64,13 @@ namespace VRC.Core
 		{
 		}
 
+		public static ApiPlayerModeration CreateRemovalModeration()
+		{
+			ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
+			apiPlayerModeration.Endpoint = "auth/user/unplayermoderate";
+			return apiPlayerModeration;
+		}
+
 		public override bool ShouldCache()
 		{
 			return false;
@@ -120,13 +127,17 @@ namespace VRC.Core
 			});
 		}
 
-		public static void DeleteModeration(string moderationId, Action successCallback, Action<string> errorCallback)
+		public static void DeleteModeration(string targetUserId, ModerationType mType, Action<ApiPlayerModeration> successCallback, Action<string> errorCallback)
 		{
-			API.Delete<ApiPlayerModeration>(moderationId, delegate
+			ApiPlayerModeration apiPlayerModeration = CreateRemovalModeration();
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			dictionary["moderated"] = targetUserId;
+			dictionary["type"] = mType.ToString().ToLower();
+			apiPlayerModeration.Put(delegate(ApiContainer c)
 			{
 				if (successCallback != null)
 				{
-					successCallback();
+					successCallback(c.Model as ApiPlayerModeration);
 				}
 			}, delegate(ApiContainer c)
 			{
@@ -134,7 +145,7 @@ namespace VRC.Core
 				{
 					errorCallback(c.Error);
 				}
-			});
+			}, dictionary);
 		}
 
 		public static void FetchAllAgainstMe(Action<List<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)

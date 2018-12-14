@@ -28,7 +28,7 @@ namespace AmplitudeSDKWrapper
 
 		private const int EVENT_UPLOAD_THRESHOLD = 30;
 
-		private const int EVENT_UPLOAD_MAX_BATCH_SIZE = 100;
+		private const int EVENT_UPLOAD_MAX_BATCH_SIZE = 10;
 
 		private const int EVENT_MAX_COUNT = 1000;
 
@@ -284,6 +284,14 @@ namespace AmplitudeSDKWrapper
 
 		private IEnumerable<Dictionary<string, object>> GetLastEvents(int maxEventId, int batchSize)
 		{
+			if (batchSize > 10)
+			{
+				batchSize = 10;
+			}
+			if (batchSize < 1)
+			{
+				batchSize = 1;
+			}
 			try
 			{
 				KeyValuePair<int, IEnumerable<Event>> events = dbHelper.GetEvents(maxEventId, batchSize);
@@ -299,7 +307,7 @@ namespace AmplitudeSDKWrapper
 					dictionary.Add("event_id", e.Id);
 					return dictionary;
 				});
-				IL_0048:;
+				IL_005e:;
 			}
 			catch (Exception ex)
 			{
@@ -308,7 +316,7 @@ namespace AmplitudeSDKWrapper
 			return new List<Dictionary<string, object>>();
 		}
 
-		private void UpdateServer(int batchSize = 100)
+		private void UpdateServer(int batchSize = 10)
 		{
 			if (Interlocked.Exchange(ref isUploading, 1) == 0)
 			{
@@ -359,7 +367,7 @@ namespace AmplitudeSDKWrapper
 			}
 		}
 
-		private void UpdateServerDelayed(int delayMs, int batchSize = 100)
+		private void UpdateServerDelayed(int delayMs, int batchSize = 10)
 		{
 			int num = -1;
 			lock (_serverUpdateLock)

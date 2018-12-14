@@ -73,6 +73,8 @@ public class SyncVideoPlayerEditor : Editor
     {
         SerializedProperty searchRoot = serializedObject.FindProperty("VideoSearchRoot");
         EditorGUILayout.PropertyField(searchRoot);
+        SerializedProperty maxQual = serializedObject.FindProperty("MaxStreamQuality");
+        EditorGUILayout.PropertyField(maxQual);
 
         EditorGUILayout.Space();
 

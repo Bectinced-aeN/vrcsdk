@@ -55,6 +55,7 @@ namespace VRCSDK2
             forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", true);
             useFileApi = UnityEditor.EditorPrefs.GetBool("useFileApi", VRC.Core.ApiFile.kDefaultUseFileAPI);
 
+            API.InitializeDebugLevel();
             API.SetOnlineMode(true);
         }
 

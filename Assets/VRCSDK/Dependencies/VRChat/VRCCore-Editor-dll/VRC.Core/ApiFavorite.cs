@@ -28,7 +28,7 @@ namespace VRC.Core
 
 		public const int MaxFavoriteFriends = 32;
 
-		public static void AddFavorite(string objectId, FavoriteType favoriteType, Action successCallback, Action<string> errorCallback)
+		public static void AddFavorite(string objectId, FavoriteType favoriteType, Action successCallback, Action<string> errorCallback, List<string> tags = null)
 		{
 			ApiDictContainer apiDictContainer = new ApiDictContainer();
 			apiDictContainer.OnSuccess = delegate
@@ -49,6 +49,10 @@ namespace VRC.Core
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary["type"] = favoriteType.value;
 			dictionary["favoriteId"] = objectId;
+			if (tags != null)
+			{
+				dictionary["tags"] = tags;
+			}
 			API.SendPostRequest("favorites", responseContainer, dictionary);
 		}
 
@@ -70,11 +74,10 @@ namespace VRC.Core
 				}
 			};
 			ApiContainer responseContainer = apiDictContainer;
-			Dictionary<string, object> requestParams = new Dictionary<string, object>();
-			API.SendDeleteRequest("favorites/" + objectId, responseContainer, requestParams);
+			API.SendDeleteRequest("favorites/" + objectId, responseContainer);
 		}
 
-		public static void FetchFavoriteIds(FavoriteType favoriteType, Action<List<string>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchFavoriteIds(FavoriteType favoriteType, Action<List<string>> successCallback = null, Action<string> errorCallback = null, string tag = null)
 		{
 			List<string> favoriteWorldIds = new List<string>();
 			List<string> favoriteFriendIds = new List<string>();
@@ -126,7 +129,13 @@ namespace VRC.Core
 					}
 				};
 				ApiContainer responseContainer2 = apiModelListContainer2;
-				API.SendGetRequest("auth/user/friends/favorite", responseContainer2, null, disableCache: true);
+				Dictionary<string, object> dictionary = null;
+				if (tag != null)
+				{
+					dictionary = new Dictionary<string, object>();
+					dictionary["tag"] = tag;
+				}
+				API.SendGetRequest("auth/user/friends/favorite", responseContainer2, dictionary, disableCache: true);
 			}
 			else
 			{

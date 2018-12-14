@@ -104,8 +104,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public GameObject[] ParameterObjects;
 
-			[SerializeField]
 			[HideInInspector]
+			[SerializeField]
 			public byte[] ParameterBytes;
 		}
 

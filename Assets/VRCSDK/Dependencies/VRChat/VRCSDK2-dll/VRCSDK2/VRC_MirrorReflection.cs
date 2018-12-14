@@ -372,11 +372,15 @@ namespace VRCSDK2
 
 		private ReflectionData GetReflectionData(Camera currentCamera)
 		{
-			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0026: Expected O, but got Unknown
-			//IL_010a: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0110: Expected O, but got Unknown
+			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
+			//IL_003c: Expected O, but got Unknown
+			//IL_0120: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0126: Expected O, but got Unknown
 			ReflectionData value = null;
+			if (m_Reflections == null)
+			{
+				m_Reflections = new Dictionary<Camera, ReflectionData>();
+			}
 			if (!m_Reflections.TryGetValue(currentCamera, out value))
 			{
 				value = new ReflectionData();

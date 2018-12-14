@@ -6,25 +6,15 @@ using UnityEngine;
 namespace VRC.Core
 {
 	[ExecuteInEditMode]
-	internal sealed class UpdateDelegator : MonoBehaviour
+	public sealed class UpdateDelegator : MonoBehaviour
 	{
 		private static int? spawnedThreadID;
 
-		private readonly object _queueLock = new object();
+		private static readonly object _queueLock = new object();
 
-		private Queue<Action> _jobQueue = new Queue<Action>();
+		private static Queue<Action> _jobQueue = new Queue<Action>();
 
-		public static UpdateDelegator Instance
-		{
-			get;
-			private set;
-		}
-
-		public static bool IsCreated
-		{
-			get;
-			private set;
-		}
+		private static UpdateDelegator Instance;
 
 		public static bool IsMainThread => spawnedThreadID.HasValue && Thread.CurrentThread.ManagedThreadId == spawnedThreadID;
 
@@ -33,22 +23,46 @@ namespace VRC.Core
 		{
 		}
 
-		public static void CheckInstance()
+		public static void Initialize()
 		{
-			//IL_0041: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0047: Expected O, but got Unknown
-			try
+			CheckInstance();
+		}
+
+		private void Awake()
+		{
+			spawnedThreadID = Thread.CurrentThread.ManagedThreadId;
+			OnEnable();
+		}
+
+		private void OnEnable()
+		{
+			if (!(Instance == this))
 			{
-				if (!IsCreated)
+				if (Instance != null)
 				{
-					GameObject val = GameObject.Find("Update Delegator");
-					if (val != null)
-					{
-						Instance = val.GetComponent<UpdateDelegator>();
-					}
+					Debug.LogError((object)"Two delegators in existence.");
+					Object.Destroy(this);
+				}
+				else
+				{
+					spawnedThreadID = Thread.CurrentThread.ManagedThreadId;
+					Instance = this;
+				}
+			}
+		}
+
+		private static void CheckInstance()
+		{
+			//IL_0030: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0036: Expected O, but got Unknown
+			if (!(Instance != null))
+			{
+				try
+				{
+					Instance = Object.FindObjectOfType<UpdateDelegator>();
 					if (Instance == null)
 					{
-						val = new GameObject("Update Delegator");
+						GameObject val = new GameObject("Update Delegator");
 						val.set_hideFlags(61);
 						try
 						{
@@ -57,29 +71,27 @@ namespace VRC.Core
 						catch
 						{
 						}
-						Instance = val.AddComponent<UpdateDelegator>();
+						val.AddComponent<UpdateDelegator>();
 					}
-					spawnedThreadID = Thread.CurrentThread.ManagedThreadId;
-					IsCreated = true;
 				}
-			}
-			catch (Exception ex)
-			{
-				Debug.LogError((object)"UpdateDelegator: CheckInstance: Exception:");
-				Debug.LogException(ex);
+				catch (Exception ex)
+				{
+					Debug.LogError((object)("Exception in UpdateDelegator.CheckInstance: " + ex.ToString()));
+					throw;
+					IL_0073:;
+				}
 			}
 		}
 
 		public static void Dispatch(Action job)
 		{
-			CheckInstance();
-			Instance.QueueJobInternal(job);
-		}
-
-		private void QueueJobInternal(Action job)
-		{
-			if (job != null)
+			if (job == null)
 			{
+				Debug.LogError((object)"Ignoring NULL job");
+			}
+			else
+			{
+				CheckInstance();
 				lock (_queueLock)
 				{
 					_jobQueue.Enqueue(job);
@@ -87,7 +99,7 @@ namespace VRC.Core
 			}
 		}
 
-		private void OnUpdate()
+		private void Update()
 		{
 			try
 			{
@@ -100,30 +112,12 @@ namespace VRC.Core
 					}
 					action = _jobQueue.Dequeue();
 				}
-				action();
+				action?.Invoke();
 			}
 			catch (Exception ex)
 			{
 				Debug.LogError((object)"Exception in UpdateDelegator job:");
 				Debug.LogException(ex);
-			}
-		}
-
-		private void Update()
-		{
-			OnUpdate();
-		}
-
-		private void OnDisable()
-		{
-			OnApplicationQuit();
-		}
-
-		private void OnApplicationQuit()
-		{
-			if (IsCreated)
-			{
-				IsCreated = false;
 			}
 		}
 	}

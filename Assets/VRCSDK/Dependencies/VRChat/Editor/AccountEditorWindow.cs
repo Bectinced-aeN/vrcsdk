@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using VRC.Core;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace VRC
 {
@@ -10,7 +12,8 @@ namespace VRC
         static bool isInitialized = false;
         static string clientInstallPath;
         static bool signingIn = false;
-        static string error = null;
+		static bool refreshWindow = false;
+		static string error = null;
 
         static AccountEditorWindow window = null;
 
@@ -20,7 +23,12 @@ namespace VRC
         void Update()
         {
             SignIn(false);
-        }
+			if (refreshWindow)
+			{
+				refreshWindow = false;
+				Repaint();
+			}
+		}
 
         static string storedUsername
         {
@@ -162,6 +170,7 @@ namespace VRC
 
         static void OnVRCInstallPathGUI()
         {
+            EditorGUILayout.Separator();
             EditorGUILayout.LabelField("VRChat Client", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Installed Client Path: ", clientInstallPath);
             if(GUILayout.Button("Edit"))
@@ -206,13 +215,14 @@ namespace VRC
 
             EditorGUILayout.LabelField(Status);
 
+            EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Account", EditorStyles.boldLabel);
 
-            if (signingIn)
+			if (signingIn)
             {
                 EditorGUILayout.LabelField("Signing in.");
                 EditorGUILayout.EndVertical();
-                return false;
+				return false;
             }
             else if (APIUser.IsLoggedInWithCredentials)
             {
@@ -223,11 +233,14 @@ namespace VRC
                     storedUsername = username = null;
                     storedPassword = password = null;
 
-                    APIUser.Logout();
+					ApiCredentials.Clear();
+                    VRC.Tools.ClearCookies();
+					APIUser.Logout();
                     VRCContentManagerWindow.ClearContent();
                 }
-            }
-            else
+
+			}
+			else
             {
                 if (signingIn)
                     EditorGUILayout.LabelField("Signing in.");
@@ -248,6 +261,7 @@ namespace VRC
             {
                 if (APIUser.CurrentUser == null || APIUser.CurrentUser.hasSuperPowers)
                 {
+                    EditorGUILayout.Separator();
                     EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
 
                     ApiServerEnvironment newEnv = (ApiServerEnvironment)EditorGUILayout.EnumPopup("Use API", serverEnvironment);
@@ -258,12 +272,13 @@ namespace VRC
 
                     if (APIUser.CurrentUser == null)
                     {
-                        EditorGUILayout.EndVertical();
+						EditorGUILayout.EndVertical();
                         return false;
                     }
                 }
                 else
                 {
+                    EditorGUILayout.Separator();
                     EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
 
                     ApiServerEnvironment newEnv = (EditorGUILayout.Popup("Use API", serverEnvironment != ApiServerEnvironment.Beta ? 1 : 0, new string[] { "Beta", "Release" }) == 0 ? ApiServerEnvironment.Beta : ApiServerEnvironment.Release);
@@ -276,6 +291,7 @@ namespace VRC
 
             // Future proof upload
             {
+                EditorGUILayout.Separator();
                 EditorGUILayout.LabelField("Publish", EditorStyles.boldLabel);
                 bool futureProofPublish = UnityEditor.EditorPrefs.GetBool("futureProofPublish", DefaultFutureProofPublishEnabled);
 
@@ -293,9 +309,53 @@ namespace VRC
                 OnVRCInstallPathGUI();
             }
 
+            // debugging
+            if (APIUser.CurrentUser != null && APIUser.CurrentUser.hasSuperPowers)
+            {
+                EditorGUILayout.Separator();
+                EditorGUILayout.LabelField("Developer", EditorStyles.boldLabel);
+
+                // API logging
+                {
+                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("apiLoggingEnabled");
+                    bool enableLogging = EditorGUILayout.Toggle("API Logging Enabled", isLoggingEnabled);
+                    if (enableLogging != isLoggingEnabled)
+                    {
+                        if (enableLogging)
+                            VRC.Core.Logger.AddDebugLevel(DebugLevel.API);
+                        else
+                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.API);
+
+                        UnityEditor.EditorPrefs.SetBool("apiLoggingEnabled", enableLogging);
+                    } 
+                }
+
+                // All logging
+                {
+                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("allLoggingEnabled");
+                    bool enableLogging = EditorGUILayout.Toggle("All Logging Enabled", isLoggingEnabled);
+                    if (enableLogging != isLoggingEnabled)
+                    {
+                        if (enableLogging)
+                            VRC.Core.Logger.AddDebugLevel(DebugLevel.All);
+                        else
+                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.All);
+
+                        UnityEditor.EditorPrefs.SetBool("allLoggingEnabled", enableLogging);
+                    }
+                }
+            }
+            else
+            {
+                if (UnityEditor.EditorPrefs.GetBool("apiLoggingEnabled"))
+                    UnityEditor.EditorPrefs.SetBool("apiLoggingEnabled", false);
+                if (UnityEditor.EditorPrefs.GetBool("allLoggingEnabled"))
+                    UnityEditor.EditorPrefs.SetBool("allLoggingEnabled", false);
+            }
+
             EditorGUILayout.EndVertical();
 
-            return true;
+			return true;
         }
 
         static void OnCreatorStatusGUI()
@@ -397,14 +457,18 @@ namespace VRC
                             VRC_SdkControlPanel.ShowContentPublishPermissionsDialog();
                         } 
                     }
-                },
+
+					refreshWindow = true;
+				},
                 delegate (string message)
                 {
                     signingIn = false;
                     storedUsername = null;
                     storedPassword = null;
                     error = message;
+                    VRC.Tools.ClearCookies();
                     APIUser.Logout();
+					refreshWindow = true;
                     VRC.Core.Logger.Log("Error logging in: " + message);
                 }
             );

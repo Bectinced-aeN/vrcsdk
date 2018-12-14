@@ -56,6 +56,20 @@ namespace VRC.Core
 			return result;
 		}
 
+		public static object GetObject(string key)
+		{
+			if (!IsInitialized())
+			{
+				Init();
+			}
+			object result = null;
+			if (IsInitialized() && HasKey(key))
+			{
+				result = GetValue(key);
+			}
+			return result;
+		}
+
 		public static int GetInt(string key, int defaultVal = 0)
 		{
 			if (!IsInitialized())
@@ -127,12 +141,16 @@ namespace VRC.Core
 		{
 			Debug.Log((object)"Fetching fresh local config");
 			Logger.Log("FetchLocalConfig", DebugLevel.All);
-			string path = Application.get_persistentDataPath() + Path.PathSeparator + "config.json";
-			if (File.Exists(path))
+			string text = Application.get_persistentDataPath() + Path.DirectorySeparatorChar + "config.json";
+			if (File.Exists(Application.get_persistentDataPath() + Path.PathSeparator + "config.json"))
+			{
+				File.Move(Application.get_persistentDataPath() + Path.PathSeparator + "config.json", text);
+			}
+			if (File.Exists(text))
 			{
 				try
 				{
-					object obj = Json.Decode(File.ReadAllText(path));
+					object obj = Json.Decode(File.ReadAllText(text));
 					config = (Dictionary<string, object>)obj;
 					Logger.Log("finshed fetching and set local config", DebugLevel.All);
 					onFetched?.Invoke();

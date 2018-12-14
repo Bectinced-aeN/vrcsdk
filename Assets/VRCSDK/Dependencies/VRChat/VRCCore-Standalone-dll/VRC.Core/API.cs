@@ -58,6 +58,10 @@ namespace VRC.Core
 			return API_ORGANIZATION;
 		}
 
+		public static void InitializeDebugLevel()
+		{
+		}
+
 		public static bool IsReady()
 		{
 			return API_ORGANIZATION != null && API_ONLINE_MODE != ApiOnlineMode.Uninitialized;
@@ -279,7 +283,7 @@ namespace VRC.Core
 		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f)
 		{
 			string text = (!disableCache) ? "cyan" : "red";
-			Logger.Log("<color=" + text + ">Dispatch " + method + " " + endpoint + ((requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams))) + " disableCache: " + disableCache.ToString() + "</color>", DebugLevel.API);
+			Logger.LogFormat(DebugLevel.API, "<color={0}>Dispatch {1} {2} {3} disableCache: {4}</color>", text, method, endpoint, (requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams)), disableCache.ToString());
 			UpdateDelegator.Dispatch(delegate
 			{
 				SendRequestInternal(endpoint, method, responseContainer, requestParams, needsAPIKey, authenticationRequired, disableCache, cacheLifetime);
@@ -337,7 +341,7 @@ namespace VRC.Core
 					ApiCache.CachedResponse cachedResponse = (!useCache) ? null : ApiCache.GetOrClearCachedResponse(baseUri.Uri.PathAndQuery, cacheLifetime);
 					if (cachedResponse != null)
 					{
-						Logger.Log("<color=cyan>Using cached " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
+						Logger.LogFormat(DebugLevel.API, "<color=cyan>Using cached {0} request to {1}</color>", method, baseUri.Uri);
 						try
 						{
 							if (responseContainer.OnComplete(success: true, baseUri.Uri.PathAndQuery, 200, string.Empty, () => cachedResponse.Data, () => cachedResponse.DataAsText, cachedResponse.Timestamp))
@@ -346,7 +350,7 @@ namespace VRC.Core
 							}
 							else
 							{
-								Debug.LogError((object)"Something went wrong re-serving data from cache.");
+								Logger.LogErrorFormat(DebugLevel.API, "Something went wrong re-serving data from cache for {0}", baseUri.Uri);
 							}
 						}
 						catch (Exception ex)
@@ -356,7 +360,7 @@ namespace VRC.Core
 					}
 					else if (method == HTTPMethods.Get && activeRequests.ContainsKey(uriPath))
 					{
-						Logger.Log("<color=cyan>Piggy-backing " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
+						Logger.LogFormat(DebugLevel.API, "<color=cyan>Piggy-backing {0} request to {1}</color>", method, baseUri.Uri);
 						OnRequestFinishedDelegate originalCallback = activeRequests[uriPath].Callback;
 						activeRequests[uriPath].Callback = delegate(HTTPRequest req, HTTPResponse resp)
 						{
@@ -381,7 +385,7 @@ namespace VRC.Core
 					else
 					{
 						int requestId = ++lastRequestId;
-						Logger.Log("<color=lightblue>[" + requestId + "] Sending " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
+						Logger.LogFormat(DebugLevel.API, "<color=lightblue>[{0}] Sending {1} request to {2}</color>", requestId, method, baseUri.Uri);
 						HTTPRequest hTTPRequest = new HTTPRequest(baseUri.Uri, delegate(HTTPRequest req, HTTPResponse resp)
 						{
 							if (activeRequests.ContainsKey(uriPath))
@@ -462,7 +466,7 @@ namespace VRC.Core
 					ApiKey = RemoteConfig.GetString("clientApiKey");
 					if (string.IsNullOrEmpty(ApiKey))
 					{
-						Logger.LogError("Could not fetch client api key - unknown error.");
+						Logger.LogErrorFormat(DebugLevel.API, "Could not fetch client api key - unknown error.");
 						if (onError != null)
 						{
 							onError("Could not fetch client api key - unknown error.");
@@ -475,7 +479,7 @@ namespace VRC.Core
 				}
 				else
 				{
-					Logger.LogWarning("Could not fetch client api key - config not initialized.");
+					Logger.LogWarningFormat(DebugLevel.API, "Could not fetch client api key - config not initialized.");
 					if (onError != null)
 					{
 						onError("Could not fetch client api key - config not initialized.");
@@ -535,7 +539,7 @@ namespace VRC.Core
 			{
 				return ApiServerEnvironment.Dev;
 			}
-			Debug.LogError((object)("GetServerEnvironmentForApiUrl: unknown api url: " + url));
+			Logger.LogErrorFormat(DebugLevel.API, "GetServerEnvironmentForApiUrl: unknown api url: {0}", url);
 			return ApiServerEnvironment.Release;
 		}
 
@@ -563,7 +567,7 @@ namespace VRC.Core
 					}
 				}
 			}
-			Debug.LogError((object)("Query used by application in offline mode not found - " + endpoint));
+			Logger.LogErrorFormat(DebugLevel.API, "Query used by application in offline mode not found - {0}", endpoint);
 			responseContainer.Error = "query not found in offline results - " + endpoint;
 			if (responseContainer.OnError != null)
 			{

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using VRC.Core.BestHTTP.JSON;
 
 namespace VRC.Core
 {
@@ -75,6 +76,7 @@ namespace VRC.Core
 
 		public static void CacheResponse(string apiRequestPathAndQuery, byte[] data)
 		{
+			Logger.Log("<color=magenta>Caching API response for: " + apiRequestPathAndQuery + ": \n" + Encoding.UTF8.GetString(data, 0, data.Length) + "</color>", DebugLevel.API);
 			int hashCode = apiRequestPathAndQuery.GetHashCode();
 			apiResponseCache[hashCode] = new CachedResponse(data, Time.get_realtimeSinceStartup(), 3600f);
 		}
@@ -82,6 +84,11 @@ namespace VRC.Core
 		public static void ClearResponseCache()
 		{
 			apiResponseCache.Clear();
+		}
+
+		public static void ClearCache()
+		{
+			cache = new Dictionary<Type, Dictionary<string, CacheEntry>>();
 		}
 
 		public static bool Contains<T>(string id) where T : class, ApiCacheObject
@@ -109,8 +116,9 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			Debug.Log((object)("<color=cyan>Fetched " + t.Name + " with id " + id + " from cache.</color>"));
+			Logger.Log("<color=cyan>Fetched " + t.Name + " with id " + id + " from cache.</color>", DebugLevel.API);
 			target = (cache[t][id].obj as T);
+			Logger.Log("<color=cyan>" + Json.Encode((target as ApiModel).ExtractApiFields()) + "</color>", DebugLevel.API);
 			return true;
 		}
 

@@ -591,11 +591,15 @@ namespace VRC.Core
 			{
 				return true;
 			}
+			if (data is object[] && typeof(IList).IsAssignableFrom(targetType))
+			{
+				data = ((object[])data).ToList();
+			}
 			try
 			{
 				data = Convert.ChangeType(data, targetType);
 				return true;
-				IL_002a:;
+				IL_0059:;
 			}
 			catch (InvalidCastException)
 			{
@@ -638,7 +642,7 @@ namespace VRC.Core
 					catch (InvalidCastException)
 					{
 						return false;
-						IL_0272:;
+						IL_02a1:;
 					}
 				}
 				else

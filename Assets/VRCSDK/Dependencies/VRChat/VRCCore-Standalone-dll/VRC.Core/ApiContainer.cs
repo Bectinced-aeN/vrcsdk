@@ -102,6 +102,7 @@ namespace VRC.Core
 
 		public bool OnComplete(bool success, string endpoint, int responseCode, string responseText, Func<byte[]> readData, Func<string> readTextData, float dataTimestamp = -1f)
 		{
+			Logger.Log("<color=magenta>API response from " + endpoint + ":\n" + readTextData() + "</color>", DebugLevel.API);
 			try
 			{
 				if (!success || responseCode < 200 || responseCode >= 400)

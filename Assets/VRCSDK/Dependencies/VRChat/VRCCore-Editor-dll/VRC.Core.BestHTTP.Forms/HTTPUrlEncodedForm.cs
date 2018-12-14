@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using UnityEngine;
 
 namespace VRC.Core.BestHTTP.Forms
 {
@@ -28,13 +29,25 @@ namespace VRC.Core.BestHTTP.Forms
 				}
 				stringBuilder.Append(Uri.EscapeDataString(hTTPFieldData.Name));
 				stringBuilder.Append("=");
-				if (!string.IsNullOrEmpty(hTTPFieldData.Text) || hTTPFieldData.Binary == null)
+				try
 				{
-					stringBuilder.Append(Uri.EscapeDataString(hTTPFieldData.Text));
+					if (!string.IsNullOrEmpty(hTTPFieldData.Text) || hTTPFieldData.Binary == null)
+					{
+						stringBuilder.Append(Uri.EscapeDataString(hTTPFieldData.Text));
+					}
+					else
+					{
+						stringBuilder.Append(Uri.EscapeDataString(Encoding.UTF8.GetString(hTTPFieldData.Binary, 0, hTTPFieldData.Binary.Length)));
+					}
 				}
-				else
+				catch (FormatException ex)
 				{
-					stringBuilder.Append(Uri.EscapeDataString(Encoding.UTF8.GetString(hTTPFieldData.Binary, 0, hTTPFieldData.Binary.Length)));
+					Debug.LogErrorFormat("Could not escape field {0} using data {1}", new object[2]
+					{
+						hTTPFieldData.Name,
+						hTTPFieldData.Text
+					});
+					Debug.LogException((Exception)ex);
 				}
 			}
 			base.IsChanged = false;

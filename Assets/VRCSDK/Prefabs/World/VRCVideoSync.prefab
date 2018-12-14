@@ -297,6 +297,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AllowNonOwnerControl: 1
+  VideoSearchRoot: youtube.com
+  MaxStreamQuality: 720
   Videos:
   - Source: 1
     AspectRatio: 3
@@ -318,16 +320,6 @@ MonoBehaviour:
     PlaybackSpeed: 1
     VideoClip: {fileID: 0}
     URL: https://archive.org/download/ThePrincessBrideTrailer/ThePrincessBrideTrailer.mp4
-  - Source: 1
-    AspectRatio: 3
-    PlaybackSpeed: 1
-    VideoClip: {fileID: 0}
-    URL: https://www.youtube.com/watch?v=tDtt8qMgkGU
-  - Source: 0
-    AspectRatio: 3
-    PlaybackSpeed: 1
-    VideoClip: {fileID: 32900000, guid: cf2cae1283c689c47b4aa9a8cf6387bb, type: 3}
-    URL: https://www.youtube.com/watch?v=tDtt8qMgkGU
 --- !u!114 &114274508091955466
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -388,6 +380,7 @@ MonoBehaviour:
   proximity: 3.4028235e+38
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 5
     BroadcastType: 7
@@ -423,6 +416,12 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    AfterSeconds: 0
+    ProbabilityLock: 
+    Probabilities: []
+    MidiChannel: 0
+    MidiNote: 0
+    OscAddr: 
 --- !u!114 &114678673541409792
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -472,6 +471,7 @@ MonoBehaviour:
   useInvSqr: 1
   near: 1
   far: 200
+  volumetricRadius: 0
   enableRfl: 0
 --- !u!222 &222179837221937686
 CanvasRenderer:

@@ -118,7 +118,7 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public int version
 		{
 			get;
@@ -181,8 +181,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
 		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
 		public string platform
 		{
 			get;

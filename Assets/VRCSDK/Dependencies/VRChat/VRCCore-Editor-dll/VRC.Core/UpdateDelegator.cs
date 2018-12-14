@@ -2,30 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityEngine;
 
 namespace VRC.Core
 {
 	[ExecuteInEditMode]
-	internal sealed class UpdateDelegator : MonoBehaviour
+	[InitializeOnLoad]
+	public sealed class UpdateDelegator : MonoBehaviour
 	{
 		private static int? spawnedThreadID;
 
-		private readonly object _queueLock = new object();
+		private static readonly object _queueLock;
 
-		private Queue<Action> _jobQueue = new Queue<Action>();
+		private static Queue<Action> _jobQueue;
 
-		public static UpdateDelegator Instance
-		{
-			get;
-			private set;
-		}
-
-		public static bool IsCreated
-		{
-			get;
-			private set;
-		}
+		private static UpdateDelegator Instance;
 
 		public static bool IsMainThread => spawnedThreadID.HasValue && Thread.CurrentThread.ManagedThreadId == spawnedThreadID;
 
@@ -34,69 +26,104 @@ namespace VRC.Core
 		{
 		}
 
-		public unsafe static void CheckInstance()
+		static UpdateDelegator()
 		{
-			//IL_0041: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0047: Expected O, but got Unknown
-			//IL_008e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0098: Expected O, but got Unknown
-			//IL_0098: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00a2: Expected O, but got Unknown
-			//IL_00b2: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00bc: Expected O, but got Unknown
-			//IL_00bc: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00c6: Expected O, but got Unknown
-			//IL_00d6: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00e0: Expected O, but got Unknown
-			//IL_00e0: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00ea: Expected O, but got Unknown
-			//IL_00fa: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0104: Expected O, but got Unknown
-			//IL_0104: Unknown result type (might be due to invalid IL or missing references)
-			//IL_010e: Expected O, but got Unknown
-			try
+			_queueLock = new object();
+			_jobQueue = new Queue<Action>();
+			SetupCallbacks();
+		}
+
+		public static void Initialize()
+		{
+			CheckInstance();
+		}
+
+		[DidReloadScripts(int.MaxValue)]
+		private static void DidReloadScripts()
+		{
+			SetupCallbacks();
+		}
+
+		private unsafe static void SetupCallbacks()
+		{
+			//IL_000c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0016: Expected O, but got Unknown
+			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0020: Expected O, but got Unknown
+			//IL_002c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0036: Expected O, but got Unknown
+			//IL_0036: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0040: Expected O, but got Unknown
+			EditorApplication.update = Delegate.Remove((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)null, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
+			EditorApplication.update = Delegate.Combine((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)null, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
+		}
+
+		private static void EditorUpdate()
+		{
+			CheckInstance();
+			if (Instance != null && !EditorApplication.get_isPlaying())
 			{
-				if (!IsCreated)
+				Instance.Update();
+			}
+		}
+
+		private void Awake()
+		{
+			spawnedThreadID = Thread.CurrentThread.ManagedThreadId;
+			OnEnable();
+		}
+
+		private void OnEnable()
+		{
+			if (!(Instance == this))
+			{
+				if (Instance != null)
 				{
-					GameObject val = GameObject.Find("Update Delegator");
-					if (val != null)
-					{
-						Instance = val.GetComponent<UpdateDelegator>();
-					}
-					if (Instance == null)
-					{
-						val = new GameObject("Update Delegator");
-						val.set_hideFlags(61);
-						Instance = val.AddComponent<UpdateDelegator>();
-					}
+					Debug.LogError((object)"Two delegators in existence.");
+					Object.Destroy(this);
+				}
+				else
+				{
 					spawnedThreadID = Thread.CurrentThread.ManagedThreadId;
-					IsCreated = true;
-					if (!EditorApplication.get_isPlaying())
-					{
-						EditorApplication.update = Delegate.Remove((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)Instance, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-						EditorApplication.update = Delegate.Combine((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)Instance, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-					}
-					EditorApplication.playmodeStateChanged = Delegate.Remove((Delegate)EditorApplication.playmodeStateChanged, (Delegate)new CallbackFunction((object)Instance, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-					EditorApplication.playmodeStateChanged = Delegate.Combine((Delegate)EditorApplication.playmodeStateChanged, (Delegate)new CallbackFunction((object)Instance, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
+					Instance = this;
 				}
 			}
-			catch (Exception ex)
+		}
+
+		private static void CheckInstance()
+		{
+			//IL_0030: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0036: Expected O, but got Unknown
+			if (!(Instance != null))
 			{
-				Debug.LogError((object)"UpdateDelegator: CheckInstance: Exception:");
-				Debug.LogException(ex);
+				try
+				{
+					Instance = Object.FindObjectOfType<UpdateDelegator>();
+					if (Instance == null)
+					{
+						GameObject val = new GameObject("Update Delegator");
+						val.set_hideFlags(61);
+						val.AddComponent<UpdateDelegator>();
+					}
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError((object)("Exception in UpdateDelegator.CheckInstance: " + ex.ToString()));
+					throw;
+					IL_0062:;
+				}
 			}
 		}
 
 		public static void Dispatch(Action job)
 		{
-			CheckInstance();
-			Instance.QueueJobInternal(job);
-		}
-
-		private void QueueJobInternal(Action job)
-		{
-			if (job != null)
+			if (job == null)
 			{
+				Debug.LogError((object)"Ignoring NULL job");
+			}
+			else
+			{
+				CheckInstance();
 				lock (_queueLock)
 				{
 					_jobQueue.Enqueue(job);
@@ -104,7 +131,7 @@ namespace VRC.Core
 			}
 		}
 
-		private void OnUpdate()
+		private void Update()
 		{
 			try
 			{
@@ -117,60 +144,12 @@ namespace VRC.Core
 					}
 					action = _jobQueue.Dequeue();
 				}
-				action();
+				action?.Invoke();
 			}
 			catch (Exception ex)
 			{
 				Debug.LogError((object)"Exception in UpdateDelegator job:");
 				Debug.LogException(ex);
-			}
-		}
-
-		private void Update()
-		{
-			OnUpdate();
-		}
-
-		private unsafe void OnPlayModeStateChanged()
-		{
-			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0020: Expected O, but got Unknown
-			//IL_0020: Unknown result type (might be due to invalid IL or missing references)
-			//IL_002a: Expected O, but got Unknown
-			//IL_0045: Unknown result type (might be due to invalid IL or missing references)
-			//IL_004f: Expected O, but got Unknown
-			//IL_004f: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0059: Expected O, but got Unknown
-			if (EditorApplication.get_isPlaying())
-			{
-				EditorApplication.update = Delegate.Remove((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-			}
-			else if (!EditorApplication.get_isPlaying())
-			{
-				EditorApplication.update = Delegate.Combine((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-			}
-		}
-
-		private void OnDisable()
-		{
-			OnApplicationQuit();
-		}
-
-		private unsafe void OnApplicationQuit()
-		{
-			//IL_001d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0027: Expected O, but got Unknown
-			//IL_0027: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0031: Expected O, but got Unknown
-			//IL_003d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0047: Expected O, but got Unknown
-			//IL_0047: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0051: Expected O, but got Unknown
-			if (IsCreated)
-			{
-				IsCreated = false;
-				EditorApplication.update = Delegate.Remove((Delegate)EditorApplication.update, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
-				EditorApplication.playmodeStateChanged = Delegate.Remove((Delegate)EditorApplication.playmodeStateChanged, (Delegate)new CallbackFunction((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 			}
 		}
 	}

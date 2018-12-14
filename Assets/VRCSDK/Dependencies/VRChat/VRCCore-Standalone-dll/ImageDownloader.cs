@@ -113,7 +113,7 @@ public class ImageDownloader : MonoBehaviour
 								DownloadFallbackOrUseErrorImage(fallbackImageUrl, onImageDownload);
 							}
 						};
-						if (response.Data == null)
+						if (response != null && response.Data == null)
 						{
 							downloadingImages.Remove(imageUrl);
 							HTTPCacheService.DeleteEntity(request.CurrentUri);
@@ -122,7 +122,7 @@ public class ImageDownloader : MonoBehaviour
 								DownloadImage(imageUrl, onImageDownload, fallbackImageUrl, isRetry: true);
 							}
 						}
-						else
+						else if (imageDownloaderQueue != null)
 						{
 							imageDownloaderQueue.QueueImageLoad(loadImage2);
 						}

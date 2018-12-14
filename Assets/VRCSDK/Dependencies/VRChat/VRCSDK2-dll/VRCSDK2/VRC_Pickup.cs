@@ -154,13 +154,17 @@ namespace VRCSDK2
 		{
 			if (ForceDrop != null && currentPlayer != null)
 			{
-				if (currentPlayer.playerId == instigator)
+				if (currentPlayer.playerId == instigator || instigator <= 0)
 				{
 					ForceDrop(this);
 				}
 				else
 				{
-					Debug.LogError((object)"Cannot Drop. Instigator != Owner");
+					Debug.LogErrorFormat("Cannot Drop. Instigator {0} != Owner {1}", new object[2]
+					{
+						instigator,
+						currentPlayer.playerId
+					});
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -23,19 +24,129 @@ namespace VRC.Core
 			Moderator
 		}
 
-		public const float FriendsListCacheTime = 60f;
+		public enum UserStatus
+		{
+			Active,
+			JoinMe,
+			Busy,
+			Offline
+		}
+
+		public enum FriendGroups
+		{
+			Group_1,
+			Group_2,
+			Group_3,
+			MAX_GROUPS
+		}
+
+		public const float FriendsListCacheTime = 10f;
 
 		public const float SingleRecordCacheTime = 60f;
 
 		public const float SearchCacheTime = 60f;
 
+		private const int MAX_STATUS_DESCRIPTION_LENGTH = 32;
+
 		public bool hasFetchedFavoriteWorlds;
 
 		private List<string> _favoriteWorldIds;
 
-		public bool hasFetchedFavoriteFriends;
+		public bool[] hasFetchedFavoriteFriendsInGroup = new bool[3];
 
-		private List<string> _favoriteFriendIds;
+		private List<string>[] _favoriteFriendIdsInGroup = new List<string>[3];
+
+		private static Hashtable statusDefaultDescriptions = new Hashtable
+		{
+			{
+				UserStatus.Active,
+				"Active"
+			},
+			{
+				UserStatus.JoinMe,
+				"Join Me"
+			},
+			{
+				UserStatus.Busy,
+				"Busy"
+			},
+			{
+				UserStatus.Offline,
+				"Offline"
+			}
+		};
+
+		private static Hashtable friendGroupApiNames = new Hashtable
+		{
+			{
+				FriendGroups.Group_1,
+				"group_0"
+			},
+			{
+				FriendGroups.Group_2,
+				"group_1"
+			},
+			{
+				FriendGroups.Group_3,
+				"group_2"
+			}
+		};
+
+		private static Hashtable friendGroupStringToValueTable = new Hashtable
+		{
+			{
+				"group_0",
+				FriendGroups.Group_1
+			},
+			{
+				"group_1",
+				FriendGroups.Group_2
+			},
+			{
+				"group_2",
+				FriendGroups.Group_3
+			}
+		};
+
+		private static Hashtable statusValueToStringTable = new Hashtable
+		{
+			{
+				UserStatus.Active,
+				"active"
+			},
+			{
+				UserStatus.JoinMe,
+				"join me"
+			},
+			{
+				UserStatus.Busy,
+				"busy"
+			},
+			{
+				UserStatus.Offline,
+				"offline"
+			}
+		};
+
+		private static Hashtable statusStringToValueTable = new Hashtable
+		{
+			{
+				"active",
+				UserStatus.Active
+			},
+			{
+				"join me",
+				UserStatus.JoinMe
+			},
+			{
+				"busy",
+				UserStatus.Busy
+			},
+			{
+				"offline",
+				UserStatus.Offline
+			}
+		};
 
 		[ApiField(Required = false)]
 		public string blob
@@ -131,6 +242,20 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public bool emailVerified
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public bool hasPendingEmail
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public string obfuscatedPendingEmail
 		{
 			get;
 			protected set;
@@ -290,6 +415,27 @@ namespace VRC.Core
 			protected set;
 		}
 
+		[ApiField(Required = false)]
+		public string status
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string statusDescription
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public List<string> friendGroupNames
+		{
+			get;
+			protected set;
+		}
+
 		public List<string> favoriteWorldIds
 		{
 			get
@@ -303,22 +449,6 @@ namespace VRC.Core
 			set
 			{
 				_favoriteWorldIds = value;
-			}
-		}
-
-		public List<string> favoriteFriendIds
-		{
-			get
-			{
-				if (_favoriteFriendIds == null)
-				{
-					_favoriteFriendIds = new List<string>();
-				}
-				return _favoriteFriendIds;
-			}
-			set
-			{
-				_favoriteFriendIds = value;
 			}
 		}
 
@@ -341,6 +471,33 @@ namespace VRC.Core
 		public bool canPublishWorlds => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_world_access") || RemoteConfig.GetBool("disableAvatarGating"));
 
 		public bool hasBasicTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_basic"));
+
+		public bool canSetStatusOffline => isAccountVerified && (developerType == DeveloperType.Moderator || developerType == DeveloperType.Internal);
+
+		public bool statusIsSetToOffline => string.Equals(status, StatusValueToString(UserStatus.Offline));
+
+		public bool statusIsSetToJoinMe => string.Equals(status, StatusValueToString(UserStatus.JoinMe));
+
+		public bool statusIsSetToBusy => string.Equals(status, StatusValueToString(UserStatus.Busy));
+
+		public string statusDefaultDescriptionDisplayString => (string)statusDefaultDescriptions[statusValue];
+
+		public string statusDescriptionDisplayString => (string.IsNullOrEmpty(statusDescription) || !(location != "offline")) ? statusDefaultDescriptionDisplayString : truncatedStatusDescription(statusDescription);
+
+		public UserStatus statusValue
+		{
+			get
+			{
+				UserStatus result = (UserStatus)((status != null) ? ((int)statusStringToValueTable[status]) : 0);
+				if (location == "offline")
+				{
+					result = UserStatus.Offline;
+				}
+				return result;
+			}
+		}
+
+		public bool canSeeAllUsersStatus => isAccountVerified && (developerType == DeveloperType.Moderator || developerType == DeveloperType.Internal);
 
 		public static bool IsLoggedIn => CurrentUser != null;
 
@@ -365,6 +522,86 @@ namespace VRC.Core
 		public override float GetLifeSpan()
 		{
 			return 60f;
+		}
+
+		public List<string> GetFavoriteFriendIdsInGroup(FriendGroups group)
+		{
+			return _favoriteFriendIdsInGroup[(int)group];
+		}
+
+		public void SetFavoriteFriendIdsInGroup(List<string> friendIds, FriendGroups group)
+		{
+			_favoriteFriendIdsInGroup[(int)group] = friendIds;
+		}
+
+		public void AddToFavoriteFriendsGroup(string userId, FriendGroups group)
+		{
+			_favoriteFriendIdsInGroup[(int)group].Add(userId);
+		}
+
+		public void RemoveFromFavoriteFriendsGroups(string userId)
+		{
+			_favoriteFriendIdsInGroup[0].Remove(userId);
+			_favoriteFriendIdsInGroup[1].Remove(userId);
+			_favoriteFriendIdsInGroup[2].Remove(userId);
+		}
+
+		public bool IsFavorite(string userId)
+		{
+			return (_favoriteFriendIdsInGroup[0] != null && _favoriteFriendIdsInGroup[0].Contains(userId)) || (_favoriteFriendIdsInGroup[1] != null && _favoriteFriendIdsInGroup[1].Contains(userId)) || (_favoriteFriendIdsInGroup[2] != null && _favoriteFriendIdsInGroup[2].Contains(userId));
+		}
+
+		public int GetTotalFavoriteFriendsInGroup(FriendGroups group)
+		{
+			return _favoriteFriendIdsInGroup[(int)group].Count;
+		}
+
+		public int GetTotalFavoriteFriendsInAllGroups()
+		{
+			return ((_favoriteFriendIdsInGroup[0] != null) ? _favoriteFriendIdsInGroup[0].Count : 0) + ((_favoriteFriendIdsInGroup[1] != null) ? _favoriteFriendIdsInGroup[1].Count : 0) + ((_favoriteFriendIdsInGroup[2] != null) ? _favoriteFriendIdsInGroup[2].Count : 0);
+		}
+
+		public static string truncatedStatusDescription(string statusString)
+		{
+			return string.IsNullOrEmpty(statusString) ? string.Empty : ((statusString.Length <= 32) ? statusString : statusString.Substring(0, 32));
+		}
+
+		public static string GetFriendsGroupName(FriendGroups index)
+		{
+			if (index < FriendGroups.MAX_GROUPS && (int)index < friendGroupApiNames.Count)
+			{
+				return (string)friendGroupApiNames[index];
+			}
+			return null;
+		}
+
+		public string GetFriendsGroupDisplayName(int index)
+		{
+			if (friendGroupNames != null && index < 3 && index < friendGroupNames.Count && !string.IsNullOrEmpty(friendGroupNames[index]))
+			{
+				return friendGroupNames[index];
+			}
+			return "Group " + (index + 1);
+		}
+
+		public void SetFriendsGroupDisplayName(int index, string name)
+		{
+			if (friendGroupNames == null)
+			{
+				friendGroupNames = new List<string>();
+			}
+			if (index < friendGroupNames.Count)
+			{
+				friendGroupNames[index] = name;
+			}
+			else
+			{
+				while (friendGroupNames.Count < index)
+				{
+					friendGroupNames.Add("Group " + (friendGroupNames.Count + 1));
+				}
+				friendGroupNames.Add(name);
+			}
 		}
 
 		protected override bool ReadField(string fieldName, ref object data)
@@ -600,90 +837,92 @@ namespace VRC.Core
 			API.SendGetRequest("users?search=" + searchQuery, responseContainer, null, disableCache: false, 60f);
 		}
 
-		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, bool useCache = true)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary.Add("offset", offset);
 			dictionary.Add("n", count);
 			Dictionary<string, object> requestParams = dictionary;
-			List<APIUser> list = new List<APIUser>();
-			foreach (string friendID in CurrentUser.friendIDs)
+			if (useCache)
 			{
-				APIUser target = null;
-				if (!ApiCache.Fetch(friendID, ref target))
+				List<APIUser> list = new List<APIUser>();
+				foreach (string friendID in CurrentUser.friendIDs)
 				{
-					break;
+					APIUser target = new APIUser();
+					if (!ApiCache.Fetch(friendID, ref target))
+					{
+						break;
+					}
+					list.Add(target);
 				}
-				list.Add(target);
-			}
-			if (list.Count == CurrentUser.friendIDs.Count)
-			{
-				if (successCallback != null)
-				{
-					successCallback(list);
-				}
-			}
-			else
-			{
-				ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
-				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				if (list.Count == CurrentUser.friendIDs.Count)
 				{
 					if (successCallback != null)
 					{
-						successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
+						successCallback(list);
 					}
-				};
-				apiModelListContainer.OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				};
-				ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
-				API.SendGetRequest("auth/user/friends" + ((location != FriendLocation.Offline) ? string.Empty : "?offline=true"), responseContainer, requestParams, disableCache: false, 60f);
+					return;
+				}
 			}
+			ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
+				}
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
+			API.SendGetRequest("auth/user/friends" + ((location != FriendLocation.Offline) ? string.Empty : "?offline=true"), responseContainer, requestParams, disableCache: false, 10f);
 		}
 
-		public static void FetchFavoriteFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchFavoriteFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, string tag = null, bool bUseCache = true)
 		{
-			List<APIUser> list = new List<APIUser>();
-			foreach (string favoriteFriendId in CurrentUser.favoriteFriendIds)
+			if (bUseCache)
 			{
-				APIUser target = null;
-				if (!ApiCache.Fetch(favoriteFriendId, ref target))
+				List<APIUser> list = new List<APIUser>();
+				foreach (string item in CurrentUser.GetFavoriteFriendIdsInGroup((FriendGroups)(int)friendGroupStringToValueTable[tag]))
 				{
-					break;
+					APIUser target = new APIUser();
+					if (!ApiCache.Fetch(item, ref target))
+					{
+						break;
+					}
+					list.Add(target);
 				}
-				list.Add(target);
-			}
-			if (list.Count == CurrentUser.favoriteFriendIds.Count)
-			{
-				if (successCallback != null)
-				{
-					successCallback(list);
-				}
-			}
-			else
-			{
-				ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
-				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				if (list.Count == CurrentUser.GetFavoriteFriendIdsInGroup((FriendGroups)(int)friendGroupStringToValueTable[tag]).Count)
 				{
 					if (successCallback != null)
 					{
-						successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
+						successCallback(list);
 					}
-				};
-				apiModelListContainer.OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				};
-				ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
-				API.SendGetRequest("auth/user/friends/favorite", responseContainer, null, disableCache: true);
+					return;
+				}
 			}
+			ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
+				}
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
+			API.SendGetRequest("auth/user/friends/favorite" + ((tag == null) ? string.Empty : ("?tag=" + tag)), responseContainer, null, disableCache: true);
 		}
 
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
@@ -710,6 +949,35 @@ namespace VRC.Core
 		public static void AttemptVerification()
 		{
 			API.SendPostRequest("auth/user/resendEmail", new ApiContainer());
+		}
+
+		public static string StatusValueToString(UserStatus statusValue)
+		{
+			return (string)statusValueToStringTable[statusValue];
+		}
+
+		public void SetStatus(string status, string statusDescription, Action successCallback, Action<string> errorCallback)
+		{
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			dictionary["status"] = status;
+			dictionary["statusDescription"] = truncatedStatusDescription(statusDescription);
+			API.SendPutRequest("users/" + base.id, new ApiContainer
+			{
+				OnSuccess = delegate
+				{
+					if (successCallback != null)
+					{
+						successCallback();
+					}
+				},
+				OnError = delegate(ApiContainer c)
+				{
+					if (errorCallback != null)
+					{
+						errorCallback(c.Error);
+					}
+				}
+			}, dictionary);
 		}
 
 		public static void AcceptFriendRequest(string notificationId, Action successCallback, Action<string> errorCallback)
@@ -806,11 +1074,7 @@ namespace VRC.Core
 
 		public static bool IsFriendsWithAndHasFavorited(string userId)
 		{
-			if (CurrentUser != null && CurrentUser.favoriteFriendIds != null)
-			{
-				return CurrentUser.favoriteFriendIds.Any((string u) => u == userId);
-			}
-			return false;
+			return CurrentUser.IsFavorite(userId);
 		}
 
 		public static void FetchOnlineModerators(bool onCallOnly, Action<List<APIUser>> successCallback, Action<string> errorCallback)
@@ -878,7 +1142,7 @@ namespace VRC.Core
 
 		public override string ToString()
 		{
-			return $"[id: {base.id}; username: {username}; displayName: {displayName}; avatarId: {avatarId}; events: {events}]";
+			return string.Format("[id: {0}; username: {1}; displayName: {2}; avatarId: {3}; events: {4}; status: {5}; statusDescription: {6};]", base.id, username, displayName, avatarId, events, (!string.IsNullOrEmpty(status)) ? status : "NULL", (!string.IsNullOrEmpty(statusDescription)) ? statusDescription : "NULL");
 		}
 	}
 }

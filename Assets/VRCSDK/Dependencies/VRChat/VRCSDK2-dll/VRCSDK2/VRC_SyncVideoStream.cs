@@ -16,6 +16,14 @@ namespace VRCSDK2
 		}
 
 		[Serializable]
+		public enum VideoTextureFormat
+		{
+			Byte,
+			Half,
+			Float
+		}
+
+		[Serializable]
 		public class VideoEntry
 		{
 			public VideoSource Source;
@@ -46,6 +54,11 @@ namespace VRCSDK2
 		public bool AllowNonOwnerControl = true;
 
 		public string VideoSearchRoot = "youtube.com";
+
+		[Tooltip("Maximum vertical resolution for a stream")]
+		public int MaxStreamQuality = 720;
+
+		public VideoTextureFormat videoTextureFormat;
 
 		public bool AutoStart;
 
@@ -78,6 +91,10 @@ namespace VRCSDK2
 		public static Action<VRC_SyncVideoStream, VideoSyncType> _SetSyncType;
 
 		public static Action<VRC_SyncVideoStream, float> _SetSyncMinutes;
+
+		public static Action<VRC_SyncVideoStream> _ShowSearch;
+
+		public static Action<VRC_SyncVideoStream, float> _SetMaxQuality;
 
 		public static Action<VRC_SyncVideoStream> Initialize;
 
@@ -263,6 +280,31 @@ namespace VRCSDK2
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Local
+		})]
+		public void ShowSearch()
+		{
+			if (_ShowSearch != null)
+			{
+				_ShowSearch(this);
+			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Local,
+			VRC_EventHandler.VrcTargetType.All
+		})]
+		public void SetMaxQuality(float quality)
+		{
+			if (_SetMaxQuality != null)
+			{
+				_SetMaxQuality(this, quality);
+			}
+		}
+
 		private void Awake()
 		{
 			if (Initialize != null)
@@ -390,6 +432,28 @@ namespace VRCSDK2
 				EventType = VRC_EventHandler.VrcEventType.SendRPC,
 				ParameterInt = 2,
 				ParameterString = "SetSyncMinutes",
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				}
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "Show Search",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 2,
+				ParameterString = "ShowSearch",
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				}
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "Set Max Quality",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 2,
+				ParameterString = "SetMaxQuality",
 				ParameterObjects = (GameObject[])new GameObject[1]
 				{
 					this.get_gameObject()

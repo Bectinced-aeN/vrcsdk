@@ -38,6 +38,9 @@ namespace VRCSDK2
 
 		public string VideoSearchRoot = "youtube.com";
 
+		[Tooltip("Maximum vertical resolution for a stream")]
+		public int MaxStreamQuality = 720;
+
 		public VideoEntry[] Videos = new VideoEntry[1];
 
 		public static Action<VRC_SyncVideoPlayer> _Play;
@@ -61,6 +64,8 @@ namespace VRCSDK2
 		public static Action<VRC_SyncVideoPlayer> _SpeedUp;
 
 		public static Action<VRC_SyncVideoPlayer> _SpeedDown;
+
+		public static Action<VRC_SyncVideoPlayer, float> _SetMaxQuality;
 
 		public static Action<VRC_SyncVideoPlayer> Initialize;
 
@@ -208,6 +213,19 @@ namespace VRCSDK2
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Local,
+			VRC_EventHandler.VrcTargetType.All
+		})]
+		public void SetMaxQuality(float quality)
+		{
+			if (_SetMaxQuality != null)
+			{
+				_SetMaxQuality(this, quality);
+			}
+		}
+
 		private void Awake()
 		{
 			if (Initialize != null)
@@ -302,6 +320,17 @@ namespace VRCSDK2
 				EventType = VRC_EventHandler.VrcEventType.SendRPC,
 				ParameterInt = 2,
 				ParameterString = "SpeedDown",
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				}
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "Set Max Quality",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 2,
+				ParameterString = "SetMaxQuality",
 				ParameterObjects = (GameObject[])new GameObject[1]
 				{
 					this.get_gameObject()
