@@ -16,7 +16,7 @@ namespace VRCSDK2
 		public GameObject interactTextGO;
 
 		[Range(0f, 100f)]
-		public float proximity = 3.40282347E+38f;
+		public float proximity = 2f;
 
 		public static InitializationDelegate Initialize;
 

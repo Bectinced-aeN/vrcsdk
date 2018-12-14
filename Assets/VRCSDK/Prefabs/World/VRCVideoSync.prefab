@@ -296,12 +296,38 @@ MonoBehaviour:
   m_Script: {fileID: 1502726341, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AllowNonOwnerControl: 1
   Videos:
   - Source: 1
     AspectRatio: 3
     PlaybackSpeed: 1
     VideoClip: {fileID: 0}
-    URL: 0
+    URL: https://archive.org/download/FantasticPlanetTrailer/FantasticPlanetTrailer.mp4
+  - Source: 1
+    AspectRatio: 3
+    PlaybackSpeed: 1
+    VideoClip: {fileID: 0}
+    URL: https://archive.org/download/BananasTrailer_733/BananasTrailer.mp4
+  - Source: 1
+    AspectRatio: 3
+    PlaybackSpeed: 1
+    VideoClip: {fileID: 0}
+    URL: https://archive.org/download/RevengeOfTheCreatureTrailer/RevengeOfTheCreatureTrailer.mp4
+  - Source: 1
+    AspectRatio: 3
+    PlaybackSpeed: 1
+    VideoClip: {fileID: 0}
+    URL: https://archive.org/download/ThePrincessBrideTrailer/ThePrincessBrideTrailer.mp4
+  - Source: 1
+    AspectRatio: 3
+    PlaybackSpeed: 1
+    VideoClip: {fileID: 0}
+    URL: https://www.youtube.com/watch?v=tDtt8qMgkGU
+  - Source: 0
+    AspectRatio: 3
+    PlaybackSpeed: 1
+    VideoClip: {fileID: 32900000, guid: cf2cae1283c689c47b4aa9a8cf6387bb, type: 3}
+    URL: https://www.youtube.com/watch?v=tDtt8qMgkGU
 --- !u!114 &114274508091955466
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -561,7 +587,7 @@ VideoPlayer:
   m_EnabledAudioTracks: 01
   m_DirectAudioMutes: 00
   m_ControlledAudioTrackCount: 1
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_SkipOnDrop: 1
   m_Looping: 0
   m_WaitForFirstFrame: 1

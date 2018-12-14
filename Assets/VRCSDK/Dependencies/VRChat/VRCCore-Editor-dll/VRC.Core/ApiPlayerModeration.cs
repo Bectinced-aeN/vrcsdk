@@ -77,7 +77,7 @@ namespace VRC.Core
 			dictionary["moderated"] = targetUserId.ToString();
 			ApiModel.SendPostRequest("auth/user/playermoderations", dictionary, delegate(Dictionary<string, object> obj)
 			{
-				ApiPlayerModeration apiPlayerModeration = ScriptableObject.CreateInstance<ApiPlayerModeration>();
+				ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
 				apiPlayerModeration.Init(obj);
 				if (successCallback != null)
 				{
@@ -106,7 +106,7 @@ namespace VRC.Core
 				{
 					errorCallback(obj);
 				}
-			});
+			}, needsAPIKey: true, authenticationRequired: true, -1f);
 		}
 
 		public static void FetchAllAgainstMe(Action<List<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
@@ -129,7 +129,7 @@ namespace VRC.Core
 					foreach (object @object in objects)
 					{
 						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						ApiPlayerModeration apiPlayerModeration = ScriptableObject.CreateInstance<ApiPlayerModeration>();
+						ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
 						apiPlayerModeration.Init(jsonObject);
 						list.Add(apiPlayerModeration);
 					}

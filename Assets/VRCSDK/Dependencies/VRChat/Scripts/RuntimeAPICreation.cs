@@ -14,7 +14,6 @@ namespace VRCSDK2
         public VRC.Core.PipelineManager pipelineManager;
 
         protected bool forceNewFileCreation = false;
-        protected bool useFileApi = true;
 
         protected bool isUploading = false;
         protected float uploadProgress = 0f;
@@ -36,7 +35,7 @@ namespace VRCSDK2
 
         private Dictionary<string, string> mRetryState = new Dictionary<string, string>();
 
-        protected bool isUpdate { get { return !string.IsNullOrEmpty(pipelineManager.blueprintId); } }
+        protected bool isUpdate { get { return pipelineManager.completedSDKPipeline; } }
 
 #if UNITY_EDITOR
         protected void Start()
@@ -52,8 +51,7 @@ namespace VRCSDK2
 
             LoadUploadRetryStateFromCache();
 
-            forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false);
-            useFileApi = IsUsingDevAPI() && UnityEditor.EditorPrefs.GetBool("useFileApi", true);
+            forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", true);
         }
 
         protected void Update()
@@ -66,11 +64,6 @@ namespace VRCSDK2
                     cancelRequested = true;
                 }
             }
-        }
-
-        protected bool IsUsingDevAPI()
-        {
-            return ApiModel.GetApiUrl() == ApiModel.devApiUrl;
         }
 
         protected void LoadUploadRetryStateFromCache()
@@ -216,7 +209,7 @@ namespace VRCSDK2
         protected void PrepareUnityPackageForS3(string packagePath, string blueprintId, int version, AssetVersion assetVersion)
         {
             uploadUnityPackagePath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + ApiModel.GetAssetPlatformString() +
-                (IsUsingDevAPI() ? "_dev" : "_release") + ".unitypackage";
+                "_" + ApiModel.GetServerEnvironmentForApiUrl() + ".unitypackage";
             uploadUnityPackagePath.Trim();
             uploadUnityPackagePath.Replace(' ', '_');
 
@@ -228,7 +221,7 @@ namespace VRCSDK2
 
         protected void PrepareVRCPathForS3(string abPath, string blueprintId, int version, AssetVersion assetVersion)
         {
-            uploadVrcPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + ApiModel.GetAssetPlatformString() + (IsUsingDevAPI() ? "_dev" : "_release") + System.IO.Path.GetExtension(abPath);
+            uploadVrcPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + ApiModel.GetAssetPlatformString() + "_" + ApiModel.GetServerEnvironmentForApiUrl() + System.IO.Path.GetExtension(abPath);
             uploadVrcPath.Trim();
             uploadVrcPath.Replace(' ', '_');
 
@@ -240,7 +233,7 @@ namespace VRCSDK2
 
         protected void PreparePluginPathForS3(string pluginPath, string blueprintId, int version, AssetVersion assetVersion)
         {
-            uploadPluginPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + ApiModel.GetAssetPlatformString() + (IsUsingDevAPI() ? "_dev" : "_release") + ".dll";
+            uploadPluginPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + ApiModel.GetAssetPlatformString() + "_" + ApiModel.GetServerEnvironmentForApiUrl() + ".dll";
             uploadPluginPath.Trim();
             uploadPluginPath.Replace(' ', '_');
 
@@ -378,22 +371,15 @@ namespace VRCSDK2
         protected IEnumerator UpdateImage(string existingFileUrl, string friendlyFileName)
         {
             string imagePath = imageCapture.TakePicture();
-
-            if (useFileApi)
+            
+            if (!string.IsNullOrEmpty(imagePath))
             {
-                if (!string.IsNullOrEmpty(imagePath))
-                {
-                    yield return StartCoroutine(UploadFile(imagePath, existingFileUrl, friendlyFileName, "Image",
-                        delegate (string fileUrl)
-                        {
-                            cloudFrontImageUrl = fileUrl;
-                        }
-                    ));
-                }
-            }
-            else
-            {
-                yield return StartCoroutine(UploadImage());
+                yield return StartCoroutine(UploadFile(imagePath, existingFileUrl, friendlyFileName, "Image",
+                    delegate (string fileUrl)
+                    {
+                        cloudFrontImageUrl = fileUrl;
+                    }
+                ));
             }
         }
 

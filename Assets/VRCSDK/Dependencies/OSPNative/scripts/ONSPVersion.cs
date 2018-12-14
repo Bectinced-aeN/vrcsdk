@@ -20,12 +20,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ************************************************************************************/
-
-#if UNITY_5 && !UNITY_5_0 && !UNITY_5_1
-// The spatialization API is only supported by the final Unity 5.2 version and newer.
-// If you get script compile errors in this file, comment out the line below.
-#define ENABLE_SPATIALIZER_API
-#endif
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
@@ -43,10 +37,6 @@ public class ONSPVersion : MonoBehaviour
 	/// </summary>
 	void Awake()
 	{
-
-#if !ENABLE_SPATIALIZER_API 
-    Debug.LogWarning ("ONSPVersion Warning: Please use Unity 5.2x or higher to use native Oculus spatializer." );
-#endif
         int major = 0;
         int minor = 0; 
         int patch = 0;

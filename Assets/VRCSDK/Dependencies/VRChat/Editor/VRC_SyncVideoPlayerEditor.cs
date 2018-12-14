@@ -33,7 +33,7 @@ public class CustomVideoEntryDrawer : PropertyDrawer
         float y = rect.y;
         float w = rect.width;
         float h = EditorGUI.GetPropertyHeight(source, new GUIContent("Source"), true) + EditorGUIUtility.standardVerticalSpacing;
-        EditorGUI.PropertyField(new Rect(x, y, w, h), source);
+        VRCSDK2.VRC_EditorTools.FilteredEnumPopup<UnityEngine.Video.VideoSource>(new Rect(x, y, w, h), source, (e) => e == UnityEngine.Video.VideoSource.Url);
         y += h;
 
         if (source.enumValueIndex == (int)UnityEngine.Video.VideoSource.Url)
@@ -70,9 +70,11 @@ public class SyncVideoPlayerEditor : Editor
     {
         SerializedProperty videos = serializedObject.FindProperty("Videos");
 
-        if (videos.arraySize <= 0) videos.arraySize = 1;
+        videos.arraySize = EditorGUILayout.DelayedIntField("Playlist Count", videos.arraySize);
 
-        videos.arraySize = EditorGUILayout.IntField("Video Count", videos.arraySize);
+        if (videos.arraySize <= 0)
+            return;
+
         for (int idx = 0; idx < videos.arraySize; ++idx)
         {
             EditorGUILayout.PropertyField(videos.GetArrayElementAtIndex(idx));

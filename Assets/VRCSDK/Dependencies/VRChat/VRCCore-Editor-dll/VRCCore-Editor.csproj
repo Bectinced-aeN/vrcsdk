@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{E23D66B8-9DCC-4108-A2FD-6175D64E696E}</ProjectGuid>
+    <ProjectGuid>{17CC52E1-775C-4884-986F-DC729CF691E0}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -37,6 +37,12 @@
     <Reference Include="UnityEditor" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AmplitudeSDKWrapper\AmplitudeWrapper.cs" />
+    <Compile Include="AmplitudeSDKWrapper\DatabaseHelper.cs" />
+    <Compile Include="AmplitudeSDKWrapper\DeviceInfo.cs" />
+    <Compile Include="AmplitudeSDKWrapper\Event.cs" />
+    <Compile Include="AmplitudeSDKWrapper\LimitedConcurrencyLevelTaskScheduler.cs" />
+    <Compile Include="AmplitudeSDKWrapper\Settings.cs" />
     <Compile Include="AuthenticationSample.cs" />
     <Compile Include="BaseHub.cs" />
     <Compile Include="CameraImageCapture.cs" />
@@ -786,6 +792,29 @@
     <Compile Include="SimpleStreamingSample.cs" />
     <Compile Include="SocketIOChatSample.cs" />
     <Compile Include="SocketIOWePlaySample.cs" />
+    <Compile Include="SQLite\AutoIncrementAttribute.cs" />
+    <Compile Include="SQLite\BaseTableQuery.cs" />
+    <Compile Include="SQLite\CollationAttribute.cs" />
+    <Compile Include="SQLite\ColumnAttribute.cs" />
+    <Compile Include="SQLite\CreateFlags.cs" />
+    <Compile Include="SQLite\IgnoreAttribute.cs" />
+    <Compile Include="SQLite\IndexedAttribute.cs" />
+    <Compile Include="SQLite\MaxLengthAttribute.cs" />
+    <Compile Include="SQLite\NotNullAttribute.cs" />
+    <Compile Include="SQLite\NotNullConstraintViolationException.cs" />
+    <Compile Include="SQLite\Orm.cs" />
+    <Compile Include="SQLite\PreparedSqlLiteInsertCommand.cs" />
+    <Compile Include="SQLite\PrimaryKeyAttribute.cs" />
+    <Compile Include="SQLite\SQLite3.cs" />
+    <Compile Include="SQLite\SQLiteCommand.cs" />
+    <Compile Include="SQLite\SQLiteConnection.cs" />
+    <Compile Include="SQLite\SQLiteConnectionString.cs" />
+    <Compile Include="SQLite\SQLiteException.cs" />
+    <Compile Include="SQLite\SQLiteOpenFlags.cs" />
+    <Compile Include="SQLite\TableAttribute.cs" />
+    <Compile Include="SQLite\TableMapping.cs" />
+    <Compile Include="SQLite\TableQuery.cs" />
+    <Compile Include="SQLite\UniqueAttribute.cs" />
     <Compile Include="TypedDemoHub.cs" />
     <Compile Include="UpdateLayers.cs" />
     <Compile Include="UploadStream.cs" />
@@ -974,8 +1003,11 @@
     <Compile Include="VRC.Core.BestHTTP\OnUploadProgressDelegate.cs" />
     <Compile Include="VRC.Core.BestHTTP\StreamList.cs" />
     <Compile Include="VRC.Core.BestHTTP\SupportedProtocols.cs" />
+    <Compile Include="VRC.Core\AnalyticsInterface.cs" />
+    <Compile Include="VRC.Core\AnalyticsSDK.cs" />
     <Compile Include="VRC.Core\ApiAnalyticEvent.cs" />
     <Compile Include="VRC.Core\ApiAvatar.cs" />
+    <Compile Include="VRC.Core\ApiCachedResponse.cs" />
     <Compile Include="VRC.Core\ApiCredentials.cs" />
     <Compile Include="VRC.Core\ApiFile.cs" />
     <Compile Include="VRC.Core\ApiModel.cs" />
@@ -983,6 +1015,7 @@
     <Compile Include="VRC.Core\ApiNotification.cs" />
     <Compile Include="VRC.Core\ApiPlayerModeration.cs" />
     <Compile Include="VRC.Core\APIResponseHandler.cs" />
+    <Compile Include="VRC.Core\ApiServerEnvironment.cs" />
     <Compile Include="VRC.Core\APIUser.cs" />
     <Compile Include="VRC.Core\ApiWorld.cs" />
     <Compile Include="VRC.Core\AssetVersion.cs" />
@@ -992,6 +1025,7 @@
     <Compile Include="VRC.Core\PipelineManager.cs" />
     <Compile Include="VRC.Core\RemoteConfig.cs" />
     <Compile Include="VRC.Core\SDKClientUtilities.cs" />
+    <Compile Include="VRC.Core\ThreadDispatcher.cs" />
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCPipelineManagerEditor.cs" />
     <Compile Include="VRCProjectSettings.cs" />

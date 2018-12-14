@@ -20,6 +20,13 @@ namespace VRC.Core
 			Descending
 		}
 
+		public enum ReleaseStatus
+		{
+			Public,
+			Private,
+			All
+		}
+
 		public enum Owner
 		{
 			Public,
@@ -30,9 +37,9 @@ namespace VRC.Core
 
 		private static AssetVersion _VERSION = null;
 
-		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.3.4p1", 0);
+		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.5.0f1", 0);
 
-		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.3.4p1", 0);
+		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.6.3p1", 0);
 
 		protected string mName;
 
@@ -45,6 +52,8 @@ namespace VRC.Core
 		protected string mAssetUrl;
 
 		protected string mDescription;
+
+		protected string mReleaseStatus;
 
 		protected List<string> mTags = new List<string>();
 
@@ -134,6 +143,18 @@ namespace VRC.Core
 			}
 		}
 
+		public string releaseStatus
+		{
+			get
+			{
+				return mReleaseStatus;
+			}
+			set
+			{
+				mReleaseStatus = value;
+			}
+		}
+
 		public List<string> tags
 		{
 			get
@@ -194,12 +215,13 @@ namespace VRC.Core
 			}
 		}
 
-		public void Init(APIUser author, string name, string imageUrl, string assetUrl, string description, List<string> tags, string packageUrl = "")
+		public void Init(APIUser author, string name, string imageUrl, string assetUrl, string description, string releaseStatus, List<string> tags, string packageUrl = "")
 		{
 			mName = name;
 			mImageUrl = imageUrl;
 			mAssetUrl = assetUrl;
 			mDescription = description;
+			mReleaseStatus = releaseStatus;
 			mTags = tags;
 			mAuthorName = author.displayName;
 			mAuthorId = author.id;
@@ -214,6 +236,7 @@ namespace VRC.Core
 			mImageUrl = string.Empty;
 			mAssetUrl = string.Empty;
 			mDescription = string.Empty;
+			mReleaseStatus = string.Empty;
 			mTags = new List<string>();
 			mAuthorName = string.Empty;
 			mAuthorId = string.Empty;
@@ -231,6 +254,7 @@ namespace VRC.Core
 			list.Add("authorId");
 			list.Add("assetUrl");
 			list.Add("description");
+			list.Add("releaseStatus");
 			list.Add("tags");
 			list.Add("version");
 			List<string> source = list;
@@ -253,6 +277,7 @@ namespace VRC.Core
 					mUnityPackageUrl = (jsonObject["unityPackageUrl"] as string);
 				}
 				mDescription = (jsonObject["description"] as string);
+				mReleaseStatus = (jsonObject["releaseStatus"] as string);
 				mTags = Tools.ObjListToStringList((List<object>)jsonObject["tags"]);
 				mVersion = (int)(double)jsonObject["version"];
 				if (jsonObject.ContainsKey("thumbnailImageUrl"))
@@ -297,6 +322,7 @@ namespace VRC.Core
 			dictionary["authorId"] = authorId;
 			dictionary["assetUrl"] = assetUrl;
 			dictionary["description"] = description;
+			dictionary["releaseStatus"] = releaseStatus;
 			dictionary["tags"] = string.Join(", ", tags.ToArray());
 			if (!string.IsNullOrEmpty(unityPackageUrl))
 			{
@@ -308,47 +334,52 @@ namespace VRC.Core
 			return dictionary;
 		}
 
-		public void Save(Action<ApiModel> onSuccess = null, Action<string> onError = null)
+		public void Save(bool overwrite, Action<ApiModel> onSuccess = null, Action<string> onError = null)
 		{
-			if (APIUser.IsLoggedInWithCredentials)
+			if (!APIUser.IsLoggedInWithCredentials)
+			{
+				Logger.Log("Must be logged in with account to create or edit a blueprint.");
+			}
+			else if (APIUser.CurrentUser.id != authorId)
+			{
+				Logger.LogError("Only the blueprint's author can update this blueprint.");
+			}
+			else
 			{
 				Dictionary<string, string> dictionary = BuildWebParameters();
-				if (mId != null)
+				dictionary["id"] = id;
+				if (overwrite)
 				{
-					if (APIUser.CurrentUser.id == authorId)
+					ApiModel.SendPutRequest("avatars/" + id, dictionary, delegate
 					{
-						dictionary["id"] = id;
-						ApiModel.SendPutRequest("avatars/" + id, dictionary, delegate
-						{
-							if (onSuccess != null)
-							{
-								onSuccess(this);
-							}
-						});
-					}
-					else
-					{
-						Logger.LogError("Only the blueprint's author can update this blueprint.");
-					}
-				}
-				else
-				{
-					ApiModel.SendPostRequest("avatars", dictionary, delegate(Dictionary<string, object> successResponse)
-					{
-						if (successResponse.ContainsKey("id"))
-						{
-							mId = (string)successResponse["id"];
-						}
 						if (onSuccess != null)
 						{
 							onSuccess(this);
 						}
+					}, delegate(string error)
+					{
+						if (onError != null)
+						{
+							onError(error);
+						}
 					});
 				}
-			}
-			else
-			{
-				Logger.Log("Must be logged in with account to create or edit a blueprint.");
+				else
+				{
+					ApiModel.SendPostRequest("avatars", dictionary, delegate
+					{
+						if (onSuccess != null)
+						{
+							onSuccess(this);
+						}
+					}, delegate(string error)
+					{
+						if (onError != null)
+						{
+							onError(error);
+						}
+					});
+				}
 			}
 		}
 
@@ -370,7 +401,7 @@ namespace VRC.Core
 			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
 			ApiModel.SendRequest("avatars/" + id, HTTPMethods.Get, dictionary, delegate(Dictionary<string, object> obj)
 			{
-				ApiAvatar apiAvatar = ScriptableObject.CreateInstance<ApiAvatar>();
+				ApiAvatar apiAvatar = new ApiAvatar();
 				apiAvatar.Init(obj);
 				if (successCallback != null)
 				{
@@ -379,7 +410,7 @@ namespace VRC.Core
 			}, delegate(string message)
 			{
 				errorCallback(message);
-			});
+			}, needsAPIKey: true, Application.get_isEditor(), 180f);
 		}
 
 		public void AssignToThisUser()
@@ -393,7 +424,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true)
+		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool bypassCache = false)
 		{
 			string endpoint = "avatars";
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
@@ -409,6 +440,7 @@ namespace VRC.Core
 			{
 				dictionary.Add("tag", "developer");
 			}
+			dictionary.Add("releaseStatus", relStatus.ToString().ToLower());
 			if (search != null)
 			{
 				dictionary.Add("search", search);
@@ -436,6 +468,11 @@ namespace VRC.Core
 				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
 			}
 			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
+			float cacheLifetime = 180f;
+			if (bypassCache)
+			{
+				cacheLifetime = 0f;
+			}
 			ApiModel.SendRequest(endpoint, HTTPMethods.Get, dictionary, delegate(List<object> objs)
 			{
 				List<ApiAvatar> list = new List<ApiAvatar>();
@@ -444,7 +481,7 @@ namespace VRC.Core
 					foreach (object obj in objs)
 					{
 						Dictionary<string, object> jsonObject = obj as Dictionary<string, object>;
-						ApiAvatar apiAvatar = ScriptableObject.CreateInstance<ApiAvatar>();
+						ApiAvatar apiAvatar = new ApiAvatar();
 						apiAvatar.Init(jsonObject);
 						list.Add(apiAvatar);
 					}
@@ -457,7 +494,7 @@ namespace VRC.Core
 			{
 				Logger.Log("Could not fetch avatars with error - " + message);
 				errorCallback(message);
-			});
+			}, needsAPIKey: true, owner != Owner.Public, cacheLifetime);
 		}
 
 		public static void Delete(string id, Action successCallback, Action<string> errorCallback)
@@ -471,7 +508,7 @@ namespace VRC.Core
 			}, (Action<string>)delegate(string message)
 			{
 				errorCallback(message);
-			});
+			}, needsAPIKey: true, authenticationRequired: true, -1f);
 		}
 	}
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{B9795D9D-D7C6-4EF9-9276-A01E160FC029}</ProjectGuid>
+    <ProjectGuid>{308FC27D-4038-44F3-8CFC-5726E76895EF}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -66,6 +66,7 @@
     <Compile Include="VRCSDK2\VRC_AvatarPedestal.cs" />
     <Compile Include="VRCSDK2\VRC_Behaviour.cs" />
     <Compile Include="VRCSDK2\VRC_CombatSystem.cs" />
+    <Compile Include="VRCSDK2\VRC_CustomRendererBehaviour.cs" />
     <Compile Include="VRCSDK2\VRC_DataStorage.cs" />
     <Compile Include="VRCSDK2\VRC_DestructibleStandard.cs" />
     <Compile Include="VRCSDK2\VRC_Editor.cs" />

@@ -11,34 +11,9 @@ namespace VRCSDK2
     [CustomEditor(typeof(VRC_YouTubeSync))]
 	public class VRC_YouTubeSyncEditor : Editor
     {
-		SerializedProperty screenName;
-		SerializedProperty videoId;
-		SerializedProperty hideUi;
-		SerializedProperty loop;
-        SerializedProperty autoplay;
-   	    SerializedProperty volume;
-
-		void OnEnable()
-		{
-			videoId = serializedObject.FindProperty("videoID");
-			hideUi = serializedObject.FindProperty("hideUI");
-			loop = serializedObject.FindProperty("loop");
-			autoplay = serializedObject.FindProperty("autoplay");
-			volume = serializedObject.FindProperty("volume");
-		}
-
 		public override void OnInspectorGUI()
 		{
-			serializedObject.Update();
-
-			DrawDefaultInspector(); // doing this for the playlist array. Arrays + property fields are hard
-			EditorGUILayout.PropertyField(videoId, new GUIContent("Youtube Video Id (optional)"));
-			EditorGUILayout.PropertyField(hideUi, new GUIContent("Hide UI"));
-			EditorGUILayout.PropertyField(loop, new GUIContent("Loop Video"));
-			EditorGUILayout.PropertyField(autoplay, new GUIContent("Autoplay"));
-			EditorGUILayout.IntSlider(volume, 0, 100, new GUIContent("Volume"));
-
-			serializedObject.ApplyModifiedProperties();
+            EditorGUILayout.HelpBox("This component is deprecated, please use the VRC_SyncVideoPlayer component instead.", MessageType.Error);
 		}
 	} 
 }

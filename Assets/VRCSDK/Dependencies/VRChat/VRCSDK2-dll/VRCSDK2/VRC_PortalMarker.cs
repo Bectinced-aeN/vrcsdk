@@ -10,7 +10,8 @@ namespace VRCSDK2
 			Trending,
 			Updated,
 			Created,
-			Active
+			Active,
+			None
 		}
 
 		public enum SortOrder
@@ -31,6 +32,8 @@ namespace VRCSDK2
 
 		public string roomId;
 
+		public string customPortalName;
+
 		public SortHeading sortHeading;
 
 		public SortOrder sortOrder;
@@ -47,9 +50,19 @@ namespace VRCSDK2
 
 		public static InitializationDelegate Initialize;
 
+		public string roomName;
+
+		[HideInInspector]
+		public bool updateFlag;
+
 		public VRC_PortalMarker()
 			: this()
 		{
+		}
+
+		public void RefreshPortal()
+		{
+			updateFlag = true;
 		}
 
 		private void Awake()

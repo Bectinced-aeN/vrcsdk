@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using UnityEngine;
 using VRC.Core.BestHTTP;
@@ -14,7 +13,14 @@ namespace VRC.Core
 		{
 			None,
 			Trusted,
-			Internal
+			Internal,
+			Moderator
+		}
+
+		public enum FriendLocation
+		{
+			Online,
+			Offline
 		}
 
 		protected string mBlob;
@@ -41,7 +47,7 @@ namespace VRC.Core
 
 		protected string mLocation;
 
-		public List<APIUser> friends;
+		public List<string> friends;
 
 		public string currentAvatarImageUrl;
 
@@ -83,6 +89,12 @@ namespace VRC.Core
 
 		public bool hasScriptingAccess => mDeveloperType == DeveloperType.Trusted || mDeveloperType == DeveloperType.Internal;
 
+		public bool hasModerationPowers => mDeveloperType == DeveloperType.Moderator || mDeveloperType == DeveloperType.Internal;
+
+		public bool hasVIPAccess => mDeveloperType == DeveloperType.Internal;
+
+		public bool hasSuperPowers => mDeveloperType == DeveloperType.Internal;
+
 		public static bool IsLoggedIn => CurrentUser != null;
 
 		public static bool IsLoggedInWithCredentials => IsLoggedIn && CurrentUser.mId != null;
@@ -99,7 +111,7 @@ namespace VRC.Core
 			dictionary["acceptedTOSVersion"] = "0";
 			ApiModel.SendPostRequest("auth/register", dictionary, delegate(Dictionary<string, object> obj)
 			{
-				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+				APIUser aPIUser = new APIUser();
 				aPIUser.Init(obj);
 				if (!aPIUser.developerType.HasValue)
 				{
@@ -146,7 +158,7 @@ namespace VRC.Core
 				}
 				ApiModel.SendPutRequest("users/" + id, dictionary, delegate(Dictionary<string, object> obj)
 				{
-					APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+					APIUser aPIUser = new APIUser();
 					aPIUser.Init(obj);
 					if (!aPIUser.developerType.HasValue)
 					{
@@ -165,18 +177,40 @@ namespace VRC.Core
 			}
 		}
 
+		public static void SetSessionId(string id, string sessionId, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		{
+			if (IsLoggedInWithCredentials)
+			{
+				Dictionary<string, string> dictionary = new Dictionary<string, string>();
+				dictionary["networkSessionId"] = sessionId;
+				ApiModel.SendPutRequest("users/" + id, dictionary, delegate
+				{
+					if (successCallback != null)
+					{
+						successCallback(mCurrentUser);
+					}
+				}, delegate(string err)
+				{
+					if (errorCallback != null)
+					{
+						errorCallback(err);
+					}
+					Debug.LogError((object)err);
+				});
+			}
+		}
+
 		public static void Login(Action<APIUser> successCallback = null, Action<string> errorCallback = null)
 		{
 			Logger.Log("Logging in", DebugLevel.All);
 			ApiModel.SendGetRequest("auth/user", delegate(Dictionary<string, object> obj)
 			{
-				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+				APIUser aPIUser = new APIUser();
 				aPIUser.Init(obj);
 				if (!aPIUser.developerType.HasValue)
 				{
 					Debug.LogError((object)"auth/user did not provide a developerType");
 				}
-				Logger.Log("Authenticated: " + aPIUser.displayName, DebugLevel.All);
 				mCurrentUser = aPIUser;
 				if (successCallback != null)
 				{
@@ -198,7 +232,7 @@ namespace VRC.Core
 			ApiModel.SendRequest("auth/" + endpoint, HTTPMethods.Post, parameters, null, delegate(Dictionary<string, object> obj)
 			{
 				Logger.Log("Authenticated", DebugLevel.All);
-				APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+				APIUser aPIUser = new APIUser();
 				if (obj.ContainsKey("emailVerified"))
 				{
 					obj["emailVerified"] = "true";
@@ -232,23 +266,33 @@ namespace VRC.Core
 		{
 			ApiModel.SendGetRequest("users/" + id, delegate(Dictionary<string, object> obj)
 			{
-				try
+				if (obj == null || !obj.ContainsKey("id"))
 				{
-					APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
-					aPIUser.InitBrief(obj);
-					if (!aPIUser.developerType.HasValue)
+					if (errorCallback != null)
 					{
-						Debug.LogError((object)("users/" + id + " did not provide a developerType"));
-					}
-					if (successCallback != null)
-					{
-						successCallback(aPIUser);
+						errorCallback("Invalid user record received.");
 					}
 				}
-				catch (Exception ex)
+				else
 				{
-					Debug.LogError((object)"users/ provided a malformed or incomplete user record");
-					Debug.LogException(ex);
+					try
+					{
+						APIUser aPIUser = new APIUser();
+						aPIUser.InitBrief(obj);
+						if (!aPIUser.developerType.HasValue)
+						{
+							Debug.LogError((object)("users/" + id + " did not provide a developerType"));
+						}
+						if (successCallback != null)
+						{
+							successCallback(aPIUser);
+						}
+					}
+					catch (Exception ex)
+					{
+						Debug.LogError((object)"users/ provided a malformed or incomplete user record");
+						Debug.LogException(ex);
+					}
 				}
 			}, delegate(string message)
 			{
@@ -270,6 +314,10 @@ namespace VRC.Core
 
 		public static APIUser GetCachedUser(string id)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return null;
+			}
 			APIUser result = null;
 			if (cachedUsers != null && cachedUsers.ContainsKey(id))
 			{
@@ -278,9 +326,9 @@ namespace VRC.Core
 			return result;
 		}
 
-		public static void FetchUsersInWorldInstance(string worldId, string instanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback)
+		public static void FetchUsersInWorldInstance(string worldId, string instanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback, float cacheTime = 10f)
 		{
-			ApiModel.SendGetRequest("worlds/" + worldId + "/" + instanceId, delegate(Dictionary<string, object> jsonDict)
+			ApiModel.SendRequest("worlds/" + worldId + "/" + instanceId, HTTPMethods.Get, (Dictionary<string, string>)null, (Action<string>)null, (Action<Dictionary<string, object>>)delegate(Dictionary<string, object> jsonDict)
 			{
 				List<object> list = jsonDict["users"] as List<object>;
 				List<APIUser> list2 = new List<APIUser>();
@@ -298,8 +346,9 @@ namespace VRC.Core
 							try
 							{
 								Dictionary<string, object> jsonObject = item as Dictionary<string, object>;
-								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								APIUser aPIUser = new APIUser();
 								aPIUser.InitBrief(jsonObject);
+								aPIUser.mLocation = worldId + ":" + instanceId;
 								if (!aPIUser.developerType.HasValue)
 								{
 									Debug.LogError((object)("worlds/" + worldId + "/" + instanceId + " did not provide a developerType"));
@@ -318,11 +367,11 @@ namespace VRC.Core
 				{
 					successCallback(list2);
 				}
-			}, delegate(string message)
+			}, (Action<List<object>>)null, (Action<string>)delegate(string message)
 			{
 				Logger.Log("Could not fetch users with error - " + message);
 				errorCallback(message);
-			});
+			}, needsAPIKey: true, authenticationRequired: true, cacheTime);
 		}
 
 		public static void FetchUsers(string searchQuery, Action<List<APIUser>> successCallback, Action<string> errorCallback)
@@ -339,7 +388,7 @@ namespace VRC.Core
 							try
 							{
 								Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								APIUser aPIUser = new APIUser();
 								aPIUser.InitBrief(jsonObject);
 								if (!aPIUser.developerType.HasValue)
 								{
@@ -366,9 +415,13 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
 		{
-			ApiModel.SendGetRequest("auth/user/friends", delegate(List<object> objects)
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			dictionary.Add("offset", offset.ToString());
+			dictionary.Add("n", count.ToString());
+			Dictionary<string, string> requestParams = dictionary;
+			ApiModel.SendRequest("auth/user/friends" + ((location != FriendLocation.Offline) ? string.Empty : "?offline=true"), HTTPMethods.Get, requestParams, delegate(List<object> objects)
 			{
 				List<APIUser> list = new List<APIUser>();
 				if (objects != null)
@@ -380,7 +433,7 @@ namespace VRC.Core
 							try
 							{
 								Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-								APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+								APIUser aPIUser = new APIUser();
 								aPIUser.InitBrief(jsonObject);
 								if (!aPIUser.developerType.HasValue)
 								{
@@ -396,10 +449,7 @@ namespace VRC.Core
 						}
 					}
 				}
-				if (mCurrentUser != null)
-				{
-					mCurrentUser.friends = list;
-				}
+				LocalAddFriends(list);
 				if (successCallback != null)
 				{
 					successCallback(list);
@@ -408,14 +458,14 @@ namespace VRC.Core
 			{
 				Logger.Log("Could not fetch friends with error - " + message);
 				errorCallback(message);
-			});
+			}, needsAPIKey: true, authenticationRequired: true, 60f);
 		}
 
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
 		{
 			ApiModel.SendPostRequest("user/" + userId + "/friendRequest", delegate(Dictionary<string, object> obj)
 			{
-				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+				ApiNotification apiNotification = new ApiNotification();
 				apiNotification.Init(obj);
 				if (successCallback != null)
 				{
@@ -471,10 +521,7 @@ namespace VRC.Core
 
 		public static void UnfriendUser(string userId, Action successCallback, Action<string> errorCallback)
 		{
-			if (mCurrentUser != null && mCurrentUser.friends != null)
-			{
-				mCurrentUser.friends.Remove(mCurrentUser.friends.Single((APIUser u) => u.id == userId));
-			}
+			LocalRemoveFriend(userId);
 			ApiModel.SendRequest("/auth/user/friends/" + userId, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
 			{
 				if (successCallback != null)
@@ -487,29 +534,67 @@ namespace VRC.Core
 				{
 					errorCallback(obj);
 				}
-			});
+			}, needsAPIKey: true, authenticationRequired: true, -1f);
 		}
 
 		public static void LocalAddFriend(APIUser user)
 		{
 			if (CurrentUser != null && user != null)
 			{
+				LocalAddFriend(user.id);
+			}
+		}
+
+		public static void LocalAddFriend(string userId)
+		{
+			if (CurrentUser != null && !string.IsNullOrEmpty(userId))
+			{
 				if (CurrentUser.friends == null)
 				{
-					CurrentUser.friends = new List<APIUser>();
+					CurrentUser.friends = new List<string>();
 				}
-				if (!CurrentUser.friends.Exists((APIUser u) => u.id == user.id))
+				if (!CurrentUser.friends.Exists((string uid) => uid == userId))
 				{
-					CurrentUser.friends.Add(user);
+					CurrentUser.friends.Add(userId);
 				}
 			}
 		}
 
 		public static void LocalRemoveFriend(APIUser user)
 		{
-			if (CurrentUser != null && user != null && CurrentUser.friends != null)
+			if (CurrentUser != null && user != null)
 			{
-				CurrentUser.friends.RemoveAll((APIUser u) => u.id == user.id);
+				LocalRemoveFriend(user.id);
+			}
+		}
+
+		public static void LocalRemoveFriend(string userId)
+		{
+			if (CurrentUser != null && !string.IsNullOrEmpty(userId) && CurrentUser.friends != null)
+			{
+				CurrentUser.friends.RemoveAll((string uid) => uid == userId);
+			}
+		}
+
+		public static void LocalAddFriends(IEnumerable<APIUser> users)
+		{
+			if (CurrentUser != null && users != null)
+			{
+				foreach (APIUser user in users)
+				{
+					LocalAddFriend(user);
+				}
+			}
+		}
+
+		public static void LocalRemoveFriends(IEnumerable<APIUser> users)
+		{
+			if (CurrentUser != null && users != null)
+			{
+				foreach (APIUser user in users)
+				{
+					LocalRemoveFriend(user);
+				}
 			}
 		}
 
@@ -518,7 +603,7 @@ namespace VRC.Core
 			bool result = false;
 			if (CurrentUser != null && CurrentUser.friends != null)
 			{
-				result = (CurrentUser.friends.Find((APIUser u) => u.id == userId) != null);
+				result = (CurrentUser.friends.Find((string u) => u == userId) != null);
 			}
 			return result;
 		}
@@ -537,7 +622,7 @@ namespace VRC.Core
 						try
 						{
 							Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-							APIUser aPIUser = ScriptableObject.CreateInstance<APIUser>();
+							APIUser aPIUser = new APIUser();
 							aPIUser.InitBrief(jsonObject);
 							if (!aPIUser.developerType.HasValue)
 							{
@@ -563,7 +648,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void PostHelpRequest(string fromWorldId, string fromInstanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback)
+		public static void PostHelpRequest(string fromWorldId, string fromInstanceId, Action successCallback, Action<string> errorCallback)
 		{
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			dictionary["worldId"] = fromWorldId;
@@ -572,7 +657,7 @@ namespace VRC.Core
 			{
 				if (successCallback != null)
 				{
-					successCallback(null);
+					successCallback();
 				}
 			}, delegate(string message)
 			{
@@ -653,6 +738,7 @@ namespace VRC.Core
 			mHasBirthday = fromUser.hasBirthday;
 			mAcceptedTOSVersion = fromUser.mAcceptedTOSVersion;
 			mDeveloperType = fromUser.developerType;
+			friends = fromUser.friends;
 		}
 
 		protected virtual void Fill(Dictionary<string, object> jsonObject)
@@ -686,6 +772,10 @@ namespace VRC.Core
 			{
 				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["developerType"] as string).ToLower());
 				mDeveloperType = (DeveloperType)(int)Enum.Parse(typeof(DeveloperType), value);
+			}
+			if (jsonObject.ContainsKey("friends"))
+			{
+				friends = Tools.ObjListToStringList((List<object>)jsonObject["friends"]);
 			}
 		}
 

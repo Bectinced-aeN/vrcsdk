@@ -47,38 +47,38 @@ namespace VRC.Core
 		{
 			ApiModel.SendRequestBatch(events.Select(delegate(EventInfo evt)
 			{
-				//IL_009e: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00a3: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00cb: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00d0: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00f8: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00fd: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00c2: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00c7: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00ef: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00f4: Unknown result type (might be due to invalid IL or missing references)
+				//IL_011c: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0121: Unknown result type (might be due to invalid IL or missing references)
 				Dictionary<string, object> dictionary = new Dictionary<string, object>(evt.parameters)
 				{
-					["eventType"] = evt.eventType.ToString(),
-					["worldId"] = evt.worldId,
-					["userId"] = evt.userId
+					["eventType"] = evt.eventType.ToString()
 				};
-				Dictionary<string, object> dictionary2 = dictionary;
-				object value;
-				if (!evt.location.HasValue)
+				if (!string.IsNullOrEmpty(evt.worldId))
 				{
-					value = null;
+					dictionary["worldId"] = evt.worldId;
 				}
-				else
+				if (!string.IsNullOrEmpty(evt.userId))
 				{
+					dictionary["userId"] = evt.userId;
+				}
+				if (evt.location.HasValue)
+				{
+					Dictionary<string, object> dictionary2 = dictionary;
 					string[] obj2 = new string[5];
-					Vector3 value2 = evt.location.Value;
-					obj2[0] = value2.x.ToString("0.00");
+					Vector3 value = evt.location.Value;
+					obj2[0] = value.x.ToString("0.00");
 					obj2[1] = ",";
-					Vector3 value3 = evt.location.Value;
-					obj2[2] = value3.y.ToString("0.00");
+					Vector3 value2 = evt.location.Value;
+					obj2[2] = value2.y.ToString("0.00");
 					obj2[3] = ",";
-					Vector3 value4 = evt.location.Value;
-					obj2[4] = value4.z.ToString("0.00");
-					value = string.Concat(obj2);
+					Vector3 value3 = evt.location.Value;
+					obj2[4] = value3.z.ToString("0.00");
+					dictionary2["position"] = string.Concat(obj2);
 				}
-				dictionary2["position"] = value;
 				return new RequestInfo
 				{
 					endpoint = "eventstream/" + evt.eventType.ToString(),

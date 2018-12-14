@@ -17,11 +17,15 @@ namespace VRCSDK2
 
 		public abstract void SetAnimatorFloat(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, float Value);
 
+		public abstract void SetAnimatorInt(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, int Value);
+
 		public abstract void SetAnimatorBool(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, GameObject destObject, VRC_EventHandler.VrcBooleanOp Value);
 
 		public abstract void SetAnimatorTrigger(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, GameObject destObject);
 
 		public abstract void SetAnimatorFloat(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, GameObject destObject, float Value);
+
+		public abstract void SetAnimatorInt(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, GameObject destObject, int Value);
 
 		public abstract void PlayAnimation(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string AnimationName, GameObject destObject, float fastForward = 0);
 

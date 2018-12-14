@@ -20,14 +20,10 @@ namespace VRCSDK2.scripts.Scenes
 		{
 			public string url;
 
-			public Layout layout;
-
 			public Texture2D texture;
 		}
 
-		public Renderer rendererLeft;
-
-		public Renderer rendererRight;
+		public Renderer renderer;
 
 		public List<PanoSpec> panoramas;
 
@@ -65,10 +61,6 @@ namespace VRCSDK2.scripts.Scenes
 			}
 		}
 
-		[RPC(new VRC_EventHandler.VrcTargetType[]
-		{
-
-		})]
 		public void NextPano()
 		{
 			data.data[dataIndex].valueInt++;
@@ -78,10 +70,6 @@ namespace VRCSDK2.scripts.Scenes
 			}
 		}
 
-		[RPC(new VRC_EventHandler.VrcTargetType[]
-		{
-
-		})]
 		public void PrevPano()
 		{
 			data.data[dataIndex].valueInt--;
@@ -91,10 +79,6 @@ namespace VRCSDK2.scripts.Scenes
 			}
 		}
 
-		[RPC(new VRC_EventHandler.VrcTargetType[]
-		{
-
-		})]
 		public void ShowPanoAt(int index)
 		{
 			index = ((index >= 0) ? ((index < panoramas.Count) ? index : (panoramas.Count - 1)) : 0);
@@ -115,29 +99,7 @@ namespace VRCSDK2.scripts.Scenes
 			}
 			if (currentlyShown == index)
 			{
-				rendererLeft.get_material().set_mainTexture(panoramas[index].texture);
-				rendererRight.get_material().set_mainTexture(panoramas[index].texture);
-				switch (panoramas[index].layout)
-				{
-				case Layout.Mono:
-					rendererLeft.get_material().set_mainTextureOffset(new Vector2(0f, 0f));
-					rendererLeft.get_material().set_mainTextureScale(new Vector2(1f, 1f));
-					rendererRight.get_material().set_mainTextureOffset(new Vector2(0f, 0f));
-					rendererRight.get_material().set_mainTextureScale(new Vector2(1f, 1f));
-					break;
-				case Layout.TopBottom:
-					rendererLeft.get_material().set_mainTextureOffset(new Vector2(0f, 0.5f));
-					rendererLeft.get_material().set_mainTextureScale(new Vector2(1f, 0.5f));
-					rendererRight.get_material().set_mainTextureOffset(new Vector2(0f, 0f));
-					rendererRight.get_material().set_mainTextureScale(new Vector2(1f, 0.5f));
-					break;
-				case Layout.LeftRight:
-					rendererLeft.get_material().set_mainTextureOffset(new Vector2(0f, 0f));
-					rendererLeft.get_material().set_mainTextureScale(new Vector2(0.5f, 1f));
-					rendererRight.get_material().set_mainTextureOffset(new Vector2(0.5f, 0f));
-					rendererRight.get_material().set_mainTextureScale(new Vector2(0.5f, 1f));
-					break;
-				}
+				renderer.get_material().set_mainTexture(panoramas[index].texture);
 			}
 		}
 	}

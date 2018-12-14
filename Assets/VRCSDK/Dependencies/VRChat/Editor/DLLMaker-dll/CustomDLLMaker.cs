@@ -308,11 +308,7 @@ public class CustomDLLMaker
 			}
 			foreach (Component item3 in list3)
 			{
-				if (item3 == null)
-				{
-					Debug.Log((object)"comp is null");
-				}
-				else
+				if (!(item3 == null))
 				{
 					GameObject gameObject = item3.get_gameObject();
 					Type type = ((object)item3).GetType();
@@ -340,11 +336,10 @@ public class CustomDLLMaker
 				}
 				else
 				{
-					string text2 = namespaceName + "." + type3.Name + ", " + namespaceName;
-					Type type4 = Type.GetType(text2);
+					string typeName2 = namespaceName + "." + type3.Name + ", " + namespaceName;
+					Type type4 = Type.GetType(typeName2);
 					if (type4 == null)
 					{
-						Debug.LogError((object)("Could not locate " + text2));
 						continue;
 					}
 					val5 = gameObject2.AddComponent(type4);
@@ -767,8 +762,8 @@ public class CustomDLLMaker
 
 	public static void CreateDirectories()
 	{
-		//IL_003e: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0044: Invalid comparison between Unknown and I4
+		//IL_0038: Unknown result type (might be due to invalid IL or missing references)
+		//IL_003e: Invalid comparison between Unknown and I4
 		if (!DoesScriptDirExist() && APIUser.get_CurrentUser() != null && APIUser.get_CurrentUser().get_developerType().HasValue && (int)APIUser.get_CurrentUser().get_developerType().Value >= 1)
 		{
 			Directory.CreateDirectory(SOURCE_FULL_PATH);

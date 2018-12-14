@@ -48,6 +48,8 @@ namespace VRCSDK2
 
 		public static Func<VRC_PlayerApi, bool> _isModeratorDelegate = null;
 
+		public static Func<VRC_PlayerApi, bool> _isSuperDelegate = null;
+
 		public bool isLocal = true;
 
 		public string name = "<uninitialized>";
@@ -98,6 +100,8 @@ namespace VRCSDK2
 
 		public static Action<VRC_PlayerApi, bool> _SetNamePlateVisibility = null;
 
+		public static Action<VRC_PlayerApi> _RestoreNamePlateVisibility = null;
+
 		public static Action<VRC_PlayerApi, string, string> _SetPlayerTag = null;
 
 		public static Func<VRC_PlayerApi, string, string> _GetPlayerTag = null;
@@ -131,6 +135,8 @@ namespace VRCSDK2
 		public bool isMaster => _isMasterDelegate(this);
 
 		public bool isModerator => _isModeratorDelegate(this);
+
+		public bool isSuper => _isSuperDelegate(this);
 
 		public static List<VRC_PlayerApi> AllPlayers => sPlayers;
 
@@ -249,6 +255,11 @@ namespace VRCSDK2
 		public void SetNamePlateVisibility(bool flag)
 		{
 			_SetNamePlateVisibility(this, flag);
+		}
+
+		public void RestoreNamePlateVisibility()
+		{
+			_RestoreNamePlateVisibility(this);
 		}
 
 		public void SetPlayerTag(string tagName, string tagValue = "")

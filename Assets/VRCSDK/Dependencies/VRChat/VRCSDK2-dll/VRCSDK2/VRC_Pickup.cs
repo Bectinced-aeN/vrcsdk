@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VRCSDK2
 {
 	[RequireComponent(typeof(Rigidbody))]
-	public class VRC_Pickup : VRC_Behaviour
+	public class VRC_Pickup : VRC_Behaviour, INetworkID
 	{
 		public enum PickupOrientation
 		{
@@ -59,8 +59,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string UseDownEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseUpEventName;
 
 		[Obsolete("Please use a VRC_Trigger", false)]
@@ -71,8 +71,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string PickupEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string DropEventName;
 
 		public float ThrowVelocityBoostMinSpeed = 1f;
@@ -86,6 +86,9 @@ namespace VRCSDK2
 		public VRC_PlayerApi currentLocalPlayer;
 
 		public bool pickupable = true;
+
+		[Range(0f, 100f)]
+		public float proximity = 2f;
 
 		public static AwakeDelegate OnAwake;
 
@@ -110,6 +113,12 @@ namespace VRCSDK2
 		public static Func<VRC_Pickup, PickupHand> _GetPickupHand;
 
 		public static Func<VRC_Pickup, VRC_PlayerApi> _GetCurrentPlayer;
+
+		public int NetworkID
+		{
+			get;
+			set;
+		}
 
 		public VRC_PlayerApi currentPlayer => (_GetCurrentPlayer == null) ? null : _GetCurrentPlayer(this);
 

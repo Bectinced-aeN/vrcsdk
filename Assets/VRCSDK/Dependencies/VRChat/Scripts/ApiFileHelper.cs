@@ -46,6 +46,7 @@ namespace VRC.Core
         }
 
         private static ApiFileHelper mInstance = null;
+        const float kPostWriteDelay = 0.75f;
 
         public bool DebugEnabled
         {
@@ -208,6 +209,9 @@ namespace VRC.Core
             if (apiFile == null)
                 yield break;
 
+            // delay to let write get through servers
+            yield return new WaitForSecondsRealtime(kPostWriteDelay);
+
             // check for server side errors from last upload
             if (apiFile.IsInErrorState())
             {
@@ -247,6 +251,9 @@ namespace VRC.Core
                     yield break;
                 }
             }
+
+            // delay to let write get through servers
+            yield return new WaitForSecondsRealtime(kPostWriteDelay);
 
             // verify previous file op is complete
             if (apiFile.HasQueuedOperation())
@@ -382,6 +389,9 @@ namespace VRC.Core
                             CleanupTempFiles(apiFile.id);
                             yield break;
                         }
+
+                        // delay to let write get through servers
+                        yield return new WaitForSecondsRealtime(kPostWriteDelay);
                     }
                 }
             }
@@ -676,6 +686,9 @@ namespace VRC.Core
                         CleanupTempFiles(apiFile.id);
                         yield break;
                     }
+
+                    // delay to let write get through servers
+                    yield return new WaitForSecondsRealtime(kPostWriteDelay);
                 }
             }
 
@@ -735,6 +748,9 @@ namespace VRC.Core
                     CleanupTempFiles(apiFile.id);
                     yield break;
                 }
+
+                // delay to let write get through servers
+                yield return new WaitForSecondsRealtime(kPostWriteDelay);
             }
 
             // upload components
@@ -1304,7 +1320,7 @@ namespace VRC.Core
         protected static void Success(OnFileOpSuccess onSuccess, ApiFile apiFile, string message)
         {
             if (apiFile == null)
-                apiFile = ScriptableObject.CreateInstance<ApiFile>();
+                apiFile = new ApiFile();
 
             Debug.Log("ApiFile " + apiFile.ToStringBrief() + ": Operation Succeeded!");
             if (onSuccess != null)
@@ -1314,7 +1330,7 @@ namespace VRC.Core
         protected static void Error(OnFileOpError onError, ApiFile apiFile, string error, string moreInfo = "")
         {
             if (apiFile == null)
-                apiFile = ScriptableObject.CreateInstance<ApiFile>();
+                apiFile = new ApiFile();
 
             Debug.LogError("ApiFile " + apiFile.ToStringBrief() + ": Error: " + error + "\n" + moreInfo);
             if (onError != null)
@@ -1324,7 +1340,7 @@ namespace VRC.Core
         protected static void Progress(OnFileOpProgress onProgress, ApiFile apiFile, string status, string subStatus = "", float pct = 0.0f)
         {
             if (apiFile == null)
-                apiFile = ScriptableObject.CreateInstance<ApiFile>();
+                apiFile = new ApiFile();
 
             Debug.Log("ApiFile " + apiFile.ToStringBrief() + ": " + status + " (" + subStatus + ") " + (pct * 100).ToString("g2") + "%");
             if (onProgress != null)
@@ -1334,7 +1350,7 @@ namespace VRC.Core
         protected static bool CheckCancelled(FileOpCancelQuery cancelQuery, OnFileOpError onError, ApiFile apiFile)
         {
             if (apiFile == null)
-                apiFile = ScriptableObject.CreateInstance<ApiFile>();
+                apiFile = new ApiFile();
 
             if (cancelQuery != null && cancelQuery(apiFile))
             {
@@ -1353,21 +1369,22 @@ namespace VRC.Core
 
         protected IEnumerator CleanupTempFilesInternal(string subFolderName)
         {
-            // wait a few frames for objects to get released
-            yield return null;
-            yield return null;
-
             if (!string.IsNullOrEmpty(subFolderName))
             {
                 string folder = VRC.Tools.GetTempFolderPath(subFolderName);
-                try
+
+                while (Directory.Exists(folder))
                 {
-                    if (Directory.Exists(folder))
-                        Directory.Delete(folder, true);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("Failed to delete temp folder: " + folder + "\n" + e.Message);
+                    try
+                    {
+                        if (Directory.Exists(folder))
+                            Directory.Delete(folder, true);
+                    }
+                    catch (System.Exception)
+                    {
+                    }
+
+                    yield return null;
                 }
             }
         }
@@ -1475,6 +1492,9 @@ namespace VRC.Core
                             onError(errorStr);
                         yield break;
                     }
+
+                    // delay to let write get through servers
+                    yield return new WaitForSecondsRealtime(kPostWriteDelay);
                 }
 
                 // PUT file
@@ -1548,6 +1568,9 @@ namespace VRC.Core
                             onError(errorStr);
                         yield break;
                     }
+
+                    // delay to let write get through servers
+                    yield return new WaitForSecondsRealtime(kPostWriteDelay);
                 }
             }
 
@@ -1688,6 +1711,9 @@ namespace VRC.Core
                                 onError(errorStr);
                             yield break;
                         }
+
+                        // delay to let write get through servers
+                        yield return new WaitForSecondsRealtime(kPostWriteDelay);
                     }
 
                     // PUT file part
@@ -1767,6 +1793,9 @@ namespace VRC.Core
                             onError(errorStr);
                         yield break;
                     }
+
+                    // delay to let write get through servers
+                    yield return new WaitForSecondsRealtime(kPostWriteDelay);
                 }
 
                 fs.Close();

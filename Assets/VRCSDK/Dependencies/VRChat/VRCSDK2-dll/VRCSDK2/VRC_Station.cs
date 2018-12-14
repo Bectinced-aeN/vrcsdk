@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace VRCSDK2
 {
-	[RequireComponent(typeof(VRC_EventHandler))]
 	public class VRC_Station : MonoBehaviour, IVRCEventProvider, IVRCEventReceiver
 	{
 		public enum Mobility

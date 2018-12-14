@@ -14,7 +14,8 @@ namespace VRC.Core
 			None,
 			Warn,
 			Kick,
-			Ban
+			Ban,
+			BanPublicOnly
 		}
 
 		public enum ModerationTimeRange
@@ -34,7 +35,7 @@ namespace VRC.Core
 
 		public string targetDisplayName;
 
-		public string reasonMessage;
+		public string reason;
 
 		public Dictionary<string, object> details;
 
@@ -55,7 +56,7 @@ namespace VRC.Core
 				moderationType = ModerationType.None;
 				try
 				{
-					moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value);
+					moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value, ignoreCase: true);
 				}
 				catch (Exception)
 				{
@@ -78,9 +79,9 @@ namespace VRC.Core
 			{
 				targetDisplayName = (jsonObject["targetDisplayName"] as string);
 			}
-			if (jsonObject.ContainsKey("reasonMessage"))
+			if (jsonObject.ContainsKey("reason"))
 			{
-				reasonMessage = (jsonObject["reasonMessage"] as string);
+				reason = (jsonObject["reason"] as string);
 			}
 			if (jsonObject.ContainsKey("details"))
 			{
@@ -138,7 +139,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void SendVoteKick(string targetUserId, string worldId = "", string worldInstanceId = "", Dictionary<string, object> details = null, Action successCallback = null, Action<string> errorCallback = null)
+		public static void SendVoteKick(string targetUserId, string worldId = "", string worldInstanceId = "", Dictionary<string, object> details = null, Action<ApiModeration> successCallback = null, Action<string> errorCallback = null)
 		{
 			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			if (!string.IsNullOrEmpty(worldId))
@@ -153,11 +154,13 @@ namespace VRC.Core
 			{
 				dictionary["details"] = Json.Encode(details);
 			}
-			ApiModel.SendPostRequest("user/" + targetUserId + "/votekick", dictionary, delegate
+			ApiModel.SendPostRequest("user/" + targetUserId + "/votekick", dictionary, delegate(Dictionary<string, object> obj)
 			{
+				ApiModeration apiModeration = new ApiModeration();
+				apiModeration.Init(obj);
 				if (successCallback != null)
 				{
-					successCallback();
+					successCallback(apiModeration);
 				}
 			}, delegate(string obj)
 			{
@@ -182,7 +185,7 @@ namespace VRC.Core
 				{
 					errorCallback(obj);
 				}
-			});
+			}, needsAPIKey: true, authenticationRequired: true, -1f);
 		}
 
 		public static void LocalFetchAll(Action<List<ApiModeration>> successCallback, Action<string> errorCallback)
@@ -195,7 +198,7 @@ namespace VRC.Core
 					foreach (object @object in objects)
 					{
 						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						ApiModeration apiModeration = ScriptableObject.CreateInstance<ApiModeration>();
+						ApiModeration apiModeration = new ApiModeration();
 						apiModeration.Init(jsonObject);
 						list.Add(apiModeration);
 					}

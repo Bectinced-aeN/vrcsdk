@@ -29,6 +29,8 @@ namespace VRCSDK2
 
             EditorGUILayout.BeginVertical();
 
+            EditorGUILayout.HelpBox("Do not play any videos with Web Panels, use VRC_VideoPlayerSync instead!", MessageType.Error);
+
             showHelp = EditorGUILayout.Toggle("Show Help", showHelp);
             EditorGUILayout.Space();
 

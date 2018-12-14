@@ -229,6 +229,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -264,6 +265,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &521585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,6 +417,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -445,6 +449,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &56032994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -586,6 +592,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 0
     BroadcastType: 2
@@ -616,6 +623,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &61866714
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1533,6 +1542,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -1563,6 +1573,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &240726547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1723,6 +1735,34 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 252408096}
+--- !u!1 &261567470
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1981732518}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 261567471}
+  m_Layer: 0
+  m_Name: Missing Prefab (Dummy)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &261567471
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 413788, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
+  m_PrefabInternal: {fileID: 1981732518}
+  m_GameObject: {fileID: 261567470}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1981732519}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &288866227
 GameObject:
   m_ObjectHideFlags: 0
@@ -1843,6 +1883,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -1873,6 +1914,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &294730117
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2077,7 +2120,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 329967262}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.38, y: 0, z: -10.29}
+  m_LocalPosition: {x: -1.1, y: 1.1, z: 0.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1626610729}
@@ -2100,6 +2143,7 @@ MonoBehaviour:
   proximity: 3.4028235e+38
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 0
     BroadcastType: 0
@@ -2134,6 +2178,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &329967265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2926,6 +2972,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -2956,6 +3003,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &502496756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4483,6 +4532,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -4518,6 +4568,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &653199277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4709,6 +4761,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -4744,6 +4797,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &668413375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8551,6 +8606,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -8586,6 +8642,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &724804981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8757,6 +8815,21 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 728490533}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
+--- !u!1 &737541904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1467152891}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1467152892}
+  m_Layer: 0
+  m_Name: Missing Prefab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &737636621
 GameObject:
   m_ObjectHideFlags: 0
@@ -9067,6 +9140,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -9102,6 +9176,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &748180679
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9382,6 +9458,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -9412,6 +9489,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &785962073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9569,6 +9648,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -9604,6 +9684,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &792921665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10406,8 +10488,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
-  blueprintId: wrld_4ea000bf-6a6a-4c35-a2f9-5d3ec6f01f2b
-  user: {fileID: 1805621609}
+  blueprintId: 
   contentType: 1
   assetBundleUnityVersion: 5.6.0p3
 --- !u!114 &872619117
@@ -10429,7 +10510,6 @@ MonoBehaviour:
   ReferenceCamera: {fileID: 0}
   RespawnHeightY: -100
   ObjectBehaviourAtRespawnHeight: 1
-  ForbidFreeModification: 0
   ForbidUserPortals: 0
   UseCustomVoiceFalloffRange: 0
   VoiceFalloffRangeNear: 4
@@ -10444,35 +10524,30 @@ MonoBehaviour:
   contentGore: 0
   contentOther: 0
   releasePublic: 1
-  unityVersion: 5.6.3f1
+  unityVersion: 5.6.3p1
   Name: Sample Environment
   NSFW: 0
   SpawnPosition: {x: 0, y: 0, z: 0}
   SpawnLocation: {fileID: 834347455}
   DrawDistance: 1000
   DynamicPrefabs:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1397695816633726, guid: 20951a249466f6449882e950bfd20724, type: 2}
   - {fileID: 0}
   DynamicMaterials:
+  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 2100000, guid: b6099d83d6f02e34ea589e768df4173b, type: 2}
+  - {fileID: 2100000, guid: eae9c11350249284e8400a100179e0b2, type: 2}
+  - {fileID: 10301, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 2100000, guid: c815f7613a04b724089c206857e57c6a, type: 2}
   - {fileID: 2100000, guid: 7a2568654af4bef4cad7a3dfa02c31b2, type: 2}
   - {fileID: 2100000, guid: 4a04f8d3981104848915e66f7a02ec72, type: 2}
   - {fileID: 2100000, guid: 45ad7d65a659f4adaa95c017f788b513, type: 2}
   - {fileID: 2100000, guid: 26803b57669325843a97b0ae43031082, type: 2}
-  - {fileID: 2100000, guid: d76386e21d31d134488117c8516747fb, type: 2}
+  - {fileID: 0}
   - {fileID: 2100000, guid: 4876fc9dc009bbe4493553020a561611, type: 2}
-  - {fileID: 2100000, guid: eae9c11350249284e8400a100179e0b2, type: 2}
   - {fileID: 2100000, guid: 1ab66d94bde8cce46bb35638099bfd31, type: 2}
   - {fileID: 2100000, guid: 5aa95b3fa56e28f43a84e301c3d19e08, type: 2}
   - {fileID: 2100000, guid: 799167b062f9e2944a302eea855166b4, type: 2}
-  - {fileID: 2100000, guid: d154633170b162144ac11bce2031ed51, type: 2}
-  - {fileID: 2100000, guid: cbbac042b7fae3b4d9c7dcf6ec8b8401, type: 2}
-  - {fileID: 2100000, guid: 0c9b0c2784313ab47856b5c933b5b6ed, type: 2}
-  - {fileID: 2100000, guid: f81fc96eb9a887b4d96469e64e2b08d1, type: 2}
-  - {fileID: 2100000, guid: f62b52b2d4b721742a0bc5c6b4db468d, type: 2}
   UpdateTimeInMS: 50
   LightMapsNear:
   - {fileID: 0}
@@ -10881,6 +10956,7 @@ MonoBehaviour:
   useInvSqr: 1
   near: 1
   far: 2000
+  volumetricRadius: 0
   enableRfl: 0
 --- !u!82 &959540481
 AudioSource:
@@ -11328,6 +11404,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -11363,6 +11440,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &996205481
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13228,6 +13307,7 @@ MonoBehaviour:
   proximity: 0.1
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -13278,6 +13358,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!54 &1190090230
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -13306,7 +13388,6 @@ MonoBehaviour:
   m_Script: {fileID: 762633, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  networkId: 0
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
 --- !u!114 &1190090232
@@ -13775,6 +13856,34 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1269486050}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
+--- !u!1 &1269659439
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1467152891}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1269659440}
+  m_Layer: 0
+  m_Name: Missing Prefab (Dummy)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1269659440
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 413788, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
+  m_PrefabInternal: {fileID: 1467152891}
+  m_GameObject: {fileID: 1269659439}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1467152892}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1275087600
 GameObject:
   m_ObjectHideFlags: 0
@@ -13826,9 +13935,10 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
-    BroadcastType: 0
+    BroadcastType: 2
     Events:
     - Name: 
       EventType: 15
@@ -13861,6 +13971,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1275087603
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13872,27 +13984,7 @@ MonoBehaviour:
   m_Script: {fileID: -339397700, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Events:
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 2
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 0}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 1
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 0}
-    ParameterObjects: []
-    ParameterBytes: 
+  Events: []
   CombinedNetworkId: -1
   _dispatcher: {fileID: 0}
   _registered: 0
@@ -14251,6 +14343,21 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1326174647}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
+--- !u!1 &1332830381
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1981732518}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1981732519}
+  m_Layer: 0
+  m_Name: Missing Prefab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1353637210
 GameObject:
   m_ObjectHideFlags: 0
@@ -15178,6 +15285,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 11
     BroadcastType: 0
@@ -15213,6 +15321,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1427158213
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15526,14 +15636,49 @@ Prefab:
     - {fileID: 11432208, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
   m_ParentPrefab: {fileID: 100100000, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
   m_IsPrefabParent: 0
---- !u!4 &1467152892 stripped
+--- !u!4 &1467152892
 Transform:
-  m_PrefabParentObject: {fileID: 413788, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 1467152891}
---- !u!1 &1467152893 stripped
+  m_GameObject: {fileID: 737541904}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1467152894}
+  - {fileID: 1269659440}
+  m_Father: {fileID: 2138439665}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1467152893
 GameObject:
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 198980, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
   m_PrefabInternal: {fileID: 1467152891}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1467152894}
+  m_Layer: 0
+  m_Name: Missing Prefab (Dummy)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1467152894
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1467152891}
+  m_GameObject: {fileID: 1467152893}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1467152892}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1468789153
 GameObject:
   m_ObjectHideFlags: 0
@@ -18448,6 +18593,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -18483,6 +18629,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1752672958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19105,20 +19253,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &1805621609
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: 
-  currentAvatarThumbnailImageUrl: 
 --- !u!1 &1809499924
 GameObject:
   m_ObjectHideFlags: 0
@@ -19560,6 +19694,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -19590,6 +19725,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1851073643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20074,6 +20211,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -20109,6 +20247,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1886667063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20226,6 +20366,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -20261,6 +20402,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1908497352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20853,6 +20996,7 @@ MonoBehaviour:
   proximity: 0.1
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -20903,6 +21047,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!54 &1945038603
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -20931,7 +21077,6 @@ MonoBehaviour:
   m_Script: {fileID: 762633, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  networkId: 0
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
 --- !u!114 &1945038605
@@ -21376,14 +21521,49 @@ Prefab:
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
   m_IsPrefabParent: 0
---- !u!4 &1981732519 stripped
+--- !u!4 &1981732519
 Transform:
-  m_PrefabParentObject: {fileID: 413788, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 1981732518}
---- !u!1 &1981732520 stripped
+  m_GameObject: {fileID: 1332830381}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1981732521}
+  - {fileID: 261567471}
+  m_Father: {fileID: 1582691631}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1981732520
 GameObject:
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 198980, guid: fb1469d852bd59547bcbf6afa455276e, type: 2}
   m_PrefabInternal: {fileID: 1981732518}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1981732521}
+  m_Layer: 0
+  m_Name: Missing Prefab (Dummy)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1981732521
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 1981732518}
+  m_GameObject: {fileID: 1981732520}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1981732519}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2000694136
 GameObject:
   m_ObjectHideFlags: 0
@@ -21504,6 +21684,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -21539,6 +21720,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &2002633101
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22439,6 +22622,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -22469,6 +22653,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &2120336270
 MonoBehaviour:
   m_ObjectHideFlags: 0

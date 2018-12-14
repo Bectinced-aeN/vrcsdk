@@ -1,36 +1,17 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &136380
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 4
-  m_Component:
-  - 4: {fileID: 440054}
-  - 33: {fileID: 3380400}
-  - 23: {fileID: 2301952}
-  - 114: {fileID: 11441832}
-  m_Layer: 0
-  m_Name: SphereR
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!1 &173772
 GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Component:
-  - 4: {fileID: 405174}
-  - 33: {fileID: 3329914}
-  - 23: {fileID: 2364512}
-  - 114: {fileID: 11460566}
+  - component: {fileID: 405174}
+  - component: {fileID: 3329914}
+  - component: {fileID: 2364512}
   m_Layer: 0
-  m_Name: SphereL
+  m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41,13 +22,14 @@ GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Component:
-  - 4: {fileID: 496902}
-  - 114: {fileID: 11445470}
-  - 114: {fileID: 11423474}
-  - 114: {fileID: 11445616}
-  - 114: {fileID: 11481130}
+  - component: {fileID: 496902}
+  - component: {fileID: 11445470}
+  - component: {fileID: 11423474}
+  - component: {fileID: 11445616}
+  - component: {fileID: 11481130}
+  - component: {fileID: 114332683634013616}
   m_Layer: 0
   m_Name: VRCPanorama
   m_TagString: Untagged
@@ -64,23 +46,10 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 496902}
   m_RootOrder: 0
---- !u!4 &440054
-Transform:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 136380}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_Children: []
-  m_Father: {fileID: 496902}
-  m_RootOrder: 1
 --- !u!4 &496902
 Transform:
   m_ObjectHideFlags: 1
@@ -90,38 +59,11 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children:
   - {fileID: 405174}
-  - {fileID: 440054}
   m_Father: {fileID: 0}
   m_RootOrder: 0
---- !u!23 &2301952
-MeshRenderer:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 136380}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_Materials:
-  - {fileID: 2100000, guid: d76386e21d31d134488117c8516747fb, type: 2}
-  m_SubsetIndices: 
-  m_StaticBatchRoot: {fileID: 0}
-  m_UseLightProbes: 1
-  m_ReflectionProbeUsage: 1
-  m_ProbeAnchor: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &2364512
 MeshRenderer:
   m_ObjectHideFlags: 1
@@ -131,22 +73,28 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
   m_Materials:
   - {fileID: 2100000, guid: 26803b57669325843a97b0ae43031082, type: 2}
-  m_SubsetIndices: 
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
   m_StaticBatchRoot: {fileID: 0}
-  m_UseLightProbes: 1
-  m_ReflectionProbeUsage: 1
   m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
+  m_SortingLayer: 0
   m_SortingOrder: 0
 --- !u!33 &3329914
 MeshFilter:
@@ -154,13 +102,6 @@ MeshFilter:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 173772}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!33 &3380400
-MeshFilter:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 136380}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &11423474
 MonoBehaviour:
@@ -176,18 +117,6 @@ MonoBehaviour:
   networkId: 500
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
---- !u!114 &11441832
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 136380}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1162989540, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  eye: 1
 --- !u!114 &11445470
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -199,14 +128,11 @@ MonoBehaviour:
   m_Script: {fileID: -1628937948, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rendererLeft: {fileID: 2364512}
-  rendererRight: {fileID: 2301952}
+  renderer: {fileID: 2364512}
   panoramas:
   - url: 
-    layout: 1
     texture: {fileID: 2800000, guid: b8e8dcca0b0b74a43acb6c803b119ea1, type: 3}
   - url: 
-    layout: 1
     texture: {fileID: 2800000, guid: 35ee2b4c3932605498ac766394b68f80, type: 3}
 --- !u!114 &11445616
 MonoBehaviour:
@@ -231,18 +157,6 @@ MonoBehaviour:
     valueSerializedBytes: 
     modified: 0
     added: 0
---- !u!114 &11460566
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 173772}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1162989540, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  eye: 0
 --- !u!114 &11481130
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -254,28 +168,9 @@ MonoBehaviour:
   m_Script: {fileID: -339397700, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Events:
-  - Name: Next
-    EventType: 6
-    ParameterString: NextPano
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 190396}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: Prev
-    EventType: 6
-    ParameterString: PrevPano
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 190396}
-    ParameterObjects: []
-    ParameterBytes: 
+  Events: []
   CombinedNetworkId: -1
+  _dispatcher: {fileID: 0}
   _registered: 0
 --- !u!1001 &100100000
 Prefab:
@@ -396,3 +291,73 @@ Prefab:
   m_ParentPrefab: {fileID: 0}
   m_RootGameObject: {fileID: 190396}
   m_IsPrefabParent: 1
+--- !u!114 &114332683634013616
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 190396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1579128511, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactTextPlacement: {fileID: 0}
+  interactText: Use
+  interactTextGO: {fileID: 0}
+  proximity: 2
+  isHidden: 0
+  UsesAdvancedOptions: 1
+  ShowHelp: 1
+  Triggers:
+  - TriggerType: 0
+    BroadcastType: 7
+    Events:
+    - Name: 
+      EventType: 14
+      ParameterString: NextPano
+      ParameterBoolOp: 0
+      ParameterBool: 0
+      ParameterFloat: 0
+      ParameterInt: 3
+      ParameterObject: {fileID: 0}
+      ParameterObjects:
+      - {fileID: 190396}
+      ParameterBytes: 
+    - Name: 
+      EventType: 14
+      ParameterString: PrevPano
+      ParameterBoolOp: 0
+      ParameterBool: 0
+      ParameterFloat: 0
+      ParameterInt: 3
+      ParameterObject: {fileID: 0}
+      ParameterObjects:
+      - {fileID: 190396}
+      ParameterBytes: 
+    Name: Unnamed
+    Others: []
+    Key: 0
+    TriggerIndividuals: 0
+    Layers:
+      serializedVersion: 2
+      m_Bits: 0
+    Repeat: 0
+    LowPeriodTime: 0
+    HighPeriodTime: 0
+    ResetOnEnable: 0
+    EventFired: 0
+    Duration: 0
+    Timer: 0
+    DataElementIdx: 0
+    DataStorageShadowValues:
+    - ParameterString: 
+      ParameterBoolOp: 
+      ParameterFloat: 
+      ParameterInt: 
+    - ParameterString: 
+      ParameterBoolOp: 
+      ParameterFloat: 
+      ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []

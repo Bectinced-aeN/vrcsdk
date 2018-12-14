@@ -210,6 +210,8 @@ namespace VRC.Core
 			}
 		}
 
+		public const bool kDefaultUseFileAPI = false;
+
 		private string mName;
 
 		private string mOwnerId;
@@ -240,7 +242,7 @@ namespace VRC.Core
 			dictionary["extension"] = extension;
 			ApiModel.SendPostRequest("file", dictionary, delegate(Dictionary<string, object> obj)
 			{
-				ApiFile apiFile = ScriptableObject.CreateInstance<ApiFile>();
+				ApiFile apiFile = new ApiFile();
 				apiFile.Init(obj);
 				if (successCallback != null)
 				{
@@ -259,7 +261,7 @@ namespace VRC.Core
 		{
 			ApiModel.SendGetRequest("file/" + fileId, delegate(Dictionary<string, object> obj)
 			{
-				ApiFile apiFile = ScriptableObject.CreateInstance<ApiFile>();
+				ApiFile apiFile = new ApiFile();
 				apiFile.Init(obj);
 				if (successCallback != null)
 				{
@@ -300,7 +302,7 @@ namespace VRC.Core
 				{
 					errorCallback(obj);
 				}
-			});
+			}, needsAPIKey: true, authenticationRequired: true, -1f);
 		}
 
 		public static void DownloadFile(string url, Action<byte[]> onSuccess, Action<string> onError, Action<int, int> onProgress)
@@ -908,7 +910,7 @@ namespace VRC.Core
 					int latestVersionNumber = GetLatestVersionNumber();
 					ApiModel.SendPutRequest("file/" + base.id + "/" + latestVersionNumber + "/" + fileDescriptorType.ToString() + "/finish", dictionary, delegate(Dictionary<string, object> obj)
 					{
-						ApiFile apiFile = ScriptableObject.CreateInstance<ApiFile>();
+						ApiFile apiFile = new ApiFile();
 						apiFile.Init(obj);
 						if (onSuccess != null)
 						{

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace VRCSDK2
 {
 	[RequireComponent(typeof(VRC_EventHandler))]
-	public class VRC_Trigger : VRC_Interactable, IVRCEventSender
+	public class VRC_Trigger : VRC_Interactable, INetworkID, IVRCEventSender
 	{
 		[Serializable]
 		public class CustomTriggerTarget
@@ -43,7 +43,9 @@ namespace VRCSDK2
 			OnDataStorageChange,
 			OnDataStorageRemove,
 			OnDataStorageAdd,
-			OnAvatarHit
+			OnAvatarHit,
+			OnStationEntered,
+			OnStationExited
 		}
 
 		public static class TypeCollections
@@ -143,6 +145,12 @@ namespace VRCSDK2
 
 			[SerializeField]
 			public List<DataStorageShadow> DataStorageShadowValues = new List<DataStorageShadow>();
+
+			[SerializeField]
+			public bool[] ProbabilityLock = new bool[0];
+
+			[SerializeField]
+			public float[] Probabilities = new float[0];
 		}
 
 		private class OccupantInfo
@@ -158,7 +166,9 @@ namespace VRCSDK2
 
 		private Collider collider;
 
-		public bool UsesAdvancedOptions = true;
+		public bool UsesAdvancedOptions;
+
+		public bool ShowHelp = true;
 
 		[SerializeField]
 		public List<TriggerEvent> Triggers = new List<TriggerEvent>();
@@ -170,6 +180,12 @@ namespace VRCSDK2
 		private VRC_EventHandler _handler;
 
 		private GameObject _localUser;
+
+		public int NetworkID
+		{
+			get;
+			set;
+		}
 
 		public VRC_EventHandler Handler
 		{
@@ -272,6 +288,13 @@ namespace VRCSDK2
 							};
 						}
 						@event.ParameterObject = null;
+					}
+					if (@event.ParameterObjects == null && @event.EventType == VRC_EventHandler.VrcEventType.SpawnObject)
+					{
+						@event.ParameterObjects = (GameObject[])new GameObject[1]
+						{
+							this.get_gameObject()
+						};
 					}
 				}
 			}
@@ -410,34 +433,29 @@ namespace VRCSDK2
 			ExecuteTriggerType(TriggerType.OnEnable);
 		}
 
-		private void OnDrawGizmosSelected()
+		private void OnDrawGizmos()
 		{
-			List<VRC_Trigger> processed = new List<VRC_Trigger>();
-			List<VRC_Trigger> toProcess = new List<VRC_Trigger>
-			{
-				this
-			};
+			List<VRC_Trigger> list = new List<VRC_Trigger>();
+			List<VRC_Trigger> list2 = new List<VRC_Trigger>();
+			list2.Add(this);
+			List<VRC_Trigger> list3 = list2;
 			Action<GameObject> action = delegate(GameObject obj)
 			{
-				//IL_0018: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0023: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0013: Unknown result type (might be due to invalid IL or missing references)
+				//IL_001e: Unknown result type (might be due to invalid IL or missing references)
 				if (!(obj == null))
 				{
 					Gizmos.DrawLine(this.get_transform().get_position(), obj.get_transform().get_position());
 					VRC_Trigger component = obj.GetComponent<VRC_Trigger>();
-					if (component != null && !processed.Contains(component))
-					{
-						toProcess.Add(component);
-					}
 				}
 			};
-			while (toProcess.Count > 0)
+			while (list3.Count > 0)
 			{
-				VRC_Trigger vRC_Trigger = toProcess.First();
-				toProcess.RemoveAt(0);
+				VRC_Trigger vRC_Trigger = list3.First();
+				list3.RemoveAt(0);
 				if (!(vRC_Trigger == null))
 				{
-					processed.Add(vRC_Trigger);
+					list.Add(vRC_Trigger);
 					foreach (TriggerEvent trigger in vRC_Trigger.Triggers)
 					{
 						if (trigger != null)
@@ -468,39 +486,40 @@ namespace VRCSDK2
 
 		private void Update()
 		{
-			//IL_0059: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0075: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0054: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0070: Unknown result type (might be due to invalid IL or missing references)
 			bool flag = false;
-			foreach (TriggerEvent trigger in Triggers)
+			for (int i = 0; i < Triggers.Count; i++)
 			{
-				switch (trigger.TriggerType)
+				TriggerEvent triggerEvent = Triggers[i];
+				switch (triggerEvent.TriggerType)
 				{
 				case TriggerType.OnKeyDown:
-					if (Input.GetKeyDown(trigger.Key))
+					if (Input.GetKeyDown(triggerEvent.Key))
 					{
-						ExecuteTrigger(trigger);
+						ExecuteTrigger(triggerEvent);
 					}
 					break;
 				case TriggerType.OnKeyUp:
-					if (Input.GetKeyUp(trigger.Key))
+					if (Input.GetKeyUp(triggerEvent.Key))
 					{
-						ExecuteTrigger(trigger);
+						ExecuteTrigger(triggerEvent);
 					}
 					break;
 				case TriggerType.OnTimer:
-					if (!trigger.EventFired)
+					if (!triggerEvent.EventFired)
 					{
-						trigger.Timer += Time.get_deltaTime();
-						if (trigger.Timer > trigger.Duration)
+						triggerEvent.Timer += Time.get_deltaTime();
+						if (triggerEvent.Timer > triggerEvent.Duration)
 						{
-							ExecuteTrigger(trigger);
-							if (trigger.Repeat)
+							ExecuteTrigger(triggerEvent);
+							if (triggerEvent.Repeat)
 							{
-								ResetClock(trigger);
+								ResetClock(triggerEvent);
 							}
 							else
 							{
-								trigger.EventFired = true;
+								triggerEvent.EventFired = true;
 							}
 						}
 					}
@@ -529,25 +548,33 @@ namespace VRCSDK2
 					while (enumerator.MoveNext())
 					{
 						occupant = enumerator.Current;
-						if (!(occupant.collider == null))
+						if (occupant.collider == null)
 						{
-							if (stayOccupants.Contains(occupant.collider))
+							if (collider.get_isTrigger())
 							{
-								occupant.time = Time.get_time();
-								stayOccupants.RemoveWhere((Collider o) => o == occupant.collider);
+								ExecuteTriggerType(TriggerType.OnExitTrigger);
 							}
-							else if (!(Time.get_time() - occupant.time < 0.5f))
+							else
 							{
-								if (collider.get_isTrigger())
-								{
-									ExecuteTriggerType(TriggerType.OnExitTrigger);
-								}
-								else
-								{
-									ExecuteTriggerType(TriggerType.OnExitCollider);
-								}
-								occupant.collider = null;
+								ExecuteTriggerType(TriggerType.OnExitCollider);
 							}
+						}
+						else if (stayOccupants.Contains(occupant.collider))
+						{
+							occupant.time = Time.get_time();
+							stayOccupants.RemoveWhere((Collider o) => o == occupant.collider);
+						}
+						else if (!(Time.get_time() - occupant.time < 0.5f))
+						{
+							if (collider.get_isTrigger())
+							{
+								ExecuteTriggerType(TriggerType.OnExitTrigger);
+							}
+							else
+							{
+								ExecuteTriggerType(TriggerType.OnExitCollider);
+							}
+							occupant.collider = null;
 						}
 					}
 				}
@@ -559,6 +586,16 @@ namespace VRCSDK2
 		public override void Interact()
 		{
 			ExecuteTriggerType(TriggerType.OnInteract);
+		}
+
+		public void OnStationEntered()
+		{
+			ExecuteTriggerType(TriggerType.OnStationEntered);
+		}
+
+		public void OnStationExited()
+		{
+			ExecuteTriggerType(TriggerType.OnStationExited);
 		}
 
 		private void OnTriggerEnter(Collider other)
@@ -687,9 +724,8 @@ namespace VRCSDK2
 				{
 					Debug.LogError((object)"Cannot execute key triggers on non-player objects.");
 				}
-				else if (!Networking.IsNetworkSettled)
+				else if (!Networking.IsObjectReady(this.get_gameObject()))
 				{
-					Debug.Log((object)"Deferred trigger because network is not settled.");
 					this.deferredForReady = (Action)Delegate.Combine(this.deferredForReady, (Action)delegate
 					{
 						ExecuteTrigger(trigger);
@@ -697,50 +733,69 @@ namespace VRCSDK2
 				}
 				else
 				{
+					float[] probabilities = trigger.Probabilities;
+					float num = Random.Range(0f, 0.99f);
+					float num2 = 0f;
 					for (int i = 0; i < trigger.Events.Count; i++)
 					{
-						VRC_EventHandler.VrcEvent vrcEvent = trigger.Events[i];
-						if (dataStorage != null && trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count)
+						if (probabilities != null && probabilities.Length == trigger.Events.Count && probabilities[i] + num2 < num)
 						{
-							DataStorageShadow shadow = trigger.DataStorageShadowValues[i];
-							if (shadow.ParameterBoolOp != null)
+							num2 += probabilities[i];
+						}
+						else
+						{
+							VRC_EventHandler.VrcEvent vrcEvent = trigger.Events[i];
+							if (dataStorage != null && trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count)
 							{
-								VRC_DataStorage.VrcDataElement vrcDataElement = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterBoolOp);
-								if (vrcDataElement != null)
+								DataStorageShadow shadow = trigger.DataStorageShadowValues[i];
+								if (shadow.ParameterBoolOp != null)
 								{
-									vrcEvent.ParameterBoolOp = (vrcDataElement.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
+									VRC_DataStorage.VrcDataElement vrcDataElement = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterBoolOp);
+									if (vrcDataElement != null)
+									{
+										vrcEvent.ParameterBoolOp = (vrcDataElement.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
+									}
+								}
+								if (shadow.ParameterFloat != null)
+								{
+									VRC_DataStorage.VrcDataElement vrcDataElement2 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterFloat);
+									if (vrcDataElement2 != null)
+									{
+										vrcEvent.ParameterFloat = vrcDataElement2.valueFloat;
+									}
+								}
+								if (shadow.ParameterInt != null)
+								{
+									VRC_DataStorage.VrcDataElement vrcDataElement3 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterInt);
+									if (vrcDataElement3 != null)
+									{
+										vrcEvent.ParameterInt = vrcDataElement3.valueInt;
+									}
+								}
+								if (shadow.ParameterString != null)
+								{
+									VRC_DataStorage.VrcDataElement vrcDataElement4 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterString);
+									if (vrcDataElement4 != null)
+									{
+										vrcEvent.ParameterString = vrcDataElement4.valueString;
+									}
 								}
 							}
-							if (shadow.ParameterFloat != null)
+							if (vrcEvent.ParameterObject == null && (vrcEvent.ParameterObjects == null || vrcEvent.ParameterObjects.Length == 0))
 							{
-								VRC_DataStorage.VrcDataElement vrcDataElement2 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterFloat);
-								if (vrcDataElement2 != null)
-								{
-									vrcEvent.ParameterFloat = vrcDataElement2.valueFloat;
-								}
+								vrcEvent.ParameterObject = this.get_gameObject();
 							}
-							if (shadow.ParameterInt != null)
+							Debug.LogFormat("{0} triggered {1}", new object[2]
 							{
-								VRC_DataStorage.VrcDataElement vrcDataElement3 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterInt);
-								if (vrcDataElement3 != null)
-								{
-									vrcEvent.ParameterInt = vrcDataElement3.valueInt;
-								}
-							}
-							if (shadow.ParameterString != null)
+								this.get_gameObject().get_name(),
+								vrcEvent.EventType
+							});
+							Handler.TriggerEvent(vrcEvent, trigger.BroadcastType, LocalUser);
+							if (probabilities != null && probabilities.Length == trigger.Events.Count)
 							{
-								VRC_DataStorage.VrcDataElement vrcDataElement4 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterString);
-								if (vrcDataElement4 != null)
-								{
-									vrcEvent.ParameterString = vrcDataElement4.valueString;
-								}
+								break;
 							}
 						}
-						if (vrcEvent.ParameterObject == null && (vrcEvent.ParameterObjects == null || vrcEvent.ParameterObjects.Length == 0))
-						{
-							vrcEvent.ParameterObject = this.get_gameObject();
-						}
-						Handler.TriggerEvent(vrcEvent, trigger.BroadcastType, LocalUser);
 					}
 					RelayTrigger(trigger);
 				}

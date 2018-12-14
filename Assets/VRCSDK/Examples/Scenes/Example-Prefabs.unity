@@ -194,20 +194,6 @@ Transform:
   m_Father: {fileID: 1066826634}
   m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &147585224
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_22-04-32.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/866713936.thumbnail-200.png
 --- !u!1 &159891590
 GameObject:
   m_ObjectHideFlags: 0
@@ -444,20 +430,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 364171944}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &367670773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-public/Jesse Eyes_1200x900_2015-09-17_11-29-17.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/4262321293.thumbnail-200.png
 --- !u!1 &403689037
 GameObject:
   m_ObjectHideFlags: 0
@@ -694,20 +666,6 @@ Light:
   m_UseColorTemperature: 0
   m_ShadowRadius: 1.1
   m_ShadowAngle: 0
---- !u!114 &510890861
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-01-31_22-00-44.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/3559862056.thumbnail-500.png
 --- !u!1 &610072224
 GameObject:
   m_ObjectHideFlags: 0
@@ -793,20 +751,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 610072224}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &658931269
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_21-48-35.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1845324879.thumbnail-200.png
 --- !u!1 &671255401
 GameObject:
   m_ObjectHideFlags: 0
@@ -873,55 +817,6 @@ Light:
   m_UseColorTemperature: 0
   m_ShadowRadius: 1.1
   m_ShadowAngle: 0
---- !u!114 &687991293
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-12-02_09-16-24.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/2222572241.thumbnail-200.png
---- !u!114 &712465459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends:
-  - {fileID: 687991293}
-  - {fileID: 658931269}
-  - {fileID: 2078613306}
-  - {fileID: 750763997}
-  - {fileID: 1108974106}
-  - {fileID: 1081315714}
-  - {fileID: 147585224}
-  - {fileID: 1428647393}
-  - {fileID: 510890861}
-  - {fileID: 1517437003}
-  - {fileID: 1543513651}
-  - {fileID: 948855328}
-  - {fileID: 367670773}
-  - {fileID: 2130641265}
-  - {fileID: 1608999355}
-  - {fileID: 1546534132}
-  - {fileID: 1591129374}
-  - {fileID: 1923773028}
-  - {fileID: 1655454918}
-  - {fileID: 1203284056}
-  - {fileID: 1637460278}
-  currentAvatarImageUrl: 
-  currentAvatarThumbnailImageUrl: 
 --- !u!1 &723394839
 GameObject:
   m_ObjectHideFlags: 0
@@ -1092,20 +987,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 728490533}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &750763997
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-08-21_00-26-24.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/4142262548.thumbnail-200.png
 --- !u!1 &813740696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1334,8 +1215,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
-  blueprintId: wrld_9aa0f6ed-69d3-4e42-97c3-c6c5ce455e4e
-  user: {fileID: 712465459}
+  blueprintId: 
   contentType: 1
   assetBundleUnityVersion: 5.6.0p3
 --- !u!114 &872619117
@@ -1357,7 +1237,6 @@ MonoBehaviour:
   ReferenceCamera: {fileID: 0}
   RespawnHeightY: -100
   ObjectBehaviourAtRespawnHeight: 1
-  ForbidFreeModification: 0
   ForbidUserPortals: 0
   UseCustomVoiceFalloffRange: 0
   VoiceFalloffRangeNear: 4
@@ -1528,20 +1407,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 877475651}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &948855328
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_22-04-32.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/866713936.thumbnail-200.png
 --- !u!1 &1008919547
 GameObject:
   m_ObjectHideFlags: 0
@@ -1975,34 +1840,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1075115067}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &1081315714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-02-28_17-15-10.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/566414504.thumbnail-500.png
---- !u!114 &1108974106
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_22-04-32.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/866713936.thumbnail-200.png
 --- !u!1 &1111958787
 GameObject:
   m_ObjectHideFlags: 0
@@ -2173,20 +2010,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1127517587}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &1203284056
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-10-20_12-21-03.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/4067164535.thumbnail-200.png
 --- !u!1 &1269486050
 GameObject:
   m_ObjectHideFlags: 0
@@ -2593,62 +2416,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1366607737}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &1428647393
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-02-28_17-24-47.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/3966336575.thumbnail-500.png
---- !u!114 &1517437003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-01-31_11-13-26.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1223176316.thumbnail-500.png
---- !u!114 &1543513651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-04-12_03-51-52.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1647153493.thumbnail-500.png
---- !u!114 &1546534132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/0e/0e2e6e0c5d918d8c98d765f4caa4a2215c60c1cb_full.jpg
-  currentAvatarThumbnailImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/0e/0e2e6e0c5d918d8c98d765f4caa4a2215c60c1cb_medium.jpg
 --- !u!1 &1589725331
 GameObject:
   m_ObjectHideFlags: 0
@@ -2734,34 +2501,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1589725331}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &1591129374
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/b5/b585a28e40ab981a4827b0c77aeb65e1d423d5ca_full.jpg
-  currentAvatarThumbnailImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/b5/b585a28e40ab981a4827b0c77aeb65e1d423d5ca_medium.jpg
---- !u!114 &1608999355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_22-04-32.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/866713936.thumbnail-200.png
 --- !u!1001 &1617943222
 Prefab:
   m_ObjectHideFlags: 0
@@ -2812,34 +2551,6 @@ Prefab:
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 98173f743947d38499a6573aafa81f02, type: 2}
   m_IsPrefabParent: 0
---- !u!114 &1637460278
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-02-16_22-52-14.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1754355419.thumbnail-500.png
---- !u!114 &1655454918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_20-53-30.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1896546855.thumbnail-200.png
 --- !u!1 &1762733320
 GameObject:
   m_ObjectHideFlags: 0
@@ -3416,20 +3127,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1914696951}
   m_Mesh: {fileID: 4300000, guid: 080bc076ed19adb4091adca05de83d66, type: 3}
---- !u!114 &1923773028
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg
-  currentAvatarThumbnailImageUrl: https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg
 --- !u!1 &1944972698
 GameObject:
   m_ObjectHideFlags: 0
@@ -3685,34 +3382,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2070250596}
   m_Mesh: {fileID: 4300000, guid: b5290684820a94548bedb95083785116, type: 3}
---- !u!114 &2078613306
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2017-02-14_16-03-44.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/1518613305.thumbnail-500.png
---- !u!114 &2130641265
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/images/image_1200x900_2016-11-29_22-04-32.png
-  currentAvatarThumbnailImageUrl: https://s3-us-west-2.amazonaws.com/vrc-uploads/thumbnails/866713936.thumbnail-200.png
 --- !u!1 &2144234752
 GameObject:
   m_ObjectHideFlags: 0

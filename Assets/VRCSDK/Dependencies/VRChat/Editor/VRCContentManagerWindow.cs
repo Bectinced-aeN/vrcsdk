@@ -9,6 +9,8 @@ using VRC.Core;
 [ExecuteInEditMode]
 public class VRCContentManagerWindow : EditorWindow
 {
+    const int PageLimit = 20;
+
     bool UseDevApi
     {
         get
@@ -42,14 +44,14 @@ public class VRCContentManagerWindow : EditorWindow
         if (!CheckLogin())
             return;
 
-        FetchUploadedData();
+        EditorCoroutine.start(FetchUploadedData());
     }
 
     [UnityEditor.Callbacks.PostProcessScene]
     static void OnPostProcessScene()
     {
         if (window != null)
-            window.FetchUploadedData();
+            EditorCoroutine.start(window.FetchUploadedData());
     }
 
     static List<ApiWorld> uploadedWorlds;
@@ -59,6 +61,7 @@ public class VRCContentManagerWindow : EditorWindow
     static Dictionary<string, Texture2D> avatarImages;
 
     static List<string> justDeletedContents;
+    static List<ApiAvatar> justUpdatedAvatars;
 
     public static void ClearContent()
     {
@@ -66,56 +69,86 @@ public class VRCContentManagerWindow : EditorWindow
         uploadedAvatars = null;
     }
 
-    void FetchUploadedData()
+    IEnumerator FetchUploadedData()
     {
         if (!RemoteConfig.IsInitialized())
             RemoteConfig.Init();
 
         if (CheckLogin() == false)
-            return;
+            yield break;
 
-        ApiWorld.FetchList(
-            delegate (List<ApiWorld> obj)
-            {
-                SetupWorldData(obj);
-            },
-            delegate (string obj)
-            {
-                Debug.LogError("Error fetching your uploaded worlds:\n" + obj);
-                SetupWorldData(new List<ApiWorld>());
+        ApiModel.ClearReponseCache();
 
-            },
-            ApiWorld.SortHeading.Updated,
-            ApiWorld.SortOwnership.Mine,
-            ApiWorld.SortOrder.Descending,
-            0,
-            100,
-            "",
-            null,
-            "",
-            ApiWorld.ReleaseStatus.All,
-            false
-        );
+        int indexPosition = 0;
+        int lastResponseCount = 0;
+        bool requestActive = false;
 
-        ApiAvatar.FetchList(
-            delegate (List<ApiAvatar> obj)
-            {
-                SetupAvatarData(obj);
-            },
-            delegate (string obj)
-            {
-                Debug.LogError("Error fetching your uploaded avatars:\n" + obj);
-                SetupAvatarData(new List<ApiAvatar>());
+        do
+        {
+            requestActive = true;
+            ApiWorld.FetchList(
+                delegate (List<ApiWorld> obj)
+                {
+                    lastResponseCount = obj.Count;
+                    indexPosition += obj.Count;
+                    requestActive = false;
+                    SetupWorldData(obj);
+                },
+                delegate (string obj)
+                {
+                    lastResponseCount = 0;
+                    requestActive = false;
+                    Debug.LogError("Error fetching your uploaded worlds:\n" + obj);
+                    SetupWorldData(new List<ApiWorld>());
+                },
+                ApiWorld.SortHeading.Updated,
+                ApiWorld.SortOwnership.Mine,
+                ApiWorld.SortOrder.Descending,
+                indexPosition,
+                PageLimit,
+                "",
+                null,
+                null,
+                "",
+                ApiWorld.ReleaseStatus.All,
+                false,
+                true
+            );
+            yield return new WaitUntil(() => !requestActive);
+        } while (lastResponseCount > 0);
 
-            },
-            ApiAvatar.Owner.Mine,
-            null,
-            100,
-            0,
-            ApiAvatar.SortHeading.None,
-            ApiAvatar.SortOrder.Descending,
-            false
-        );
+        indexPosition = 0;
+
+        do
+        {
+            requestActive = true;
+            ApiAvatar.FetchList(
+                delegate (List<ApiAvatar> obj)
+                {
+                    lastResponseCount = obj.Count;
+                    indexPosition += obj.Count;
+                    requestActive = false;
+                    SetupAvatarData(obj);
+                },
+                delegate (string obj)
+                {
+                    lastResponseCount = 0;
+                    requestActive = false;
+                    Debug.LogError("Error fetching your uploaded avatars:\n" + obj);
+                    SetupAvatarData(new List<ApiAvatar>());
+                },
+                ApiAvatar.Owner.Mine,
+                ApiAvatar.ReleaseStatus.All,
+                null,
+                PageLimit,
+                indexPosition,
+                ApiAvatar.SortHeading.None,
+                ApiAvatar.SortOrder.Descending,
+                false,
+                true
+            );
+            yield return new WaitUntil(() => !requestActive);
+        } while (lastResponseCount > 0);
     }
 
     void SetupWorldData(List<ApiWorld> worlds)
@@ -286,6 +319,15 @@ public class VRCContentManagerWindow : EditorWindow
             if (uploadedAvatars != null)
                 tmpAvatars = new List<ApiAvatar>(uploadedAvatars);
 
+            if (justUpdatedAvatars != null){
+                foreach(ApiAvatar a in justUpdatedAvatars)
+                {
+                    int index = tmpAvatars.FindIndex((av) => av.id == a.id);
+                    if(index != -1)
+                        tmpAvatars[index] = a;
+                }
+            }
+
             foreach (ApiAvatar a in tmpAvatars)
             {
                 if (justDeletedContents != null && justDeletedContents.Contains(a.id)) continue;
@@ -304,6 +346,29 @@ public class VRCContentManagerWindow : EditorWindow
                     GUILayout.Label("No Image", GUILayout.Height(100), GUILayout.Width(100));
                 }
                 EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
+                EditorGUILayout.LabelField(a.releaseStatus, GUILayout.Width(100));
+                EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
+
+                string oppositeReleaseStatus = a.releaseStatus == "public" ? "private" : "public";
+                if (GUILayout.Button("Make " + oppositeReleaseStatus, GUILayout.Width(100)))
+                {
+                    a.releaseStatus = oppositeReleaseStatus;
+
+                    a.Save(true, delegate(ApiModel model)
+                    {
+                        ApiAvatar savedBP = (ApiAvatar)model;
+
+                        if (justUpdatedAvatars == null) justUpdatedAvatars = new List<ApiAvatar>();
+                        justUpdatedAvatars.Add(savedBP);
+
+                        EditorUtility.DisplayDialog("Avatar Updated", "Avatar made " + savedBP.releaseStatus, "OK");
+                    },
+                    delegate( string error )
+                    {
+                        Debug.LogError(error);
+                        EditorUtility.DisplayDialog("Avatar Updated", "Failed to change avatar release status", "OK");
+                    });
+                }
 
                 if (GUILayout.Button("Copy ID", GUILayout.Width(75)))
                 {

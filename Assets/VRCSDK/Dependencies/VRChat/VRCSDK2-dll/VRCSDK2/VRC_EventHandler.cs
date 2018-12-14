@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace VRCSDK2
@@ -31,7 +30,8 @@ namespace VRCSDK2
 			SetMaterial,
 			AddHealth,
 			AddDamage,
-			SetComponentActive
+			SetComponentActive,
+			AnimationInt
 		}
 
 		public enum VrcBroadcastType
@@ -296,6 +296,9 @@ namespace VRCSDK2
 				case VrcEventType.AnimationFloat:
 					_dispatcher.SetAnimatorFloat(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterFloat);
 					break;
+				case VrcEventType.AnimationInt:
+					_dispatcher.SetAnimatorInt(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject, e.ParameterInt);
+					break;
 				case VrcEventType.AnimationTrigger:
 					_dispatcher.SetAnimatorTrigger(CombinedNetworkId, broadcast, instagatorId, e.ParameterString, e.ParameterObject);
 					break;
@@ -434,10 +437,7 @@ namespace VRCSDK2
 
 		private void LateUpdate()
 		{
-			if (deferredEvents.FirstOrDefault() != null)
-			{
-				ProcessDeferredEvents();
-			}
+			ProcessDeferredEvents();
 		}
 
 		public long GetCombinedNetworkId()

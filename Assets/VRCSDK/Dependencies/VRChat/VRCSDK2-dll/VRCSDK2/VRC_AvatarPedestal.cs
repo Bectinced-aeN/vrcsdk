@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace VRCSDK2
 {
-	public class VRC_AvatarPedestal : MonoBehaviour
+	public class VRC_AvatarPedestal : MonoBehaviour, INetworkID
 	{
 		public delegate Object InstantiationDelegate(Object prefab);
 
@@ -20,6 +20,12 @@ namespace VRCSDK2
 		private GameObject Instance;
 
 		public static InstantiationDelegate Instantiate;
+
+		public int NetworkID
+		{
+			get;
+			set;
+		}
 
 		public VRC_AvatarPedestal()
 			: this()

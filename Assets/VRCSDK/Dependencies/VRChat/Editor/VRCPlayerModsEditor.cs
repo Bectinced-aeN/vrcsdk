@@ -41,6 +41,11 @@ namespace VRCSDK2
 				}
 				EditorGUILayout.EndVertical();
 			}
+			if(GUILayout.Button("Add Mods"))
+			{
+				VRCPlayerModEditorWindow.AddModCallback adcb = OnInspectorGUI;
+				VRCPlayerModEditorWindow.Init(myTarget, adcb);
+			}
 		}
 
 		VRCSDK2.VRCPlayerModProperty DrawFieldForProp(VRCSDK2.VRCPlayerModProperty property)

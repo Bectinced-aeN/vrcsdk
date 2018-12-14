@@ -21,22 +21,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ************************************************************************************/
 
-#if UNITY_5 && !UNITY_5_0 && !UNITY_5_1
-// The spatialization API is only supported by the final Unity 5.2 version and newer.
-// If you get script compile errors in this file, comment out the line below.
-//
-// Note: When Unity 6 is a thing, we will need to add that into the mix
-//
-#define ENABLE_SPATIALIZER_API
-#endif
+// Uncomment below to test access of read-only spatializer parameters
+//#define TEST_READONLY_PARAMETERS
 
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 
 public class ONSPAudioSource : MonoBehaviour
 {
-#if ENABLE_SPATIALIZER_API
+#if TEST_READONLY_PARAMETERS
+    // Spatializer read-only system parameters (global)
+    static int readOnly_GlobalRelectionOn = 8;
+    static int readOnly_NumberOfUsedSpatializedVoices = 9;
+#endif
 
     // Import functions
     public const string strONSPS = "AudioPluginOculusSpatializer";
@@ -117,6 +116,20 @@ public class ONSPAudioSource : MonoBehaviour
 		}
 	}
 
+    [SerializeField]
+    private float volumetricRadius = 0.0f;
+    public float VolumetricRadius
+    {
+        get
+        {
+            return volumetricRadius;
+        }
+        set
+        {
+            volumetricRadius = Mathf.Clamp(value, 0.0f, 1000.0f);
+        }
+    }
+
 	[SerializeField]
 	private bool enableRfl = false;
 	public  bool EnableRfl
@@ -130,13 +143,13 @@ public class ONSPAudioSource : MonoBehaviour
 			enableRfl = value;
 		}
 	}
-#endif
 
 	/// <summary>
 	/// Awake this instance.
 	/// </summary>
 	void Awake()
 	{
+        // jnuccio: moved SetParameters() call from Awake to Start below
 	}
 
 	/// <summary>
@@ -144,33 +157,44 @@ public class ONSPAudioSource : MonoBehaviour
 	/// </summary>
     void Start()
     {
+#if VRC_CLIENT
+        VRCAudioManager.ApplyGameAudioMixerSettings(GetComponent<AudioSource>());
+#endif
+
+        // jnuccio: moved SetParameters() call here from Awake 
         // We might iterate through multiple sources / game object
         var source = GetComponent<AudioSource>();
         SetParameters(ref source);
     }
 
-    /// <summary>
-    /// Update this instance.
-    /// </summary>
+	/// <summary>
+	/// Update this instance.
+	/// </summary>
     void Update()
     {
 		// We might iterate through multiple sources / game object
 		var source = GetComponent<AudioSource>();
-        if (source == null)
+		 if (source == null)
             return;
-              
+
+        // READ-ONLY PARAMETER TEST      
+#if TEST_READONLY_PARAMETERS
+        float rfl_enabled = 0.0f;
+        source.GetSpatializerFloat(readOnly_GlobalRelectionOn, out rfl_enabled);
+        float num_voices = 0.0f;
+        source.GetSpatializerFloat(readOnly_NumberOfUsedSpatializedVoices, out num_voices);
+
+        String readOnly = System.String.Format
+        ("Read only values: refl enabled: {0:F0} num voices: {1:F0}", rfl_enabled, num_voices);
+        Debug.Log(readOnly);
+#endif
+
         // Check to see if we should disable spatializion
         if ((Application.isPlaying == false) || 
             (AudioListener.pause == true) || 
             (source.isPlaying == false) ||
             (source.isActiveAndEnabled == false)
-#if VRC_CLIENT
-            ||
-            (VRCFlowManager.Instance.IsEnteringRoom() == true)
            )
-#else
-           )
-#endif
         {
             source.spatialize = false;
             return;
@@ -187,12 +211,11 @@ public class ONSPAudioSource : MonoBehaviour
 	/// <param name="source">Source.</param>
 	public void SetParameters(ref AudioSource source)
 	{
+        // jnuccio: added try here to catch unknown exception reported in analytics
         try
         {
             if (source == null)
                 return;
-
-#if ENABLE_SPATIALIZER_API
 
             // See if we should enable spatialization
             source.spatialize = enableSpatialization;
@@ -207,21 +230,19 @@ public class ONSPAudioSource : MonoBehaviour
             source.SetSpatializerFloat(2, near);
             source.SetSpatializerFloat(3, far);
 
-            if (enableRfl == true)
-                source.SetSpatializerFloat(4, 0.0f);
-            else
-                source.SetSpatializerFloat(4, 1.0f);
+            source.SetSpatializerFloat(4, volumetricRadius);
 
-#endif
+            if (enableRfl == true)
+                source.SetSpatializerFloat(5, 0.0f);
+            else
+                source.SetSpatializerFloat(5, 1.0f);
         }
-        catch (System.NullReferenceException)
+        catch (Exception)
         {
             // not sure why this throws sometimes
         }
 	}
 
-    // Only draw gizmos if spatializer exists
-#if ENABLE_SPATIALIZER_API
     private static ONSPAudioSource RoomReflectionGizmoAS = null; 
 
     /// <summary>
@@ -262,6 +283,17 @@ public class ONSPAudioSource : MonoBehaviour
         c.a = colorSolidAlpha;
         Gizmos.color = c;
         Gizmos.DrawSphere(transform.position, Far);
+        
+        // VolumetricRadius (purple)
+        c.r = 1.0f;
+        c.g = 0.0f;
+        c.b = 1.0f;
+        c.a = 1.0f;
+        Gizmos.color = c;
+        Gizmos.DrawWireSphere(transform.position, VolumetricRadius);
+        c.a = colorSolidAlpha;
+        Gizmos.color = c;
+        Gizmos.DrawSphere(transform.position, VolumetricRadius);
 
         // Draw room parameters ONCE only, provided reflection engine is on
         if (RoomReflectionGizmoAS == this)
@@ -308,5 +340,4 @@ public class ONSPAudioSource : MonoBehaviour
             RoomReflectionGizmoAS = null;
         }
     }
-#endif
 }

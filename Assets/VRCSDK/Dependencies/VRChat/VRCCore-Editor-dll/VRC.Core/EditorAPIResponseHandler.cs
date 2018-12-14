@@ -8,7 +8,7 @@ namespace VRC.Core
 {
 	internal class EditorAPIResponseHandler : APIResponseHandler
 	{
-		public override void HandleReponse(HTTPRequest req, HTTPResponse resp, int requestId, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, int retryCount = 0)
+		public override void HandleReponse(HTTPRequest req, HTTPResponse resp, int requestId, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, int retryCount = 0, float cacheLifetime = -1f)
 		{
 			string empty = string.Empty;
 			switch (req.State)
@@ -18,48 +18,37 @@ namespace VRC.Core
 				string dataAsText = resp.DataAsText;
 				if (APIUser.CurrentUser != null && APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
 				{
-					Debug.Log((object)("[" + requestId + "] Response:\n" + dataAsText));
-				}
-				Dictionary<string, object> obj = null;
-				if (successCallbackWithDict != null)
-				{
-					obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
-				}
-				List<object> obj2 = null;
-				if (successCallbackWithList != null)
-				{
-					obj2 = (Json.Decode(dataAsText) as List<object>);
+					Debug.Log((object)("<color=red>[" + requestId + "] Response:\n" + dataAsText + "</color>"));
 				}
 				if (resp.IsSuccess)
 				{
 					if (resp.StatusCode == 200 || resp.StatusCode == 304)
 					{
-						successCallbackWithResponse?.Invoke(dataAsText);
-						successCallbackWithDict?.Invoke(obj);
-						successCallbackWithList?.Invoke(obj2);
+						APIResponseHandler.CacheResponse(req.Uri.PathAndQuery, cacheLifetime, dataAsText);
+						HandleSuccessReponse(dataAsText, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList);
 					}
 					else
 					{
-						obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
-						string errorMessage = GetErrorMessage(obj);
-						errorCallback?.Invoke(errorMessage);
-						Debug.LogError((object)("[" + requestId + "] Response error - server returned status code " + resp.StatusCode + ", message - " + errorMessage));
+						Dictionary<string, object> dictionary = Json.Decode(dataAsText) as Dictionary<string, object>;
+						string text = (dictionary == null) ? resp.Message : GetErrorMessage(dictionary);
+						errorCallback?.Invoke(text);
+						Debug.LogError((object)("[" + requestId + "] Response error - server returned status code " + resp.StatusCode + ", message - " + text));
 					}
 				}
 				else
 				{
 					Debug.Log((object)string.Format("<color=red>[" + requestId + "] Request finished Successfully, but the server sent an error. Status Code: {0}-{1} Message: {2} </color>", resp.StatusCode, resp.Message, resp.DataAsText));
-					obj = (Json.Decode(dataAsText) as Dictionary<string, object>);
-					string errorMessage2 = GetErrorMessage(obj);
-					errorCallback?.Invoke(errorMessage2);
+					Dictionary<string, object> dictionary2 = Json.Decode(dataAsText) as Dictionary<string, object>;
+					string obj = (dictionary2 == null) ? resp.Message : GetErrorMessage(dictionary2);
+					errorCallback?.Invoke(obj);
 				}
 				break;
 			}
 			case HTTPRequestStates.Error:
 			{
 				empty = ((req.Exception == null) ? "No Exception" : req.Exception.Message);
-				string text = (req.Exception == null) ? "No Exception" : (req.Exception.Message + "\n" + req.Exception.StackTrace);
-				Logger.Log("[" + requestId + "] Request Finished with Error! " + text);
+				string text2 = (req.Exception == null) ? "No Exception" : (req.Exception.Message + "\n" + req.Exception.StackTrace);
+				Logger.Log("[" + requestId + "] Request Finished with Error! " + text2);
 				RetryRequest(requestId, req, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, empty, --retryCount);
 				break;
 			}
@@ -79,6 +68,23 @@ namespace VRC.Core
 				RetryRequest(requestId, req, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, empty, --retryCount);
 				break;
 			}
+		}
+
+		public override void HandleSuccessReponse(string jsonResponse, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null)
+		{
+			Dictionary<string, object> obj = null;
+			if (successCallbackWithDict != null)
+			{
+				obj = (Json.Decode(jsonResponse) as Dictionary<string, object>);
+			}
+			List<object> obj2 = null;
+			if (successCallbackWithList != null)
+			{
+				obj2 = (Json.Decode(jsonResponse) as List<object>);
+			}
+			successCallbackWithResponse?.Invoke(jsonResponse);
+			successCallbackWithDict?.Invoke(obj);
+			successCallbackWithList?.Invoke(obj2);
 		}
 	}
 }

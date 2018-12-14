@@ -89,12 +89,36 @@ namespace VRC
             }
         }
 
-        static bool UseDevApi
+        static ApiServerEnvironment serverEnvironment
         {
             get
             {
-                return VRC.Core.ApiModel.GetApiUrl() == ApiModel.devApiUrl;
+                ApiServerEnvironment env = ApiServerEnvironment.Release;
+                try
+                {
+                    env = (ApiServerEnvironment)System.Enum.Parse(typeof(ApiServerEnvironment), UnityEditor.EditorPrefs.GetString("VRC_ApiServerEnvironment", env.ToString()));
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Invalid server environment name - " + e.ToString());
+                }
+
+                return env;
             }
+            set
+            {
+                UnityEditor.EditorPrefs.SetString("VRC_ApiServerEnvironment", value.ToString());
+
+                ApiModel.SetApiUrlFromEnvironment(value);
+            }
+        }
+
+        public static void RefreshApiUrlSetting()
+        {
+            // this forces the static api url variable to be reset from the server environment set in editor prefs.
+            // needed because the static variable states get cleared when entering / exiting play mode
+            ApiServerEnvironment env = serverEnvironment;
+            serverEnvironment = env;
         }
 
         [MenuItem("VRChat SDK/Settings")]
@@ -115,7 +139,7 @@ namespace VRC
 
 			if(!APIUser.IsLoggedInWithCredentials && ApiCredentials.Load() )
             {
-				APIUser.Login( null, null );
+				APIUser.Login((user) => AnalyticsSDK.LoggedInUserChanged(user), null );
             }
 
             clientInstallPath = SDKClientUtilities.GetSavedVRCInstallPath();
@@ -124,6 +148,12 @@ namespace VRC
 
             signingIn = false;
 			isInitialized = true;
+        }
+
+        [UnityEditor.Callbacks.DidReloadScripts(int.MaxValue)]
+        static void DidReloadScripts()
+        {
+            RefreshApiUrlSetting();
         }
 
         static void OnVRCInstallPathGUI()
@@ -210,26 +240,31 @@ namespace VRC
                 }
             }
 
-            //if (IsInternal)
             {
-                if (APIUser.CurrentUser == null || APIUser.CurrentUser.developerType > APIUser.DeveloperType.Trusted)
+                if (APIUser.CurrentUser == null || APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
                 {
                     EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
-                    bool useDevApi = UseDevApi;
-                    bool newUseDevApi = EditorGUILayout.Toggle("Use Dev API", useDevApi);
 
-                    if (newUseDevApi != useDevApi)
+                    ApiServerEnvironment newEnv = (ApiServerEnvironment)EditorGUILayout.EnumPopup("Use API", serverEnvironment);
+                    if (serverEnvironment != newEnv)
                     {
-                        if (newUseDevApi)
-                            ApiModel.SetApiUrl(ApiModel.devApiUrl);
-                        else
-                            ApiModel.SetApiUrl(ApiModel.releaseApiUrl);
+                        serverEnvironment = newEnv;
                     }
 
                     if (APIUser.CurrentUser == null)
                     {
                         EditorGUILayout.EndVertical();
                         return false;
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
+
+                    ApiServerEnvironment newEnv = (EditorGUILayout.Popup("Use API", serverEnvironment != ApiServerEnvironment.Beta ? 1 : 0, new string[] { "Beta", "Release" }) == 0 ? ApiServerEnvironment.Beta : ApiServerEnvironment.Release);
+                    if (serverEnvironment != newEnv)
+                    {
+                        serverEnvironment = newEnv;
                     }
                 }
             }
@@ -251,10 +286,6 @@ namespace VRC
             {
                 // custom vrchat install location
                 OnVRCInstallPathGUI();
-
-                // custom api endpoint field
-                if (APIUser.CurrentUser.developerType <= APIUser.DeveloperType.Trusted && UseDevApi)
-                    ApiModel.SetApiUrl(ApiModel.releaseApiUrl);
             }
 
             EditorGUILayout.EndVertical();
@@ -295,7 +326,7 @@ namespace VRC
                 if (signingIn)  
                     return "Logging in.";
                 else
-                    return "Connected to " + (UseDevApi ? "Dev" : "Prod");
+                    return "Connected to " + serverEnvironment.ToString();
             }
         }
 
@@ -324,6 +355,7 @@ namespace VRC
                     error = null;
                     storedUsername = username;
                     storedPassword = password;
+                    AnalyticsSDK.LoggedInUserChanged(user);
                 },
                 delegate (string message)
                 {

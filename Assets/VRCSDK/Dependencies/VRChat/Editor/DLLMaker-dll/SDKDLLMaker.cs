@@ -29,7 +29,7 @@ public class SDKDLLMaker
 		}
 		try
 		{
-			MakeSDKDLL(debug, isInternal);
+			Obfuscate(MakeSDKDLL(debug, isInternal), debug);
 		}
 		catch (Exception ex2)
 		{
@@ -46,7 +46,7 @@ public class SDKDLLMaker
 		AssetDatabase.Refresh();
 	}
 
-	public static void MakeSDKDLL(bool debug, bool isInternal)
+	public static string MakeSDKDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -60,7 +60,11 @@ public class SDKDLLMaker
 			dLLMaker.defines.Add("INTERNAL_SDK");
 		}
 		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCSDK2.dll";
-		dLLMaker.createDLL();
+		return dLLMaker.createDLL();
+	}
+
+	private static void Obfuscate(string dllPath, bool debug)
+	{
 	}
 
 	public static void MakeCoreDLLs(bool debug, bool isInternal)
@@ -75,7 +79,7 @@ public class SDKDLLMaker
 		}
 		try
 		{
-			MakeStandaloneCoreDLL(debug, isInternal);
+			Obfuscate(MakeStandaloneCoreDLL(debug, isInternal), debug);
 		}
 		catch (Exception ex2)
 		{
@@ -83,7 +87,7 @@ public class SDKDLLMaker
 		}
 	}
 
-	public static void MakeEditorCoreDLL(bool debug, bool isInternal)
+	public static string MakeEditorCoreDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -98,10 +102,10 @@ public class SDKDLLMaker
 		}
 		dLLMaker.isEditor = true;
 		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCCore-Editor.dll";
-		dLLMaker.createDLL();
+		return dLLMaker.createDLL();
 	}
 
-	public static void MakeStandaloneCoreDLL(bool debug, bool isInternal)
+	public static string MakeStandaloneCoreDLL(bool debug, bool isInternal)
 	{
 		DLLMaker dLLMaker = new DLLMaker();
 		dLLMaker.debug = debug;
@@ -116,7 +120,7 @@ public class SDKDLLMaker
 		}
 		dLLMaker.isEditor = false;
 		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCCore-Standalone.dll";
-		dLLMaker.createDLL();
+		return dLLMaker.createDLL();
 	}
 
 	public static void MakeDLLMakerDLL(bool debug, bool isInternal)

@@ -70,6 +70,10 @@ public class OculusSpatializerUserParamsEditor : Editor
 			m_Component.Near  = EditorGUILayout.FloatField("Minimum", m_Component.Near);
 			m_Component.Far   = EditorGUILayout.FloatField("Maximum", m_Component.Far);
 
+            Label("");
+            Label("VOLUMETRIC RADIUS (0.0 - 1000.0 meters)");
+            m_Component.VolumetricRadius = EditorGUILayout.FloatField("Radius", m_Component.VolumetricRadius);
+
 			Separator();
 /*
 			// Reference GUI Layout fields

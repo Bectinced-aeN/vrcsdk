@@ -7,7 +7,7 @@ namespace VRCSDK2
 {
 	[RequireComponent(typeof(AudioSource))]
 	[ExecuteInEditMode]
-	public class VRC_WebPanel : VRC_Interactable, INetworkID, IVRCEventProvider
+	public class VRC_WebPanel : VRC_Interactable, IVRCEventProvider
 	{
 		[Serializable]
 		public class WebFile
@@ -52,9 +52,6 @@ namespace VRCSDK2
 		public bool cookiesEnabled;
 
 		[HideInInspector]
-		public int networkId;
-
-		[HideInInspector]
 		public List<WebFile> webData;
 
 		public Action<string> _NavigateTo;
@@ -68,19 +65,6 @@ namespace VRCSDK2
 		public Action<string> _ExecuteScript;
 
 		public Func<string, Delegate, bool> _BindCall;
-
-		[HideInInspector]
-		public int NetworkID
-		{
-			get
-			{
-				return networkId;
-			}
-			set
-			{
-				networkId = value;
-			}
-		}
 
 		private string WebRootPath => (webRoot != null && !(webRoot.Trim() == string.Empty)) ? (Application.get_dataPath() + webRoot.Replace('/', Path.DirectorySeparatorChar)) : null;
 

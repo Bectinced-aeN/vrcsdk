@@ -1,4 +1,4 @@
-﻿//#define ENV_SET_INCLUDED_SHADERS
+﻿#define ENV_SET_INCLUDED_SHADERS
 
 using UnityEngine;
 using UnityEditor;
@@ -38,16 +38,85 @@ public class EnvConfig
         BuildTarget.StandaloneWindows64, BuildTarget.StandaloneWindows
     };
 
-    private static bool _requestConfigureSettings = true;
-
-#if ENV_SET_INCLUDED_SHADERS
-    static string[] minimalShaders = new string[]
+    static string[] ensureTheseShadersAreAvailable = new string[]
     {
-        "Standard",
-        "Standard (Specular setup)"
-    };
+#if VRC_CLIENT
+        "Hidden/CubeBlend",
+        "Hidden/CubeBlur",
+        "Hidden/CubeCopy",
+        "Hidden/VideoDecode",
+        "Legacy Shaders/Bumped Diffuse",
+        "Legacy Shaders/Bumped Specular",
+        "Legacy Shaders/Decal",
+        "Legacy Shaders/Diffuse Detail",
+        "Legacy Shaders/Diffuse Fast",
+        "Legacy Shaders/Diffuse",
+        "Legacy Shaders/Diffuse",
+        "Legacy Shaders/Lightmapped/Diffuse",
+        "Legacy Shaders/Lightmapped/Specular",
+        "Legacy Shaders/Lightmapped/VertexLit",
+        "Legacy Shaders/Parallax Diffuse",
+        "Legacy Shaders/Parallax Specular",
+        "Legacy Shaders/Reflective/Bumped Diffuse",
+        "Legacy Shaders/Reflective/Bumped Specular",
+        "Legacy Shaders/Reflective/Bumped Unlit",
+        "Legacy Shaders/Reflective/Bumped VertexLit",
+        "Legacy Shaders/Reflective/Diffuse",
+        "Legacy Shaders/Reflective/Parallax Diffuse",
+        "Legacy Shaders/Reflective/Parallax Specular",
+        "Legacy Shaders/Reflective/Specular",
+        "Legacy Shaders/Reflective/VertexLit",
+        "Legacy Shaders/Self-Illumin/Bumped Diffuse",
+        "Legacy Shaders/Self-Illumin/Bumped Specular",
+        "Legacy Shaders/Self-Illumin/Diffuse",
+        "Legacy Shaders/Self-Illumin/Parallax Diffuse",
+        "Legacy Shaders/Self-Illumin/Parallax Specular",
+        "Legacy Shaders/Self-Illumin/Specular",
+        "Legacy Shaders/Self-Illumin/VertexLit",
+        "Legacy Shaders/Specular",
+        "Legacy Shaders/Transparent/Bumped Diffuse",
+        "Legacy Shaders/Transparent/Bumped Specular",
+        "Legacy Shaders/Transparent/Cutout/Bumped Diffuse",
+        "Legacy Shaders/Transparent/Cutout/Bumped Specular",
+        "Legacy Shaders/Transparent/Cutout/Diffuse",
+        "Legacy Shaders/Transparent/Cutout/Soft Edge Unlit",
+        "Legacy Shaders/Transparent/Cutout/Specular",
+        "Legacy Shaders/Transparent/Cutout/VertexLit",
+        "Legacy Shaders/Transparent/Diffuse",
+        "Legacy Shaders/Transparent/Parallax Diffuse",
+        "Legacy Shaders/Transparent/Parallax Specular",
+        "Legacy Shaders/Transparent/Specular",
+        "Legacy Shaders/Transparent/VertexLit",
+        "Legacy Shaders/VertexLit",
+        "Mobile/Particles/Additive",
+        "Mobile/Particles/Alpha Blended",
+        "Mobile/Particles/Multiply",
+        "Mobile/Particles/VertexLit Blended",
+        "Mobile/Skybox",
+        "Nature/Terrain/Diffuse",
+        "Nature/Terrain/Specular",
+        "Nature/Terrain/Standard",
+        "Particles/Additive (Soft)",
+        "Particles/Additive",
+        "Particles/Alpha Blended Premultiply",
+        "Particles/Alpha Blended",
+        "Particles/Anim Alpha Blended",
+        "Particles/Multiply (Double)",
+        "Particles/Multiply",
+        "Particles/VertexLit Blended",
+        "Particles/~Additive-Multiply",
+        "Skybox/Cubemap",
+        "Skybox/Procedural",
+        "Skybox/6 Sided",
+        "Sprites/Default",
+        "Sprites/Diffuse",
+        "UI/Default",
+        "UI/Unlit/WebPanelTransparent",
 #endif
+    };
 
+    private static bool _requestConfigureSettings = true;
+    
     static EnvConfig()
     {
         EditorApplication.update += EditorUpdate;
@@ -88,6 +157,7 @@ public class EnvConfig
         return true;
     }
 
+    [MenuItem("VRChat SDK/Force Configure Player Settings")]
     public static void ConfigurePlayerSettings()
 	{
 		Debug.Log("Setting required PlayerSettings...");
@@ -113,6 +183,8 @@ public class EnvConfig
 
 		// default to steam runtime in sdk (shouldn't matter)
 		SetVRSDKs(new string[] { "None", "OpenVR", "Oculus" });
+
+        VRC.Core.AnalyticsSDK.Initialize(VRC.Core.SDKClientUtilities.GetSDKVersionDate());
 #endif
     }
 
@@ -306,21 +378,31 @@ public class EnvConfig
 #if ENV_SET_INCLUDED_SHADERS
         SerializedProperty alwaysIncluded = graphicsManager.FindProperty("m_AlwaysIncludedShaders");
 
-        System.Collections.Generic.List<Shader> foundShaders = minimalShaders.Aggregate(new System.Collections.Generic.List<Shader>(), (l, name) => { var s = Shader.Find(name); if (s) l.Add(s); return l; });
+#if ENV_SEARCH_FOR_SHADERS
+        Resources.LoadAll("", typeof(Shader));
+        System.Collections.Generic.List<Shader> foundShaders = Resources.FindObjectsOfTypeAll<Shader>()
+            .Where(s => { string name = s.name.ToLower(); return 0 == (s.hideFlags & HideFlags.DontSave); })
+            .GroupBy(s => s.name)
+            .Select(g => g.First())
+            .ToList();
+#else
+        System.Collections.Generic.List<Shader> foundShaders = new System.Collections.Generic.List<Shader>();
+#endif
 
-        for (int shaderIdx = 0; shaderIdx < alwaysIncluded.arraySize; ++shaderIdx)
+        for (int shaderIdx = 0; shaderIdx < ensureTheseShadersAreAvailable.Length; ++shaderIdx)
         {
-            Shader s = alwaysIncluded.GetArrayElementAtIndex(shaderIdx).objectReferenceValue as Shader;
-            if (s != null && foundShaders.Contains(s))
-                foundShaders.Remove(s);
+            if (foundShaders.Any(s => s.name == ensureTheseShadersAreAvailable[shaderIdx]))
+                continue;
+            Shader namedShader = Shader.Find(ensureTheseShadersAreAvailable[shaderIdx]);
+            if (namedShader != null)
+                foundShaders.Add(namedShader);
         }
 
-        {
-            int endIdx = alwaysIncluded.arraySize;
-            alwaysIncluded.arraySize += foundShaders.Count;
-            for (int shaderIdx = endIdx; shaderIdx < alwaysIncluded.arraySize; ++shaderIdx)
-                alwaysIncluded.GetArrayElementAtIndex(shaderIdx).objectReferenceValue = foundShaders[shaderIdx - endIdx];
-        }
+        foundShaders.Sort((s1, s2) => s1.name.CompareTo(s2.name));
+
+        alwaysIncluded.arraySize = foundShaders.Count;
+        for (int shaderIdx = 0; shaderIdx < foundShaders.Count; ++shaderIdx)
+            alwaysIncluded.GetArrayElementAtIndex(shaderIdx).objectReferenceValue = foundShaders[shaderIdx];
 #endif
 
         SerializedProperty preloaded = graphicsManager.FindProperty("m_PreloadedShaders");

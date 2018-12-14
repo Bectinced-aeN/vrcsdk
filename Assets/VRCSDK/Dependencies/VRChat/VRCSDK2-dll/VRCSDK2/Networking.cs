@@ -35,6 +35,14 @@ namespace VRCSDK2
 
 		public static Action<GameObject> _Destroy;
 
+		public static Func<DateTime> _GetNetworkDateTime;
+
+		public static Func<double> _GetServerTimeInSeconds;
+
+		public static Func<int> _GetServerTimeInMilliseconds;
+
+		public static Func<double, double, double> _CalculateServerDeltaTime;
+
 		public static bool IsNetworkSettled => _IsNetworkSettled == null || _IsNetworkSettled();
 
 		public static bool IsMaster => _IsMaster == null || _IsMaster();
@@ -141,6 +149,42 @@ namespace VRCSDK2
 				return _GetUniqueName(obj);
 			}
 			return null;
+		}
+
+		public static DateTime GetNetworkDateTime()
+		{
+			if (_GetNetworkDateTime != null)
+			{
+				return _GetNetworkDateTime();
+			}
+			return DateTime.UtcNow;
+		}
+
+		public static double GetServerTimeInSeconds()
+		{
+			if (_GetServerTimeInSeconds != null)
+			{
+				return _GetServerTimeInSeconds();
+			}
+			return (double)Time.get_time();
+		}
+
+		public static int GetServerTimeInMilliseconds()
+		{
+			if (_GetServerTimeInMilliseconds != null)
+			{
+				return _GetServerTimeInMilliseconds();
+			}
+			return (int)(Time.get_time() * 1000f);
+		}
+
+		public static double CalculateServerDeltaTime(double timeInSeconds, double previousTimeInSeconds)
+		{
+			if (_CalculateServerDeltaTime != null)
+			{
+				return _CalculateServerDeltaTime(timeInSeconds, previousTimeInSeconds);
+			}
+			return timeInSeconds - previousTimeInSeconds;
 		}
 	}
 }

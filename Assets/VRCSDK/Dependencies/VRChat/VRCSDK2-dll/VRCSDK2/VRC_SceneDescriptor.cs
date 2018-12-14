@@ -5,7 +5,6 @@ using UnityEngine.Rendering;
 
 namespace VRCSDK2
 {
-	[RequireComponent(typeof(VRC_EventHandler))]
 	public class VRC_SceneDescriptor : VRC_Behaviour
 	{
 		public enum SpawnOrder
@@ -42,8 +41,6 @@ namespace VRCSDK2
 		public float RespawnHeightY = -100f;
 
 		public RespawnHeightBehaviour ObjectBehaviourAtRespawnHeight = RespawnHeightBehaviour.Destroy;
-
-		public bool ForbidFreeModification;
 
 		public bool ForbidUserPortals;
 
@@ -85,8 +82,8 @@ namespace VRCSDK2
 
 		public string unityVersion;
 
-		[HideInInspector]
 		[Obsolete("Property is not used.")]
+		[HideInInspector]
 		public string Name;
 
 		[Obsolete("Property is not used.")]
@@ -110,8 +107,8 @@ namespace VRCSDK2
 
 		private static Dictionary<string, Material> sDynamicMaterials;
 
-		[Range(1f, 50f)]
-		public int UpdateTimeInMS = 10;
+		[Range(33f, 150f)]
+		public int UpdateTimeInMS = 33;
 
 		[HideInInspector]
 		public Texture2D[] LightMapsNear;

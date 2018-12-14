@@ -12,9 +12,6 @@ namespace VRCSDK2
 
 		public delegate void TeleportDelegate(VRC_ObjectSync obj, Vector3 position, Quaternion rotation);
 
-		[HideInInspector]
-		public int networkId;
-
 		public static InitializationDelegate Initialize;
 
 		public static IsLocalDelegate IsLocal;
@@ -33,17 +30,10 @@ namespace VRCSDK2
 
 		public static Action<VRC_ObjectSync, bool> SetIsKinematic;
 
-		[HideInInspector]
 		public int NetworkID
 		{
-			get
-			{
-				return networkId;
-			}
-			set
-			{
-				networkId = value;
-			}
+			get;
+			set;
 		}
 
 		public bool useGravity
@@ -89,6 +79,17 @@ namespace VRCSDK2
 		{
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void TeleportTo(Transform targetLocation)
+		{
+			//IL_0002: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0008: Unknown result type (might be due to invalid IL or missing references)
+			TeleportTo(targetLocation.get_position(), targetLocation.get_rotation());
+		}
+
 		public void TeleportTo(Vector3 position, Quaternion rotation)
 		{
 			//IL_0010: Unknown result type (might be due to invalid IL or missing references)
@@ -104,6 +105,19 @@ namespace VRCSDK2
 			if (Initialize != null)
 			{
 				Initialize(this);
+			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void TakeOwnership(int instigator_id)
+		{
+			VRC_PlayerApi playerById = VRC_PlayerApi.GetPlayerById(instigator_id);
+			if (!(playerById == null))
+			{
+				Networking.SetOwner(playerById, this.get_gameObject());
 			}
 		}
 
@@ -155,6 +169,26 @@ namespace VRCSDK2
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
 			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "ReapObject";
+			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
+			{
+				this.get_gameObject()
+			};
+			list.Add(vrcEvent);
+			vrcEvent = new VRC_EventHandler.VrcEvent();
+			vrcEvent.Name = "TakeOwnership";
+			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
+			vrcEvent.ParameterString = "TakeOwnership";
+			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
+			{
+				this.get_gameObject()
+			};
+			list.Add(vrcEvent);
+			vrcEvent = new VRC_EventHandler.VrcEvent();
+			vrcEvent.Name = "TeleportTo";
+			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
+			vrcEvent.ParameterString = "TeleportTo";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
 				this.get_gameObject()

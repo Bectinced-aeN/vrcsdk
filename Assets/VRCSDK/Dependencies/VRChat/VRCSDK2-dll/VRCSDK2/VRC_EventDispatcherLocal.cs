@@ -11,6 +11,11 @@ namespace VRCSDK2
 	{
 		private Dictionary<Type, MethodInfo[]> cachedMethodInfo = new Dictionary<Type, MethodInfo[]>();
 
+		private void Start()
+		{
+			Object.Destroy(this);
+		}
+
 		public override void ActivateCustomTrigger(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, GameObject triggerObject, string customName)
 		{
 			_ActivateCustomTrigger(CombinedNetworkId, GetGameObjectPath(triggerObject), customName);
@@ -90,6 +95,20 @@ namespace VRCSDK2
 			}
 		}
 
+		public override void SetAnimatorInt(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, GameObject destObject, int Value)
+		{
+			_SetAnimatorInt(CombinedNetworkId, Name, GetGameObjectPath(destObject), Value);
+		}
+
+		public void _SetAnimatorInt(long CombinedNetworkId, string Name, string destObject, int Value)
+		{
+			Transform val = FindTransform(destObject);
+			if (val != null && val.get_gameObject().GetComponent<Animator>() != null)
+			{
+				val.get_gameObject().GetComponent<Animator>().SetInteger(Name, Value);
+			}
+		}
+
 		public override void SetAnimatorBool(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, VRC_EventHandler.VrcBooleanOp Value)
 		{
 			_SetAnimatorBool(CombinedNetworkId, Name, (int)Value);
@@ -127,6 +146,19 @@ namespace VRCSDK2
 			if (this.GetComponent<Animator>() != null)
 			{
 				this.GetComponent<Animator>().SetFloat(Name, Value);
+			}
+		}
+
+		public override void SetAnimatorInt(long CombinedNetworkId, VRC_EventHandler.VrcBroadcastType Broadcast, int Instigator, string Name, int Value)
+		{
+			_SetAnimatorInt(CombinedNetworkId, Name, Value);
+		}
+
+		public void _SetAnimatorInt(long CombinedNetworkId, string Name, int Value)
+		{
+			if (this.GetComponent<Animator>() != null)
+			{
+				this.GetComponent<Animator>().SetInteger(Name, Value);
 			}
 		}
 
@@ -315,12 +347,12 @@ namespace VRCSDK2
 
 		public void _SpawnObject(long CombinedNetworkId, string objectSpawnerName, string prefabName, byte[] data)
 		{
-			//IL_000b: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0010: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0014: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0019: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_000c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0011: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001a: Unknown result type (might be due to invalid IL or missing references)
 			//IL_001d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001e: Unknown result type (might be due to invalid IL or missing references)
 			object[] array = VRC_Serialization.ParameterDecoder(data);
 			Vector3 position = (Vector3)array[0];
 			Quaternion rotation = (Quaternion)array[1];

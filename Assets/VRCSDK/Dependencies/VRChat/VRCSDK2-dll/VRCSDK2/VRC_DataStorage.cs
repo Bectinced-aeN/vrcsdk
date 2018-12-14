@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace VRCSDK2
 {
-	[RequireComponent(typeof(VRC_ObjectSync))]
-	public class VRC_DataStorage : MonoBehaviour
+	public class VRC_DataStorage : MonoBehaviour, INetworkID
 	{
 		public enum VrcDataMirror
 		{
@@ -117,6 +116,12 @@ namespace VRCSDK2
 		public static ResizeDelegate _Resize;
 
 		public static Func<VRC_DataStorage, string, int> _GetElementIndex;
+
+		public int NetworkID
+		{
+			get;
+			set;
+		}
 
 		public event DataElementDelegate ElementChanged;
 

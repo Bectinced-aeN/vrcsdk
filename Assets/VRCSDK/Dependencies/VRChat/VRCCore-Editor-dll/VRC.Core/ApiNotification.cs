@@ -90,7 +90,7 @@ namespace VRC.Core
 			}
 			ApiModel.SendPostRequest("user/" + targetUserId + "/notification", dictionary, delegate(Dictionary<string, object> obj)
 			{
-				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+				ApiNotification apiNotification = new ApiNotification();
 				apiNotification.Init(obj);
 				if (successCallback != null)
 				{
@@ -109,7 +109,7 @@ namespace VRC.Core
 		{
 			ApiModel.SendPutRequest("auth/user/notifications/" + notificationId + "/see", delegate(Dictionary<string, object> obj)
 			{
-				ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+				ApiNotification apiNotification = new ApiNotification();
 				apiNotification.Init(obj);
 				if (successCallback != null)
 				{
@@ -171,7 +171,7 @@ namespace VRC.Core
 					foreach (object @object in objects)
 					{
 						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						ApiNotification apiNotification = ScriptableObject.CreateInstance<ApiNotification>();
+						ApiNotification apiNotification = new ApiNotification();
 						apiNotification.Init(jsonObject);
 						list.Add(apiNotification);
 					}

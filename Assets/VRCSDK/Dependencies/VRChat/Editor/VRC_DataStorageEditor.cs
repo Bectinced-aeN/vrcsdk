@@ -80,6 +80,10 @@ namespace VRCSDK2
     {
         public override void OnInspectorGUI()
         {
+            VRCSDK2.VRC_ObjectSync os = ((VRCSDK2.VRC_DataStorage)target).GetComponent<VRCSDK2.VRC_ObjectSync>();
+            if (os != null && os.SynchronizePhysics)
+                EditorGUILayout.HelpBox("Consider either removing the VRC_ObjectSync or disabling SynchronizePhysics.", MessageType.Warning);
+
             DrawDefaultInspector();
         }
     }

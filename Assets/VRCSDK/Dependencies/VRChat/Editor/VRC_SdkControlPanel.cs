@@ -1,25 +1,28 @@
-using UnityEngine;
-using UnityEditor;
-using VRC.Core;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+using VRC.Core;
 
 [ExecuteInEditMode]
 public class VRC_SdkControlPanel : EditorWindow
 {
     static VRC_SdkControlPanel window;
-	static bool forceNewFileCreation = false;
+    static bool forceNewFileCreation = false;
 
     public static System.Action _EnableSpatialization = null;   // assigned in AutoAddONSPAudioSourceComponents
-    
+
     [MenuItem("VRChat SDK/Show Build Control Panel")]
     static void Init()
     {
         window = (VRC_SdkControlPanel)EditorWindow.GetWindow(typeof(VRC_SdkControlPanel));
         window.titleContent.text = "VRChat";
+
+        window.ResetIssues();
+
         window.Show();
-    	forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false);
-	}
+        //forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false);
+    }
 
     bool UseDevApi
     {
@@ -29,40 +32,63 @@ public class VRC_SdkControlPanel : EditorWindow
         }
     }
 
-    int errorCount = 0;
-    int warningCount = 0;
-
-    void OnGUIError(string output)
+    private void ResetIssues()
     {
-        OnGUIError(new GameObject[] { }, output);
-    }
-    void OnGUIError(GameObject subject, string output)
-    {
-        OnGUIError(new GameObject[] { subject }, output);
-    }
-    void OnGUIError(GameObject[] subject, string output)
-    {
-        ++errorCount;
-        EditorGUILayout.HelpBox(output, MessageType.Error);
+        GUIErrors.Clear();
+        GUIInfos.Clear();
+        GUIWarnings.Clear();
+        GUILinks.Clear();
+        checkedForIssues = false;
     }
 
-    void OnGUIWarning(string output)
+    private void OnFocus()
     {
-        OnGUIWarning(new GameObject[] { }, output);
-    }
-    void OnGUIWarning(GameObject subject, string output)
-    {
-        OnGUIWarning(new GameObject[] { subject }, output);
-    }
-    void OnGUIWarning(GameObject[] subject, string output)
-    {
-        ++warningCount;
-        EditorGUILayout.HelpBox(output, MessageType.Warning);
+        ResetIssues();
     }
 
-    void OnGUIInformation(GameObject[] subject, string output)
+    private void OnLostFocus()
     {
-        EditorGUILayout.HelpBox(output, MessageType.Info);
+        ResetIssues();    
+    }
+
+    bool checkedForIssues = false;
+
+    Dictionary<Object, List<string>> GUIErrors = new Dictionary<Object, List<string>>();
+    Dictionary<Object, List<string>> GUIWarnings = new Dictionary<Object, List<string>>();
+    Dictionary<Object, List<string>> GUIInfos = new Dictionary<Object, List<string>>();
+    Dictionary<Object, List<string>> GUILinks = new Dictionary<Object, List<string>>();
+
+    void AddToReport(Dictionary<Object, List<string>> report, Object subject, string output)
+    {
+        if (subject == null)
+            subject = this;
+        if (!report.ContainsKey(subject))
+            report.Add(subject, new List<string>());
+        report[subject].Add(output);
+    }
+    
+    void OnGUIError(Object subject, string output)
+    {
+        if (!checkedForIssues)
+            AddToReport(GUIErrors, subject, output);
+    }
+    
+    void OnGUIWarning(Object subject, string output)
+    {
+        if (!checkedForIssues)
+            AddToReport(GUIWarnings, subject, output);
+    }
+
+    void OnGUIInformation(Object subject, string output)
+    {
+        if (!checkedForIssues)
+            AddToReport(GUIInfos, subject, output);
+    }
+
+    void OnGUILink(Object subject, string output)
+    {
+        if (!checkedForIssues)
+            AddToReport(GUILinks, subject, output);
     }
 
     VRCSDK2.VRC_SceneDescriptor[] scenes;
@@ -91,77 +117,79 @@ public class VRC_SdkControlPanel : EditorWindow
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
 
-        if (VRC.Core.SDKClientUtilities.IsInternalSDK())
-        {
-            useFileApi = EditorGUILayout.ToggleLeft("Use New File API", useFileApi); 
-        }
-        else
-        {
-            useFileApi = true;
-        }
+        //if (EditorGUILayout.ToggleLeft("Force Complete File Upload", forceNewFileCreation))
+        //{
+        //    if (!forceNewFileCreation)
+        //    {
+        //        bool yep = UnityEditor.EditorUtility.DisplayDialog("Are you sure?", "This will disable compression and cause your full file data to be uploaded during next publish, resulting in longer upload times.", "OK", "Cancel");
+        //        if (yep)
+        //        {
+        //            forceNewFileCreation = true;
+        //        }
+        //    }
+        //}
+        //else
+        //{
+        //    forceNewFileCreation = false;
+        //}
 
-        if (UnityEditor.EditorPrefs.GetBool("useFileApi", true) != useFileApi)
-        {
-            UnityEditor.EditorPrefs.SetBool("useFileApi", useFileApi);
-        }
+        //if (UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false) != forceNewFileCreation)
+        //{
+        //    UnityEditor.EditorPrefs.SetBool("forceNewFileCreation", forceNewFileCreation);
+        //}
 
-        if (useFileApi && EditorGUILayout.ToggleLeft("Force Complete File Upload", forceNewFileCreation))
-        {
-            if (!forceNewFileCreation)
-            {
-                bool yep = UnityEditor.EditorUtility.DisplayDialog("Are you sure?", "This will disable compression and cause your full file data to be uploaded during next publish, resulting in longer upload times.", "OK", "Cancel");
-                if (yep)
-                {
-                    forceNewFileCreation = true;
-                }
-            }
-        }
-        else
-        {
-            forceNewFileCreation = false;
-        }
-
-        if (UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false) != forceNewFileCreation)
-        {
-            UnityEditor.EditorPrefs.SetBool("forceNewFileCreation", forceNewFileCreation);
-        }
+        UnityEditor.EditorPrefs.SetBool("forceNewFileCreation", true);
 
         EditorGUILayout.Space();
 
+        ShowBuildControls();
+
+        //window.Repaint();
+    }
+
+    void ShowBuildControls()
+    {
+        if (!checkedForIssues)
+            EnvConfig.ConfigurePlayerSettings();
+
         EditorGUILayout.LabelField("Client Version Date", VRC.Core.SDKClientUtilities.GetTestClientVersionDate());
         EditorGUILayout.LabelField("SDK Version Date", VRC.Core.SDKClientUtilities.GetSDKVersionDate());
+
+/**
+        // Commented this out 12/12/2017 bc client no longer produces version files, resulting in this warning always appearing - Graham
         if (!VRC.Core.SDKClientUtilities.IsClientNewerThanSDK())
         {
-            OnGUIWarning("Your SDK is newer than the VRChat client you're testing with. Some SDK features may not work as expected. You can change VRC clients in VRChat SDK/Settings.");
+            OnGUIWarning(null, "Your SDK is newer than the VRChat client you're testing with. Some SDK features may not work as expected. You can change VRC clients in VRChat SDK/Settings.");
         }
+**/
 
         if (VRC.Core.RemoteConfig.IsInitialized())
         {
             string sdkUnityVersion = VRC.Core.RemoteConfig.GetString("sdkUnityVersion");
             if (Application.unityVersion != sdkUnityVersion)
             {
-                OnGUIWarning("You are not using the recommended Unity version for the VRChat SDK. Content built with this version may not work correctly. Please use Unity " + sdkUnityVersion);
+                OnGUIWarning(null, "You are not using the recommended Unity version for the VRChat SDK. Content built with this version may not work correctly. Please use Unity " + sdkUnityVersion);
             }
         }
 
-        errorCount = warningCount = 0;
-
         scenes = (VRCSDK2.VRC_SceneDescriptor[])VRC.Tools.FindSceneObjectsOfTypeAll<VRCSDK2.VRC_SceneDescriptor>();
-        avatars = (VRCSDK2.VRC_AvatarDescriptor[])VRC.Tools.FindSceneObjectsOfTypeAll<VRCSDK2.VRC_AvatarDescriptor>();
+        List<VRCSDK2.VRC_AvatarDescriptor> allavatars = VRC.Tools.FindSceneObjectsOfTypeAll<VRCSDK2.VRC_AvatarDescriptor>().ToList();
+        // select only the active avatars
+        avatars = allavatars.Where(av => av.gameObject.activeInHierarchy).ToArray();
 
         if (scenes.Length > 0 && avatars.Length > 0)
         {
             GameObject[] gos = new GameObject[avatars.Length];
             for (int i = 0; i < avatars.Length; ++i)
                 gos[i] = avatars[i].gameObject;
-            OnGUIError(gos, "a unity scene containing a VRChat Scene Descriptor should not also contain avatars.");
+            OnGUIError(null, "a unity scene containing a VRChat Scene Descriptor should not also contain avatars.");
         }
         else if (scenes.Length > 1)
         {
             GameObject[] gos = new GameObject[scenes.Length];
             for (int i = 0; i < scenes.Length; ++i)
                 gos[i] = scenes[i].gameObject;
-            OnGUIError(gos, "a unity scene containing a VRChat Scene Descriptor should only contain one scene descriptor.");
+            OnGUIError(null, "a unity scene containing a VRChat Scene Descriptor should only contain one scene descriptor.");
         }
         else if (scenes.Length == 1)
         {
@@ -170,8 +198,19 @@ public class VRC_SdkControlPanel : EditorWindow
             EditorGUILayout.Space();
             try
             {
-                //TODO: Throws errors on scene export for some reason.
+                EditorGUI.BeginChangeCheck();
+
+                if (!checkedForIssues)
+                    OnGUISceneCheck(scenes[0]);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    EditorUtility.SetDirty(scenes[0]);
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+                }
+
                 OnGUIScene(scenes[0]);
+                OnGUIShowIssues(scenes[0]);
             }
             catch (System.Exception)
             {
@@ -184,27 +223,36 @@ public class VRC_SdkControlPanel : EditorWindow
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             foreach (var av in avatars)
             {
+                EditorGUI.BeginChangeCheck();
+
                 EditorGUILayout.Space();
+                OnGUIAvatarCheck(av);
+
                 OnGUIAvatar(av);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    EditorUtility.SetDirty(av);
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+                }
             }
             EditorGUILayout.EndScrollView();
         }
         else
         {
-            OnGUIError("Please add a scene descriptor or avatar descriptor to your project.");
+            OnGUIError(null, "Please add a scene descriptor or avatar descriptor to your project.");
         }
-
-        window.Repaint();
+        OnGUIShowIssues();
+        checkedForIssues = true;
     }
 
     bool showLayerHelp = false;
     int numClients = 1;
-    bool useFileApi = true;
 
     void CheckUploadChanges(VRCSDK2.VRC_SceneDescriptor scene)
     {
         if (UnityEditor.EditorPrefs.HasKey("VRCSDK2_scene_changed") &&
-            UnityEditor.EditorPrefs.GetBool("VRCSDK2_scene_changed"))
+                UnityEditor.EditorPrefs.GetBool("VRCSDK2_scene_changed"))
         {
             UnityEditor.EditorPrefs.DeleteKey("VRCSDK2_scene_changed");
 
@@ -266,30 +314,97 @@ public class VRC_SdkControlPanel : EditorWindow
         }
     }
 
-    void OnGUIScene(VRCSDK2.VRC_SceneDescriptor scene)
+    void OnGUIShowIssues(Object subject = null)
+    {
+        if (subject == null)
+            subject = this;
+
+        if (GUIErrors.ContainsKey(subject))
+            foreach (string error in GUIErrors[subject].Where(s => !string.IsNullOrEmpty(s)))
+                EditorGUILayout.HelpBox(error, MessageType.Error);
+        if (GUIWarnings.ContainsKey(subject))
+            foreach (string error in GUIWarnings[subject].Where(s => !string.IsNullOrEmpty(s)))
+                EditorGUILayout.HelpBox(error, MessageType.Warning);
+        if (GUIInfos.ContainsKey(subject))
+            foreach (string error in GUIInfos[subject].Where(s => !string.IsNullOrEmpty(s)))
+                EditorGUILayout.HelpBox(error, MessageType.Info);
+        if (GUILinks.ContainsKey(subject))
+            foreach (string error in GUILinks[subject].Where(s => !string.IsNullOrEmpty(s)))
+                EditorGUILayout.SelectableLabel(error);
+    }
+
+    void OnGUISceneCheck(VRCSDK2.VRC_SceneDescriptor scene)
     {
         CheckUploadChanges(scene);
 
-        EditorGUI.BeginChangeCheck();
-
         EditorGUILayout.InspectorTitlebar(true, scene.gameObject);
-
-        errorCount = warningCount = 0;
-
+        
         if (VRC.Core.APIUser.CurrentUser != null && VRC.Core.APIUser.CurrentUser.hasScriptingAccess && !CustomDLLMaker.DoesScriptDirExist())
         {
-			CustomDLLMaker.CreateDirectories();
+            CustomDLLMaker.CreateDirectories();
         }
 
         Vector3 g = Physics.gravity;
         if (g.x != 0.0f || g.z != 0.0f)
-            OnGUIWarning("Gravity vector is not straight down. Though we support different gravity, player orientation is always 'upwards' so things don't always behave as you intend.");
+            OnGUIWarning(scene, "Gravity vector is not straight down. Though we support different gravity, player orientation is always 'upwards' so things don't always behave as you intend.");
         if (g.y > 0)
-            OnGUIWarning("Gravity vector is not straight down, inverted or zero gravity will make walking extremely difficult.");
+            OnGUIWarning(scene, "Gravity vector is not straight down, inverted or zero gravity will make walking extremely difficult.");
         if (g.y == 0)
-            OnGUIWarning("Zero gravity will make walking extremely difficult, though we support different gravity, player orientation is always 'upwards' so this may not have the effect you're looking for.");
+            OnGUIWarning(scene, "Zero gravity will make walking extremely difficult, though we support different gravity, player orientation is always 'upwards' so this may not have the effect you're looking for.");
 
         scene.useAssignedLayers = true;
+        if (scene.useAssignedLayers)
+        {
+            if (!UpdateLayers.AreLayersSetup())
+                OnGUIWarning(scene, "Layers are not setup properly. Please press the button above.");
+
+            if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup())
+                OnGUIWarning(scene, "Physics Collision Layer Matrix is not setup correctly. Please press the button above.");
+        }
+
+        // warn those without scripting access if they choose to script locally
+        if(VRC.Core.APIUser.CurrentUser != null && !VRC.Core.APIUser.CurrentUser.hasScriptingAccess && CustomDLLMaker.DoesScriptDirExist())
+        {
+            OnGUIWarning(scene, "Your account does not have permissions to upload custom scripts. You can test locally but need to contact VRChat to publish your world with scripts.");
+        }
+
+        foreach (VRCSDK2.VRC_DataStorage ds in GameObject.FindObjectsOfType<VRCSDK2.VRC_DataStorage>())
+        {
+            VRCSDK2.VRC_ObjectSync os = ds.GetComponent<VRCSDK2.VRC_ObjectSync>();
+            if (os != null && os.SynchronizePhysics)
+                OnGUIWarning(scene, ds.name + " has a VRC_DataStorage and VRC_ObjectSync, with SynchronizePhysics enabled.");
+        }
+
+        // auto create VRCScript dir for those with access
+        if (VRC.Core.APIUser.CurrentUser != null && VRC.Core.APIUser.CurrentUser.hasScriptingAccess && !CustomDLLMaker.DoesScriptDirExist())
+        {
+            CustomDLLMaker.CreateDirectories();
+        }
+    }
+
+    void OnGUIScene(VRCSDK2.VRC_SceneDescriptor scene)
+    {
+        string lastUrl = VRC_SdkBuilder.GetLastUrl();
+        bool lastBuildPresent = lastUrl != null;
+
+        string worldVersion = "-1";
+        PipelineManager[] pms = (PipelineManager[])VRC.Tools.FindSceneObjectsOfTypeAll<PipelineManager>();
+        if (pms.Length == 1)
+        {
+            if (scene.apiWorld == null)
+            {
+                scene.apiWorld = new ApiWorld();
+                ApiWorld.Fetch(pms[0].blueprintId, false, delegate (ApiWorld world)
+                {
+                    scene.apiWorld = world;
+                }, delegate (string error) { });
+            }
+            worldVersion = (scene.apiWorld as ApiWorld).version.ToString();
+        }
+        EditorGUILayout.LabelField("World Version: " + worldVersion);
+
+        EditorGUILayout.Space();
+
         if (scene.useAssignedLayers)
         {
             if (!UpdateLayers.AreLayersSetup() && GUILayout.Button("Setup Layers"))
@@ -301,9 +416,6 @@ public class VRC_SdkControlPanel : EditorWindow
                 }
             }
 
-            if (!UpdateLayers.AreLayersSetup())
-                OnGUIWarning("Layers are not setup properly. Please press the button above.");
-
             if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup() && GUILayout.Button("Setup Collision Layer Matrix"))
             {
                 bool doIt = EditorUtility.DisplayDialog("Setup Collision Layer Matrix for VRChat", "This will setup the correct physics collisions in the PhysicsManager for VRChat layers. Are you sure you want to continue?", "Do it!", "Don't do it");
@@ -312,9 +424,6 @@ public class VRC_SdkControlPanel : EditorWindow
                     UpdateLayers.SetupCollisionLayerMatrix();
                 }
             }
-
-            if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup())
-                OnGUIWarning("Physics Collision Layer Matrix is not setup correctly. Please press the button above.");
         }
 
         scene.autoSpatializeAudioSources = EditorGUILayout.ToggleLeft("Apply 3D spatialization to AudioSources automatically at runtime (override settings by adding an ONSPAudioSource component to game object)", scene.autoSpatializeAudioSources);
@@ -323,59 +432,14 @@ public class VRC_SdkControlPanel : EditorWindow
             bool doIt = EditorUtility.DisplayDialog("Enable Spatialization", "This will add an ONSPAudioSource script to every 3D AudioSource in the current scene, and enable default settings for spatialization.  Are you sure you want to continue?", "Do it!", "Don't do it");
             if (doIt)
             {
-				if (_EnableSpatialization != null)
-					_EnableSpatialization();
-				else
-					Debug.LogError("VrcSdkControlPanel: EnableSpatialization callback not found!");
+                if (_EnableSpatialization != null)
+                    _EnableSpatialization();
+                else
+                    Debug.LogError("VrcSdkControlPanel: EnableSpatialization callback not found!");
             }
         }
 
-        if (EditorGUI.EndChangeCheck())
-        {
-            EditorUtility.SetDirty(scene);
-            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
-        }
-
-        // auto create VRCScript dir for those with access
-        if(VRC.Core.APIUser.CurrentUser != null && VRC.Core.APIUser.CurrentUser.hasScriptingAccess && !CustomDLLMaker.DoesScriptDirExist())
-        {
-			CustomDLLMaker.CreateDirectories();
-        }
-
-        // warn those without scripting access if they choose to script locally
-		if(VRC.Core.APIUser.CurrentUser != null && !VRC.Core.APIUser.CurrentUser.hasScriptingAccess && CustomDLLMaker.DoesScriptDirExist())
-        {
-            OnGUIWarning("Your account does not have permissions to upload custom scripts. You can test locally but need to contact VRChat to publish your world with scripts.");
-        }
-
-        //if (ShouldShowFogWarning)
-        //    OnGUIWarning("Automatic stripping is selected for Fog settings, and so Fog may not appear properly in VR Chat. Check your Graphics Settings.");
-
-        //if (ShouldShowLightmapWarning)
-        //    OnGUIWarning("Automatic stripping is selected for Lightmap settings, and so Lightmaps may not work properly in VR Chat. Check your Graphics Settings.");
-
-        string lastUrl = VRC_SdkBuilder.GetLastUrl();
-        bool lastBuildPresent = lastUrl != null;
-
-        EditorGUILayout.LabelField("Errors: " + errorCount + " Warnings: " + warningCount);
-
-        string worldVersion = "-1";
-        PipelineManager[] pms = (PipelineManager[])VRC.Tools.FindSceneObjectsOfTypeAll<PipelineManager>();
-        if (pms.Length == 1)
-        {
-            if (scene.apiWorld == null)
-            {
-                scene.apiWorld = ScriptableObject.CreateInstance<ApiWorld>();
-                ApiWorld.Fetch(pms[0].blueprintId, false, delegate(ApiWorld world)
-                {
-                    scene.apiWorld = world;
-                }, delegate (string error) { });
-            }
-            worldVersion = (scene.apiWorld as ApiWorld).version.ToString();
-        }
-        EditorGUILayout.LabelField("World Version: " + worldVersion);
-
-        GUI.enabled = (errorCount == 0);
+        GUI.enabled = (GUIErrors.Count == 0 && checkedForIssues);
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical();
         EditorGUILayout.LabelField("Test", EditorStyles.boldLabel);
@@ -404,6 +468,7 @@ public class VRC_SdkControlPanel : EditorWindow
         {
             EnvConfig.ConfigurePlayerSettings();
             VRC_SdkBuilder.shouldBuildUnityPackage = false;
+            VRC.AssetExporter.CleanupUnityPackageExport();  // force unity package rebuild on next publish
             VRC_SdkBuilder.numClientsToLaunch = numClients;
             VRC_SdkBuilder.PreBuildBehaviourPackaging();
             VRC_SdkBuilder.ExportSceneResourceAndRun();
@@ -435,10 +500,10 @@ public class VRC_SdkControlPanel : EditorWindow
     void OnGUISceneLayer(int layer, string name, string description)
     {
         if (LayerMask.LayerToName(layer) != name)
-            OnGUIError("Layer " + layer + " must be renamed to '" + name + "'");
+            OnGUIError(null, "Layer " + layer + " must be renamed to '" + name + "'");
 
         if (showLayerHelp)
-            EditorGUILayout.HelpBox("Layer " + layer + " " + name + "\n" + description, MessageType.None);
+            OnGUIInformation(null, "Layer " + layer + " " + name + "\n" + description);
     }
 
     int CountPolygons(Renderer r)
@@ -526,7 +591,141 @@ public class VRC_SdkControlPanel : EditorWindow
         return found;
     }
 
-    void AnalyzeIK(GameObject avObj, Animator anim)
+    List<Transform> FindBonesBetween(Transform top, Transform bottom)
+    {
+        List<Transform> list = new List<Transform>();
+        if (top == null || bottom == null) return list;
+        Transform bt = top.parent;
+        while (bt != bottom && bt != null)
+        {
+            list.Add(bt);
+            bt = bt.parent;
+        }
+        return list;
+    }
+
+    // Attempts to remap a mecanim rig so that the upper chest bone
+    // is blank, by moving the upper chest bone to chest and rebuilding
+    // CURRENTLY DOES NOT WORK!
+    void UpperChestFix(VRCSDK2.VRC_AvatarDescriptor ad, GameObject avObj, Animator anim)
+    {
+        // if upper chest was mapped we need to reconfigure rig
+        // by moving upper chest to chest
+        Transform pelvis = anim.GetBoneTransform(HumanBodyBones.Hips);
+        Transform upchest = anim.GetBoneTransform(HumanBodyBones.UpperChest);
+        Transform chest = anim.GetBoneTransform(HumanBodyBones.Chest);
+        Transform torso = anim.GetBoneTransform(HumanBodyBones.Spine);
+        Avatar origAvatar = anim.avatar;
+
+        if (upchest != null)
+        {
+            // get every child transform of the animator
+            Transform[] allBones = anim.GetComponentsInChildren<Transform>();
+
+            // get a list of the extra spine bones between spine and pelvis
+            List<Transform> extras = FindBonesBetween(torso, pelvis);
+
+            HumanDescription desc = new HumanDescription();
+            desc.upperArmTwist = 0.5f;
+            desc.lowerArmTwist = 0.5f;
+            desc.upperLegTwist = 0.5f;
+            desc.lowerLegTwist = 0.5f;
+            desc.armStretch = 0.05f;
+            desc.legStretch = 0.05f;
+            desc.feetSpacing = 0.0f;
+            List<HumanBone> hbList = new List<HumanBone>();
+            List<SkeletonBone> sbList = new List<SkeletonBone>();
+            HumanBodyBones[] hbbArray = (HumanBodyBones[])System.Enum.GetValues(typeof(HumanBodyBones));
+            Dictionary<Transform, string> hbbDict = new Dictionary<Transform, string>();
+
+            for (int i=0; i<hbbArray.Length; i++)
+            {
+                Transform t = anim.GetBoneTransform(hbbArray[i]);
+                string n = hbbArray[i].ToString();
+                if (t != null && n != "LastBone")
+                {
+                    hbbDict[t] = n;
+                    //Debug.LogError("Dictionary Added:"+hbbArray[i].ToString());
+                }
+            }
+
+            foreach (Transform bt in allBones)
+            {
+                // map the human bones
+                if (hbbDict.Keys.Contains(bt))
+                {
+                    string hbName = hbbDict[bt];
+                    //Debug.LogError("Processing: "+hbName);
+                    if (hbName != "Spine" && bt != null && !extras.Contains(bt))
+                    {
+                        if (bt == upchest) hbName = "Chest";
+                        else if (bt == chest) hbName = "Spine";
+                        HumanBone hb = new HumanBone();
+                        hb.boneName = bt.name;
+                        hb.humanName = hbName;
+                        //Debug.Log("Mapped human bone:" + hb.humanName + " to " + hb.boneName);
+                        hbList.Add(hb);
+                    }
+                    else
+                    {
+                        //Debug.LogError("Skipped:" + hbbDict[bt]);
+                    }
+                }
+
+                if (bt != null)
+                {
+                    // THESE POSITIONS/ROTATIONS MUST BE FOR TPOSE !!!
+                    SkeletonBone sb = new SkeletonBone();
+                    sb.name = bt.name;
+                    sb.position = bt.position;
+                    sb.rotation = bt.rotation;
+                    sb.scale = bt.localScale;
+                    sbList.Add(sb);
+                }
+            }
+
+            // add any root bones above hip
+            Transform root = pelvis.parent;
+            while (root != null && root != anim.transform)
+            {
+                // THESE POSITIONS/ROTATIONS MUST BE FOR TPOSE !!!
+                SkeletonBone sb = new SkeletonBone();
+                sb.name = root.name;
+                sb.position = root.position;
+                sb.rotation = root.rotation;
+                sb.scale = root.localScale;
+                sbList.Add(sb);
+                root = root.parent;
+            }
+
+            desc.human = hbList.ToArray();
+            desc.skeleton = sbList.ToArray();
+            anim.avatar = AvatarBuilder.BuildHumanAvatar(avObj, desc);
+            if (anim.avatar.isValid && anim.avatar.isHuman)
+            {
+                anim.avatar.name = "{ADJUSTED}"+origAvatar.name;
+                // shift all the bone mappings
+                torso = chest;
+                chest = upchest;
+                upchest = null;
+            }
+            else
+            {
+                OnGUIError(ad, "Automatic rig adjustment on "+origAvatar.name+" failed. You will need to manually configure the humanoid rig. Make sure the UpperChest slot is empty.");
+                anim.avatar = origAvatar;
+                return;
+            }
+        }
+
+        if (anim.avatar.name.StartsWith("{ADJUSTED}"))
+        {
+            OnGUIWarning(ad, "Your rig has the UPPERCHEST mapped in the Humanoid Rig, and was automatically corrected " +
+                             "to use the CHEST instead. If you run into issues we recommend leaving the " +
+                             "UPPERCHEST blank and mapping your top spine bone to the CHEST.");
+        }
+    }
+
+    bool AnalyzeIK(VRCSDK2.VRC_AvatarDescriptor ad, GameObject avObj, Animator anim)
     {
         bool hasHead = false;
         bool hasFeet = false;
@@ -536,6 +735,8 @@ public class VRC_SdkControlPanel : EditorWindow
         bool correctSpineHierarchy = false;
         bool correctArmHierarchy = false;
         bool correctLegHierarchy = false;
+
+        bool status = true;
 
         Transform head = anim.GetBoneTransform(HumanBodyBones.Head);
         Transform lfoot = anim.GetBoneTransform(HumanBodyBones.LeftFoot);
@@ -549,13 +750,10 @@ public class VRC_SdkControlPanel : EditorWindow
 
         if (!hasHead || !hasFeet || !hasHands)
         {
-            OnGUIError(avObj, "Humanoid avatar must have head, hands and feet bones mapped.");
-            return;
+            OnGUIError(ad, "Humanoid avatar must have head, hands and feet bones mapped.");
+            return false;
         }
 
-        //Transform ltoe = anim.GetBoneTransform(HumanBodyBones.LeftToes);
-        //Transform rtoe = anim.GetBoneTransform(HumanBodyBones.RightToes);
-        
         Transform lthumb = anim.GetBoneTransform(HumanBodyBones.LeftThumbProximal);
         Transform lindex = anim.GetBoneTransform(HumanBodyBones.LeftIndexProximal);
         Transform lmiddle = anim.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
@@ -567,29 +765,38 @@ public class VRC_SdkControlPanel : EditorWindow
 
         if (!hasThreeFingers)
         {
-            OnGUIWarning(avObj, "Thumb, Index, and Middle finger bones are not mapped, Full-Body IK will be disabled.");
-            return;
+            // although its only a warning, we return here because the rest
+            // of the analysis is for VRIK
+            OnGUIWarning(ad, "Thumb, Index, and Middle finger bones are not mapped, Full-Body IK will be disabled."); 
+            status = false;
         }
+
+        if (anim.GetBoneTransform(HumanBodyBones.UpperChest) != null)
+        {
+            OnGUIError(ad, "Your rig has the UPPERCHEST mapped in the Humanoid Rig. This will cause problems with IK.");
+            return false;
+        }
+
+        Transform pelvis = anim.GetBoneTransform(HumanBodyBones.Hips);
+        Transform chest = anim.GetBoneTransform(HumanBodyBones.Chest);
+        Transform torso = anim.GetBoneTransform(HumanBodyBones.Spine);
 
         Transform neck = anim.GetBoneTransform(HumanBodyBones.Neck);
         Transform lclav = anim.GetBoneTransform(HumanBodyBones.LeftShoulder);
         Transform rclav = anim.GetBoneTransform(HumanBodyBones.RightShoulder);
-        Transform pelvis = anim.GetBoneTransform(HumanBodyBones.Hips);
-        Transform torso = anim.GetBoneTransform(HumanBodyBones.Spine);
-        Transform chest = anim.GetBoneTransform(HumanBodyBones.Chest);
 
         if (null==neck || null==lclav || null==rclav || null==pelvis || null==torso || null==chest)
         {
-            OnGUIError(avObj, "Spine hierarchy missing elements, make sure that Pelvis, Spine, Chest, Neck and Shoulders are mapped.");
-            return;
+            OnGUIError(ad, "Spine hierarchy missing elements, make sure that Pelvis, Spine, Chest, Neck and Shoulders are mapped.");
+            return false;
         }
 
         correctSpineHierarchy = lclav.parent == chest && rclav.parent == chest && neck.parent == chest;
 
         if (!correctSpineHierarchy)
         {
-            OnGUIError(avObj, "Spine hierarchy incorrect, make sure that the parent of both Shoulders and the Neck is the Chest.");
-            return;
+            OnGUIError(ad, "Spine hierarchy incorrect. Make sure that the parent of both Shoulders and the Neck is the Chest.");
+            return false;
         }
 
         Transform lshoulder = anim.GetBoneTransform(HumanBodyBones.LeftUpperArm);
@@ -598,11 +805,12 @@ public class VRC_SdkControlPanel : EditorWindow
         Transform relbow = anim.GetBoneTransform(HumanBodyBones.RightLowerArm);
 
         correctArmHierarchy = lshoulder.GetChild(0) == lelbow && lelbow.GetChild(0) == lhand &&
-                              rshoulder.GetChild(0) == relbow && relbow.GetChild(0) == rhand;
+            rshoulder.GetChild(0) == relbow && relbow.GetChild(0) == rhand;
 
         if (!correctArmHierarchy)
         {
-            OnGUIWarning(avObj, "LowerArm is not first child of UpperArm or Hand is not first child of LowerArm: you may have problems with Forearm rotations.");
+            OnGUIWarning(ad, "LowerArm is not first child of UpperArm or Hand is not first child of LowerArm: you may have problems with Forearm rotations.");
+            status = false;
         }
 
         Transform lhip = anim.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
@@ -611,94 +819,128 @@ public class VRC_SdkControlPanel : EditorWindow
         Transform rknee = anim.GetBoneTransform(HumanBodyBones.RightLowerLeg);
 
         correctLegHierarchy = lhip.GetChild(0) == lknee && lknee.GetChild(0) == lfoot &&
-                              rhip.GetChild(0) == rknee && rknee.GetChild(0) == rfoot;
+            rhip.GetChild(0) == rknee && rknee.GetChild(0) == rfoot;
 
         if (!correctLegHierarchy)
         {
-            OnGUIWarning(avObj, "LowerLeg is not first child of UpperLeg or Foot is not first child of LowerLeg: you may have problems with Shin rotations.");
+            OnGUIWarning(ad, "LowerLeg is not first child of UpperLeg or Foot is not first child of LowerLeg: you may have problems with Shin rotations.");
+            status = false;
         }
 
         if ( !(IsAncestor(pelvis, rfoot) && IsAncestor(pelvis, lfoot) && IsAncestor(pelvis, lhand) || IsAncestor(pelvis, rhand) || IsAncestor(pelvis, lhand)) )
         {
-            OnGUIWarning(avObj, "This avatar has a split heirarchy (Hips bone is not the ancestor of all humanoid bones). IK may not work correctly.");
+            OnGUIWarning(ad, "This avatar has a split heirarchy (Hips bone is not the ancestor of all humanoid bones). IK may not work correctly.");
+            status = false;
         }
+
+        // if thigh bone rotations diverge from 180 from hip bone rotations, full-body tracking/ik does not work well
+        Vector3 hipLocalUp = pelvis.InverseTransformVector(Vector3.up);
+        Vector3 legLDir = lhip.TransformVector(hipLocalUp);
+        Vector3 legRDir = rhip.TransformVector(hipLocalUp);
+        float angL = Vector3.Angle(Vector3.up, legLDir);
+        float angR = Vector3.Angle(Vector3.up, legRDir);
+        if ( angL < 175f || angR < 175f )
+        {
+            string angle = string.Format("{0:F1}", Mathf.Min(angL, angR));
+            OnGUIWarning(ad, "The angle between pelvis and thigh bones should be close to 180 degrees (this avatar's angle is "+angle+"). Your avatar may not work well with full-body IK and Tracking.");
+            status = false;
+        }
+        return status;
     }
 
-    void OnGUIAvatar(VRCSDK2.VRC_AvatarDescriptor avatar)
+    void OnGUIAvatarCheck(VRCSDK2.VRC_AvatarDescriptor avatar)
     {
-        EditorGUI.BeginChangeCheck();
-
-        errorCount = warningCount = 0;
-
-        EditorGUILayout.InspectorTitlebar(true, avatar.gameObject);
-
         int polycount;
         Bounds bounds;
         AnalyzeGeometry(avatar.gameObject, out bounds, out polycount);
         if (polycount < 10000)
-            OnGUIInformation(new GameObject[] { avatar.gameObject }, "Polygons: " + polycount);
+            OnGUIInformation(avatar, "Polygons: " + polycount);
         else if (polycount < 15000)
-            OnGUIWarning(avatar.gameObject, "Polygons: " + polycount + " - Please try to reduce your avatar poly count to less thatn 10k.");
+            OnGUIWarning(avatar, "Polygons: " + polycount + " - Please try to reduce your avatar poly count to less thatn 10k.");
         else if (polycount < 20000)
-            OnGUIWarning(avatar.gameObject, "Polygons: " + polycount + " - This avatar will not perform well on many systems.");
+            OnGUIWarning(avatar, "Polygons: " + polycount + " - This avatar will not perform well on many systems.");
         else
-            OnGUIError(new GameObject[] { avatar.gameObject }, "Polygons: " + polycount + " - This avatar has too many polygons. It must have less than 20k and should have less than 10k.");
+            OnGUIError(avatar, "Polygons: " + polycount + " - This avatar has too many polygons. It must have less than 20k and should have less than 10k.");
 
         if (bounds.size.x > 5f || bounds.size.y > 6.0f || bounds.size.z > 5f)
-            OnGUIError(avatar.gameObject, "This avatar measures too large on at least one axis. It must be <5m on a side but it's bounds are " + bounds.size.ToString());
+            OnGUIError(avatar, "This avatar measures too large on at least one axis. It must be <5m on a side but it's bounds are " + bounds.size.ToString());
 
         var eventHandler = avatar.GetComponentInChildren<VRCSDK2.VRC_EventHandler>();
         if (eventHandler != null)
         {
-            OnGUIError(avatar.gameObject, "This avatar contains an EventHandler, which is not currently supported in VRChat.");
+            OnGUIError(avatar, "This avatar contains an EventHandler, which is not currently supported in VRChat.");
         }
 
         if (avatar.lipSync == VRCSDK2.VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape && avatar.VisemeSkinnedMesh == null)
-            OnGUIError(avatar.gameObject, "This avatar uses Visemes but the Face Mesh is not specified.");
+            OnGUIError(avatar, "This avatar uses Visemes but the Face Mesh is not specified.");
 
         var anim = avatar.GetComponent<Animator>();
         if (anim == null)
         {
-            OnGUIWarning(avatar.gameObject, "This avatar does not contain an animator, and will not animate in VRChat.");
+            OnGUIWarning(avatar, "This avatar does not contain an animator, and will not animate in VRChat.");
         }
         else if (anim.isHuman == false)
         {
-            OnGUIWarning(avatar.gameObject, "This avatar is not imported as a humanoid rig and will not play VRChat's provided animation set.");
+            OnGUIWarning(avatar, "This avatar is not imported as a humanoid rig and will not play VRChat's provided animation set.");
         }
         else if (avatar.gameObject.activeInHierarchy == false)
         {
-            OnGUIError(avatar.gameObject, "Your avatar is disabled in the scene heirarchy!");
+            OnGUIError(avatar, "Your avatar is disabled in the scene heirarchy!");
         }
         else
         {
             Transform foot = anim.GetBoneTransform(HumanBodyBones.LeftFoot);
             Transform shoulder = anim.GetBoneTransform(HumanBodyBones.LeftUpperArm);
             if (foot == null)
-                OnGUIError(avatar.gameObject, "Your avatar is humanoid, but it's feet aren't specified!");
+                OnGUIError(avatar, "Your avatar is humanoid, but it's feet aren't specified!");
             if (shoulder == null)
-                OnGUIError(avatar.gameObject, "Your avatar is humanoid, but it's upper arms aren't specified!");
+                OnGUIError(avatar, "Your avatar is humanoid, but it's upper arms aren't specified!");
 
             if (foot != null && shoulder != null)
             {
                 Vector3 footPos = foot.position - avatar.transform.position;
                 if (footPos.y < 0)
-                    OnGUIWarning(avatar.gameObject, "Avatar feet are beneath the avatar's origin (the floor). That's probably not what you want.");
+                    OnGUIWarning(avatar, "Avatar feet are beneath the avatar's origin (the floor). That's probably not what you want.");
                 Vector3 shoulderPosition = shoulder.position - avatar.transform.position;
                 if (shoulderPosition.y < 0.2f)
-                    OnGUIError(avatar.gameObject, "This avatar is too short. The minimum is 20cm shoulder height.");
+                    OnGUIError(avatar, "This avatar is too short. The minimum is 20cm shoulder height.");
                 else if (shoulderPosition.y < 1.0f)
-                    OnGUIWarning(avatar.gameObject, "This avatar is short. This is probably shorter than you want.");
+                    OnGUIWarning(avatar, "This avatar is short. This is probably shorter than you want.");
                 else if (shoulderPosition.y > 5.0f)
-                    OnGUIWarning(avatar.gameObject, "This avatar is too tall. The maximum is 5m shoulder height.");
+                    OnGUIWarning(avatar, "This avatar is too tall. The maximum is 5m shoulder height.");
                 else if (shoulderPosition.y > 2.5f)
-                    OnGUIWarning(avatar.gameObject, "This avatar is tall. This is probably taller than you want.");
+                    OnGUIWarning(avatar, "This avatar is tall. This is probably taller than you want.");
             }
-            AnalyzeIK(avatar.gameObject, anim);
+            
+            if ( AnalyzeIK(avatar, avatar.gameObject, anim) == false )
+                OnGUILink(avatar, "See https://docs.vrchat.com/docs/rig-requirements for details."); 
         }
 
-        EditorGUILayout.LabelField("Errors: " + errorCount + " Warnings: " + warningCount);
+        {
+            IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(avatar.Name, avatar.gameObject);
+            HashSet<string> componentsToRemoveNames = new HashSet<string>();
+            foreach (Component c in componentsToRemove)
+            {
+                if (componentsToRemoveNames.Contains(c.GetType().Name) == false)
+                    componentsToRemoveNames.Add(c.GetType().Name);
+            }
 
-        GUI.enabled = (errorCount == 0) || (APIUser.CurrentUser.developerType.HasValue && APIUser.CurrentUser.developerType.Value == APIUser.DeveloperType.Internal);
+            if (componentsToRemoveNames.Count > 0)
+                OnGUIError(avatar, "The following component types are found on the Avatar and will be removed by the client: " + string.Join(", ", componentsToRemoveNames.ToArray()));
+        }
+        
+        if (VRCSDK2.AvatarValidation.EnforceAudioSourceLimits(avatar.gameObject).Count > 0)
+            OnGUIWarning(avatar, "Audio sources found on Avatar, they will be adjusted to safe limits, if necessary.");
+
+        if (avatar.gameObject.GetComponentInChildren<Camera>() != null)
+            OnGUIWarning(avatar, "Cameras are removed from non-local avatars at runtime.");
+    }
+
+    void OnGUIAvatar(VRCSDK2.VRC_AvatarDescriptor avatar)
+    {
+        EditorGUILayout.InspectorTitlebar(avatar.gameObject.activeInHierarchy, avatar.gameObject);
+
+        GUI.enabled = (GUIErrors.Count == 0 && checkedForIssues) || (APIUser.CurrentUser.developerType.HasValue && APIUser.CurrentUser.developerType.Value == APIUser.DeveloperType.Internal);
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Build & Publish"))
         {
@@ -708,10 +950,6 @@ public class VRC_SdkControlPanel : EditorWindow
         EditorGUILayout.EndHorizontal();
         GUI.enabled = true;
 
-        if (EditorGUI.EndChangeCheck())
-        {
-            EditorUtility.SetDirty(avatar);
-            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
-        }
+        OnGUIShowIssues(avatar);
     }
 }

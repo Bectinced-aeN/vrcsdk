@@ -12,6 +12,10 @@ namespace VRCSDK2
 
 		public MetadataCallback metadataUpdate;
 
+		public static Func<Dictionary<string, object>> _GetCurrentMetadata;
+
+		public static Dictionary<string, object> currentMetadata => (_GetCurrentMetadata == null) ? null : _GetCurrentMetadata();
+
 		public VRC_MetadataListener()
 			: this()
 		{

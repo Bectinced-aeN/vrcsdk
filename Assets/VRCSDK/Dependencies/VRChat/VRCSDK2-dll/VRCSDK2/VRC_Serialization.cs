@@ -224,19 +224,19 @@ namespace VRCSDK2
 
 			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
 			{
-				//IL_0050: Unknown result type (might be due to invalid IL or missing references)
-				//IL_005f: Unknown result type (might be due to invalid IL or missing references)
-				//IL_006e: Unknown result type (might be due to invalid IL or missing references)
-				//IL_007d: Unknown result type (might be due to invalid IL or missing references)
-				//IL_008c: Unknown result type (might be due to invalid IL or missing references)
-				//IL_009b: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00aa: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00b9: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0060: Unknown result type (might be due to invalid IL or missing references)
+				//IL_006f: Unknown result type (might be due to invalid IL or missing references)
+				//IL_007e: Unknown result type (might be due to invalid IL or missing references)
+				//IL_008d: Unknown result type (might be due to invalid IL or missing references)
+				//IL_009c: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00ab: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00ba: Unknown result type (might be due to invalid IL or missing references)
+				//IL_00c9: Unknown result type (might be due to invalid IL or missing references)
 				string @string = info.GetString("path");
 				GameObject val = FindGameObject(@string);
 				if (val == null)
 				{
-					return null;
+					throw new KeyNotFoundException("Could not locate Transform at path " + @string);
 				}
 				Transform transform = val.get_transform();
 				byte[] dataParameters = (byte[])info.GetValue("data", typeof(byte[]));
@@ -319,7 +319,12 @@ namespace VRCSDK2
 			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
 			{
 				string @string = info.GetString("path");
-				return FindGameObject(@string);
+				GameObject val = FindGameObject(@string);
+				if (val == null)
+				{
+					throw new KeyNotFoundException("Could not locate Game Object at path " + @string);
+				}
+				return val;
 			}
 		}
 
@@ -432,7 +437,7 @@ namespace VRCSDK2
 			return memoryStream.ToArray();
 		}
 
-		public static object[] ParameterDecoder(byte[] dataParameters)
+		public static object[] ParameterDecoder(byte[] dataParameters, bool rethrow = false)
 		{
 			if (dataParameters != null && dataParameters.Length > 0)
 			{
@@ -445,9 +450,13 @@ namespace VRCSDK2
 				}
 				catch (Exception ex)
 				{
-					Debug.LogError((object)("Error decoding parameters: \n" + ex.Message + "\n" + ex.StackTrace));
+					if (rethrow)
+					{
+						throw ex;
+					}
+					Debug.LogError((object)("Error decoding parameters: " + ex.Message + "\n" + ex.StackTrace));
 					return null;
-					IL_0062:
+					IL_006a:
 					object[] result;
 					return result;
 				}

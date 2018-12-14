@@ -108,7 +108,10 @@ namespace VRC
 			List<string> list = new List<string>();
 			foreach (object obj in objList)
 			{
-				list.Add(obj.ToString());
+				if (obj != null)
+				{
+					list.Add(obj.ToString());
+				}
 			}
 			return list;
 		}

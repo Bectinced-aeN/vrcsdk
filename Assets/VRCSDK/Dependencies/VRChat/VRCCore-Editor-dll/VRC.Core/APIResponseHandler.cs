@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using VRC.Core.BestHTTP;
 
 namespace VRC.Core
 {
 	internal abstract class APIResponseHandler
 	{
-		public virtual void HandleReponse(HTTPRequest req, HTTPResponse resp, int requestId, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, int retryCount = 0)
+		private static Dictionary<int, ApiCachedResponse> apiResponseCache = new Dictionary<int, ApiCachedResponse>();
+
+		public virtual void HandleReponse(HTTPRequest req, HTTPResponse resp, int requestId, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, int retryCount = 0, float cacheLifetime = -1f)
+		{
+		}
+
+		public virtual void HandleSuccessReponse(string jsonResponse, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null)
 		{
 		}
 
@@ -44,6 +51,51 @@ namespace VRC.Core
 				}
 			}
 			return result;
+		}
+
+		public static ApiCachedResponse GetOrClearCachedResponse(string apiRequestPathAndQuery, float cacheLifetime)
+		{
+			int hashCode = apiRequestPathAndQuery.GetHashCode();
+			if (apiResponseCache.TryGetValue(hashCode, out ApiCachedResponse value))
+			{
+				if (Time.get_realtimeSinceStartup() - value.Timestamp > Mathf.Min(value.Lifetime, cacheLifetime))
+				{
+					apiResponseCache.Remove(hashCode);
+					return null;
+				}
+				return value;
+			}
+			return null;
+		}
+
+		public static void CacheResponse(string apiRequestPathAndQuery, float cacheLifetime, string data)
+		{
+			if (!(cacheLifetime <= 0f))
+			{
+				int hashCode = apiRequestPathAndQuery.GetHashCode();
+				apiResponseCache[hashCode] = new ApiCachedResponse(data, Time.get_realtimeSinceStartup(), cacheLifetime);
+			}
+		}
+
+		public static void ClearCache()
+		{
+			apiResponseCache.Clear();
+		}
+
+		public static void CleanExpiredCache()
+		{
+			List<int> list = new List<int>();
+			foreach (KeyValuePair<int, ApiCachedResponse> item in apiResponseCache)
+			{
+				if (Time.get_realtimeSinceStartup() - item.Value.Timestamp > item.Value.Lifetime)
+				{
+					list.Add(item.Key);
+				}
+			}
+			for (int i = 0; i < list.Count; i++)
+			{
+				apiResponseCache.Remove(list[i]);
+			}
 		}
 	}
 }

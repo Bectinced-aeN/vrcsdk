@@ -45,7 +45,10 @@ public class VRC_SdkBuilder : MonoBehaviour
 		}
 		if (!APIUser.get_IsLoggedInWithCredentials() && ApiCredentials.Load())
 		{
-			APIUser.Login((Action<APIUser>)null, (Action<string>)null);
+			APIUser.Login((Action<APIUser>)delegate(APIUser user)
+			{
+				AnalyticsSDK.LoggedInUserChanged(user);
+			}, (Action<string>)null);
 		}
 		if (!APIUser.get_IsLoggedInWithCredentials())
 		{
@@ -82,18 +85,18 @@ public class VRC_SdkBuilder : MonoBehaviour
 	private static void ExportCurrentAvatarResource(GameObject avatarResource = null)
 	{
 		//IL_009b: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00c7: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00d8: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0145: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0198: Unknown result type (might be due to invalid IL or missing references)
-		//IL_019d: Unknown result type (might be due to invalid IL or missing references)
-		//IL_019f: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01a4: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01b8: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00dd: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00ee: Unknown result type (might be due to invalid IL or missing references)
+		//IL_015b: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01ae: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01b3: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01b5: Unknown result type (might be due to invalid IL or missing references)
 		//IL_01ba: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01c0: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01ff: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0201: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01ce: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01d0: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01d6: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0215: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0217: Unknown result type (might be due to invalid IL or missing references)
 		if (avatarResource != null)
 		{
 			Selection.set_activeObject(avatarResource);
@@ -118,6 +121,10 @@ public class VRC_SdkBuilder : MonoBehaviour
 				if (component2 != null)
 				{
 					component2.contentType = 0;
+					if (string.IsNullOrEmpty(component2.blueprintId))
+					{
+						component2.AssignId();
+					}
 					EditorUtility.SetDirty(component2);
 					EditorSceneManager.MarkSceneDirty(component2.get_gameObject().get_scene());
 					EditorSceneManager.SaveScene(component2.get_gameObject().get_scene());
@@ -355,13 +362,17 @@ public class VRC_SdkBuilder : MonoBehaviour
 	public static bool ExportSceneResource()
 	{
 		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0028: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0039: Unknown result type (might be due to invalid IL or missing references)
+		//IL_003e: Unknown result type (might be due to invalid IL or missing references)
+		//IL_004f: Unknown result type (might be due to invalid IL or missing references)
 		PipelineManager[] array = Object.FindObjectsOfType<PipelineManager>();
 		if (array.Length > 0)
 		{
 			PipelineManager val = array[0];
 			val.contentType = 1;
+			if (string.IsNullOrEmpty(val.blueprintId))
+			{
+				val.AssignId();
+			}
 			EditorUtility.SetDirty(array[0]);
 			EditorSceneManager.MarkSceneDirty(val.get_gameObject().get_scene());
 			EditorSceneManager.SaveScene(val.get_gameObject().get_scene());

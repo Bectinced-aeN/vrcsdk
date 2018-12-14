@@ -87,7 +87,7 @@ public class ImageDownloader : MonoBehaviour
 				try
 				{
 					downloadingImages[imageUrl] = new List<OnImageDownloaded>();
-					HTTPManager.SendRequest(imageUrl, delegate(HTTPRequest request, HTTPResponse response)
+					HTTPManager.SendRequest(imageUrl, HTTPMethods.Get, HTTPManager.KeepAliveDefaultValue, disableCache: false, delegate(HTTPRequest request, HTTPResponse response)
 					{
 						Action loadImage2 = delegate
 						{

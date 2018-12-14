@@ -151,5 +151,22 @@ namespace VRC.Core
 			Object.DestroyImmediate(GameObject.Find("UploadManager"));
 			launchedFromSDKPipeline = false;
 		}
+
+		public void AssignId()
+		{
+			if (contentType == ContentType.avatar)
+			{
+				blueprintId = "avtr_" + Guid.NewGuid().ToString();
+			}
+			else if (contentType == ContentType.world)
+			{
+				blueprintId = "wrld_" + Guid.NewGuid().ToString();
+			}
+			else
+			{
+				Debug.LogError((object)"Assigning PipelineManager asset ID without content type");
+			}
+			completedSDKPipeline = false;
+		}
 	}
 }

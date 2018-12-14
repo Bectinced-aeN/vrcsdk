@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace VRCSDK2
 {
-	public class VRC_ObjectSpawn : MonoBehaviour, INetworkID, IVRCEventProvider
+	public class VRC_ObjectSpawn : MonoBehaviour, IVRCEventProvider
 	{
 		public delegate void InitializationDelegate(VRC_ObjectSpawn obj);
 
@@ -18,22 +18,6 @@ namespace VRCSDK2
 		public InstantiationDelegate Instantiate;
 
 		public ObjectReaperDelegate ReapObjects;
-
-		[HideInInspector]
-		public int networkId;
-
-		[HideInInspector]
-		public int NetworkID
-		{
-			get
-			{
-				return networkId;
-			}
-			set
-			{
-				networkId = value;
-			}
-		}
 
 		public VRC_ObjectSpawn()
 			: this()

@@ -188,7 +188,6 @@ namespace VRC
 						EditorUserBuildSettings.SwitchActiveBuildTarget(selectedBuildTargetGroup, activeBuildTarget);
 						EditorPrefs.SetString("currentBuildingAssetBundlePath", text2);
 						EditorPrefs.SetString("lastVRCPath", text2);
-						CleanupUnityPackageExport();
 						atPath.set_assetBundleName(string.Empty);
 						atPath.SaveAndReimport();
 						if (flag)
@@ -201,7 +200,7 @@ namespace VRC
 					{
 						Debug.LogError((object)("Export Exception - " + ex.ToString()));
 						throw ex;
-						IL_020a:;
+						IL_0205:;
 					}
 					if (text2 != null)
 					{
@@ -234,7 +233,7 @@ namespace VRC
 			string text = WWW.EscapeURL(pluginFilePath).Replace("+", "%20");
 			string randomDigits = Tools.GetRandomDigits(10);
 			string text2 = SDKClientUtilities.GetSavedVRCInstallPath();
-			if (string.IsNullOrEmpty(text2))
+			if (string.IsNullOrEmpty(text2) || !File.Exists(text2))
 			{
 				text2 = "vrchat://create?roomId=" + randomDigits + "&hidden=true&name=BuildAndRun&url=file:///" + str;
 				if (!string.IsNullOrEmpty(text))
@@ -247,9 +246,11 @@ namespace VRC
 			{
 				text3 = text3 + "&pluginUrl=file:///" + text;
 			}
+			ProcessStartInfo processStartInfo = new ProcessStartInfo(text2, text3);
+			processStartInfo.WorkingDirectory = Path.GetDirectoryName(text2);
 			for (int i = 0; i < numClientsToLaunch; i++)
 			{
-				Process.Start(text2, text3);
+				Process.Start(processStartInfo);
 			}
 		}
 
@@ -279,6 +280,9 @@ namespace VRC
 			FindDynamicPrefabsInScene(ref prefabs);
 			FindMaterialsAndPrefabsInScene(ref prefabs, ref materials);
 			FindMaterialsOnObjects(prefabs, ref prefabs, ref materials);
+			while (FindPrefabReferencesOnPrefabs(ref prefabs))
+			{
+			}
 			if (desc.DynamicMaterials != null && desc.DynamicMaterials.Count > 0)
 			{
 				materials.AddRange(from m in desc.DynamicMaterials
@@ -490,6 +494,37 @@ namespace VRC
 					FindDynamicContentInProject(ref prefabs, ref materials, rootPath2);
 				}
 			}
+		}
+
+		private static bool FindPrefabReferencesOnPrefabs(ref List<GameObject> prefabs)
+		{
+			List<GameObject> list = new List<GameObject>();
+			foreach (GameObject item in from p in prefabs
+			where p != null
+			select p)
+			{
+				VRC_Trigger[] components = item.GetComponents<VRC_Trigger>();
+				foreach (VRC_Trigger item2 in components.Where((VRC_Trigger t) => t != null))
+				{
+					foreach (TriggerEvent item3 in item2.Triggers.Where((TriggerEvent te) => te != null))
+					{
+						foreach (VrcEvent item4 in item3.Events.Where((VrcEvent e) => e != null && (int)e.EventType == 13))
+						{
+							GameObject val = AssetDatabase.LoadAssetAtPath(item4.ParameterString, typeof(GameObject)) as GameObject;
+							if (val != null && !prefabs.Contains(val))
+							{
+								list.Add(val);
+							}
+						}
+					}
+				}
+			}
+			if (list.Count > 0)
+			{
+				prefabs.AddRange(list);
+				return true;
+			}
+			return false;
 		}
 
 		public static void CleanupTmpFiles()

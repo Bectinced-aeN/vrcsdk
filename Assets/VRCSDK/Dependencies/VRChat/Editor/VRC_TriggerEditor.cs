@@ -63,9 +63,11 @@ namespace VRCSDK2
 
 #pragma warning disable CS0618 // Type or member is obsolete
         private static List<VRC_Trigger.TriggerType> hiddenTriggerTypes = new List<VRC_Trigger.TriggerType> { VRC_Trigger.TriggerType.OnDataStorageAdd, VRC_Trigger.TriggerType.OnDataStorageRemove };
-        private static List<VRC_EventHandler.VrcEventType> hiddenEventTypes = new List<VRC_EventHandler.VrcEventType> { VRC_EventHandler.VrcEventType.MeshVisibility, VRC_EventHandler.VrcEventType.SendMessage };
+        private static List<VRC_EventHandler.VrcEventType> hiddenEventTypes = new List<VRC_EventHandler.VrcEventType> { VRC_EventHandler.VrcEventType.MeshVisibility, VRC_EventHandler.VrcEventType.SendMessage, VRC_EventHandler.VrcEventType.RunConsoleCommand };
         private static List<VRC_EventHandler.VrcBroadcastType> unbufferedBroadcastTypes = new List<VRC_EventHandler.VrcBroadcastType> { VRC_EventHandler.VrcBroadcastType.AlwaysUnbuffered, VRC_EventHandler.VrcBroadcastType.MasterUnbuffered, VRC_EventHandler.VrcBroadcastType.OwnerUnbuffered, VRC_EventHandler.VrcBroadcastType.Local };
+        private static List<VRC_EventHandler.VrcBroadcastType> bufferOneBroadcastTypes = new List<VRC_EventHandler.VrcBroadcastType> { VRC_EventHandler.VrcBroadcastType.AlwaysBufferOne, VRC_EventHandler.VrcBroadcastType.MasterBufferOne, VRC_EventHandler.VrcBroadcastType.OwnerBufferOne };
         private static List<VRC_EventHandler.VrcBroadcastType> simpleBroadcastTypes = new List<VRC_EventHandler.VrcBroadcastType> { VRC_EventHandler.VrcBroadcastType.AlwaysUnbuffered, VRC_EventHandler.VrcBroadcastType.AlwaysBufferOne, VRC_EventHandler.VrcBroadcastType.OwnerBufferOne, VRC_EventHandler.VrcBroadcastType.OwnerUnbuffered };
+        private static List<VRC_EventHandler.VrcBroadcastType> hiddenBroadcastTypes = new List<VRC_EventHandler.VrcBroadcastType> {  };
 #pragma warning restore CS0618 // Type or member is obsolete
 
         private ReorderableList[] eventLists = new ReorderableList[0];
@@ -77,12 +79,16 @@ namespace VRCSDK2
         private SerializedProperty proximityProperty;
         private SerializedProperty interactTextProperty;
         private SerializedProperty advancedProperty;
+        private SerializedProperty helpProperty;
 
-        private static Dictionary<string, object[]> rpcByteCache = new Dictionary<string, object[]>();
+        private Dictionary<string, object[]> rpcByteCache = new Dictionary<string, object[]>();
 
         private VRC_Trigger.TriggerType addTriggerSelectedType = VRC_Trigger.TriggerType.Custom;
 
-        private static bool showHelp = true;
+        private void OnEnable()
+        {
+            rpcByteCache.Clear();
+        }
 
         public override void OnInspectorGUI()
         {
@@ -105,6 +111,7 @@ namespace VRCSDK2
             proximityProperty = serializedObject.FindProperty("proximity");
             interactTextProperty = serializedObject.FindProperty("interactText");
             advancedProperty = serializedObject.FindProperty("UsesAdvancedOptions");
+            helpProperty = serializedObject.FindProperty("ShowHelp");
 
             serializedObject.Update();
 
@@ -125,13 +132,15 @@ namespace VRCSDK2
                 bool[] newVisible = new bool[triggersLength];
                 for (int idx = 0; idx < visible.Length && idx < newVisible.Length; ++idx)
                     newVisible[idx] = visible[idx];
+                for (int idx = visible.Length; idx < newVisible.Length && idx < newVisible.Length; ++idx)
+                    newVisible[idx] = true;
                 visible = newVisible;
             }
 
             EditorGUILayout.BeginVertical(GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 30));
 
             EditorGUILayout.PropertyField(advancedProperty, new GUIContent("Advanced Mode"));
-            showHelp = EditorGUILayout.Toggle("Show Help", showHelp);
+            EditorGUILayout.PropertyField(helpProperty, new GUIContent("Show Help"));
 
             EditorGUILayout.Space();
 
@@ -143,7 +152,7 @@ namespace VRCSDK2
 
         private void RenderHelpBox(string message, MessageType messageType)
         {
-            if (showHelp || messageType == MessageType.Error)
+            if (helpProperty.boolValue || messageType == MessageType.Error)
                 EditorGUILayout.HelpBox(message, messageType);
         }
 
@@ -177,6 +186,7 @@ namespace VRCSDK2
                 }
 
                 if (!unbufferedBroadcastTypes.Contains((VRC_EventHandler.VrcBroadcastType)broadcastProperty.enumValueIndex) &&
+                    !bufferOneBroadcastTypes.Contains((VRC_EventHandler.VrcBroadcastType)broadcastProperty.enumValueIndex) &&
                     ActiveEvents(triggerProperty).Any(e => e == VRC_EventHandler.VrcEventType.SendRPC))
                     RenderHelpBox("Consider using unbuffered broadcasts with RPCs.", MessageType.Error);
 
@@ -301,14 +311,14 @@ namespace VRCSDK2
                 Rect rect = EditorGUILayout.BeginHorizontal(GUILayout.Height(15f));
                 EditorGUILayout.Space();
                 
-                int baseWidth = (int)((rect.width - 35) / 3);
+                int baseWidth = (int)((rect.width - 40) / 4);
                 Rect foldoutRect = new Rect(rect.x + 10, rect.y, 20, rect.height);
-                Rect typeRect = new Rect(rect.x + 25, rect.y, baseWidth, rect.height);
-                Rect broadcastRect = new Rect(rect.x + 30 + baseWidth, rect.y, baseWidth, rect.height);
-                Rect removeRect = new Rect(rect.x + 35 + baseWidth * 2, rect.y, baseWidth, rect.height);
+                Rect typeRect = new Rect(rect.x + 20, rect.y, baseWidth, rect.height);
+                Rect broadcastRect = new Rect(rect.x + 25 + baseWidth, rect.y, baseWidth, rect.height);
+                Rect randomRect = new Rect(rect.x + 30 + baseWidth * 2, rect.y, baseWidth, rect.height);
+                Rect removeRect = new Rect(rect.x + 35 + baseWidth * 3, rect.y, baseWidth, rect.height);
 
                 expand = EditorGUI.Foldout(foldoutRect, expand, GUIContent.none);
-
 
                 SerializedProperty triggerTypeProperty = triggerProperty.FindPropertyRelative("TriggerType");
                 VRC_Trigger.TriggerType currentType = (VRC_Trigger.TriggerType)triggerTypeProperty.enumValueIndex;
@@ -318,7 +328,11 @@ namespace VRCSDK2
                     nameProperty.stringValue = "Unnamed";
 
                 System.Func<string, string> rename = s => s == "Custom" ? s + " (" + nameProperty.stringValue + ")" : s;
-                System.Func<VRC_Trigger.TriggerType, bool> predicate = v => (v == currentType || ActiveTypes.All(t => t != v)) && hiddenTriggerTypes.Contains(v) == false;
+                System.Func<VRC_Trigger.TriggerType, bool> predicate =
+                    v => (v == currentType || ActiveTypes.All(t => t != v))
+                        && hiddenTriggerTypes.Contains(v) == false
+                        && !((v == VRC_Trigger.TriggerType.OnStationEntered || v == VRC_Trigger.TriggerType.OnStationExited) 
+                             && serializedObject.targetObjects.Any(o => (o as VRC_Trigger).GetComponent<VRCSDK2.VRC_Station>() == null));
 
                 triggerTypeProperty.enumValueIndex = (int)VRC_EditorTools.FilteredEnumPopup(typeRect, currentType, predicate, rename);
                 currentType = (VRC_Trigger.TriggerType)triggerTypeProperty.enumValueIndex;
@@ -333,9 +347,18 @@ namespace VRCSDK2
                 }
                 else
                 {
-                    VRC_EditorTools.FilteredEnumPopup<VRC_EventHandler.VrcBroadcastType>(broadcastRect, broadcastTypeProperty, b => advancedProperty.boolValue || simpleBroadcastTypes.Contains(b));
+                    VRC_EditorTools.FilteredEnumPopup<VRC_EventHandler.VrcBroadcastType>(broadcastRect, broadcastTypeProperty, b => !hiddenBroadcastTypes.Contains(b) && (advancedProperty.boolValue || simpleBroadcastTypes.Contains(b)));
                     broadcast = (VRC_EventHandler.VrcBroadcastType)broadcastTypeProperty.enumValueIndex;
                 }
+
+                SerializedProperty probabilitiesProperty = triggerProperty.FindPropertyRelative("Probabilities");
+                SerializedProperty probabilityLockProperty = triggerProperty.FindPropertyRelative("ProbabilityLock");
+                SerializedProperty eventsProperty = triggerProperty.FindPropertyRelative("Events");
+
+                if (advancedProperty.boolValue && GUI.Toggle(randomRect, probabilitiesProperty.arraySize > 0, new GUIContent(" Randomize")))
+                    probabilityLockProperty.arraySize = probabilitiesProperty.arraySize = eventsProperty.arraySize;
+                else
+                    probabilityLockProperty.arraySize = probabilitiesProperty.arraySize = 0;
 
                 if (GUI.Button(removeRect, "Remove"))
                     delete = true;
@@ -401,6 +424,8 @@ namespace VRCSDK2
                 newList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
                 {
                     SerializedProperty eventsListProperty = triggerProperty.FindPropertyRelative("Events");
+                    SerializedProperty probabilitiesProperty = triggerProperty.FindPropertyRelative("Probabilities");
+                    SerializedProperty probabilityLockProperty = triggerProperty.FindPropertyRelative("ProbabilityLock");
                     SerializedProperty shadowListProperty = triggerProperty.FindPropertyRelative("DataStorageShadowValues");
 
                     if (shadowListProperty != null && shadowListProperty.arraySize != eventsListProperty.arraySize)
@@ -415,7 +440,59 @@ namespace VRCSDK2
                     if (!string.IsNullOrEmpty(parameterStringProperty.stringValue))
                         label += " (" + parameterStringProperty.stringValue + ")";
 
-                    EditorGUI.LabelField(rect, label);
+                    if (probabilitiesProperty.arraySize == 0 || !advancedProperty.boolValue)
+                        EditorGUI.LabelField(rect, label);
+                    else
+                    {
+                        Rect labelRect = new Rect(rect.x, rect.y, rect.width / 2, rect.height);
+                        Rect sliderLockRect = new Rect(rect.x + rect.width / 2, rect.y, 30, rect.height);
+                        Rect sliderRect = new Rect(rect.x + rect.width / 2 + 30, rect.y, rect.width / 2 - 30, rect.height);
+
+                        EditorGUI.LabelField(labelRect, label);
+                        
+                        probabilityLockProperty.GetArrayElementAtIndex(index).boolValue = GUI.Toggle(sliderLockRect, probabilityLockProperty.GetArrayElementAtIndex(index).boolValue, new GUIContent());
+                        probabilitiesProperty.GetArrayElementAtIndex(index).floatValue = EditorGUI.Slider(sliderRect, new GUIContent(), probabilitiesProperty.GetArrayElementAtIndex(index).floatValue, 0f, 1f);
+
+                        bool allLocked = true;
+                        for (int pIdx = 0; pIdx < probabilitiesProperty.arraySize; ++pIdx)
+                            allLocked = allLocked && probabilityLockProperty.GetArrayElementAtIndex(pIdx).boolValue;
+                        if (allLocked)
+                            for (int pIdx = 0; pIdx < probabilitiesProperty.arraySize; ++pIdx)
+                                if (pIdx != index)
+                                    probabilitiesProperty.GetArrayElementAtIndex(pIdx).floatValue = probabilitiesProperty.GetArrayElementAtIndex(index).floatValue;
+
+                        // Squish 'em down
+                        float probabilitySum = 1f;
+                        do
+                        {
+                            if (probabilitySum > 1f)
+                            {
+                                float fixRatio = 1f / probabilitySum;
+                                int countChanged = 0;
+                                for (int pIdx = 0; pIdx < probabilitiesProperty.arraySize; ++pIdx)
+                                {
+                                    if (allLocked)
+                                    {
+                                        countChanged++;
+                                        probabilitiesProperty.GetArrayElementAtIndex(pIdx).floatValue *= fixRatio;
+                                    }
+                                    else
+                                    {
+                                        if (pIdx == index || probabilityLockProperty.GetArrayElementAtIndex(pIdx).boolValue || probabilitiesProperty.GetArrayElementAtIndex(pIdx).floatValue == 0f)
+                                            continue;
+                                        countChanged++;
+                                        probabilitiesProperty.GetArrayElementAtIndex(pIdx).floatValue *= fixRatio;
+                                    }
+                                }
+                                if (countChanged == 0)
+                                    probabilitiesProperty.GetArrayElementAtIndex(index).floatValue -= probabilitySum - 1f;
+                            }
+                            probabilitySum = 0f;
+                            for (int pIdx = 0; pIdx < probabilitiesProperty.arraySize; ++pIdx)
+                                probabilitySum += probabilitiesProperty.GetArrayElementAtIndex(pIdx).floatValue;
+                        } while (probabilitySum > 1f);
+                    }
+
                     if (isFocused)
                         objectLists[idx] = null;
                     if (isActive)
@@ -439,7 +516,7 @@ namespace VRCSDK2
                             newEventProperty.FindPropertyRelative("ParameterObjects").arraySize = 0;
                             newEventProperty.FindPropertyRelative("ParameterInt").intValue = 0;
                             newEventProperty.FindPropertyRelative("ParameterFloat").floatValue = 0f;
-                            newEventProperty.FindPropertyRelative("ParameterFloat").stringValue = null;
+                            newEventProperty.FindPropertyRelative("ParameterString").stringValue = null;
 
                             serializedObject.ApplyModifiedProperties();
                         }, type);
@@ -589,12 +666,12 @@ namespace VRCSDK2
             objectLists[idx].DoLayoutList();
         }
 
-        private void RenderTargetComponentList<T>(SerializedProperty objectsProperty, int idx) where T : Component
+        private void RenderTargetComponentList<T>(SerializedProperty objectsProperty, int idx, string label = "Receivers") where T : Component
         {
             if (objectLists[idx] == null)
             {
                 objectLists[idx] = new ReorderableList(objectsProperty.serializedObject, objectsProperty, true, true, true, true);
-                objectLists[idx].drawHeaderCallback = (Rect rect) => EditorGUI.LabelField(rect, new GUIContent("Receivers"));
+                objectLists[idx].drawHeaderCallback = (Rect rect) => EditorGUI.LabelField(rect, new GUIContent(label));
                 objectLists[idx].drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
                 {
                     SerializedProperty target = objectLists[idx].serializedProperty.GetArrayElementAtIndex(index);
@@ -644,6 +721,14 @@ namespace VRCSDK2
 
                         RenderPropertyEditor(shadowProperty, parameterStringProperty, new GUIContent("Variable"));
                         RenderPropertyEditor(shadowProperty, parameterFloatProperty, new GUIContent("Value"));
+                        break;
+                    }
+                case VRCSDK2.VRC_EventHandler.VrcEventType.AnimationInt:
+                    {
+                        RenderTargetComponentList<Animator>(parameterObjectsProperty, triggerIdx);
+
+                        RenderPropertyEditor(shadowProperty, parameterStringProperty, new GUIContent("Variable"));
+                        RenderPropertyEditor(shadowProperty, parameterIntProperty, new GUIContent("Value"));
                         break;
                     }
                 case VRCSDK2.VRC_EventHandler.VrcEventType.AnimationTrigger:
@@ -794,6 +879,8 @@ namespace VRCSDK2
                         found = found == null ? AssetDatabase.LoadAssetAtPath<GameObject>(path) : found;
                         GameObject newFound = EditorGUILayout.ObjectField("Prefab", found, typeof(GameObject), false) as GameObject;
                         parameterStringProperty.stringValue = newFound == null ? null : AssetDatabase.GetAssetOrScenePath(newFound);
+
+                        RenderTargetComponentList<Transform>(parameterObjectsProperty, triggerIdx, "Locations");
                     }
                     break;
                 case VRC_EventHandler.VrcEventType.DestroyObject:
@@ -1024,7 +1111,7 @@ namespace VRCSDK2
                 else if (paramType == typeof(int))
                 {
                     if (idx == parameters.Length - 1)
-                        finalIntAsPlayerID = EditorGUILayout.Toggle("Use Player ID as last", finalIntAsPlayerID || parameters[idx] == null);
+                        finalIntAsPlayerID = !advancedProperty.boolValue || EditorGUILayout.Toggle("Use Player ID as last", finalIntAsPlayerID || parameters[idx] == null);
                     if (!finalIntAsPlayerID)
                     {
                         if (parameters[idx] == null || parameters[idx].GetType() != paramType)

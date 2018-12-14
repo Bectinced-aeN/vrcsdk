@@ -19,8 +19,8 @@ public class VRCPipelineManagerEditor : Editor
 
 	public override void OnInspectorGUI()
 	{
-		//IL_0185: Unknown result type (might be due to invalid IL or missing references)
-		//IL_019b: Unknown result type (might be due to invalid IL or missing references)
+		//IL_019d: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01b3: Unknown result type (might be due to invalid IL or missing references)
 		PipelineManager pipeline = (PipelineManager)this.get_target();
 		EditorGUILayout.LabelField("Unity Version", Application.get_unityVersion(), (GUILayoutOption[])new GUILayoutOption[0]);
 		if (!loggingIn)
@@ -59,10 +59,12 @@ public class VRCPipelineManagerEditor : Editor
 			if (string.IsNullOrEmpty(text))
 			{
 				text = (pipeline.blueprintId = tmpBlueprintId);
+				pipeline.completedSDKPipeline = true;
 			}
 			else
 			{
 				pipeline.blueprintId = string.Empty;
+				pipeline.completedSDKPipeline = false;
 			}
 			EditorUtility.SetDirty(pipeline);
 			EditorSceneManager.MarkSceneDirty(pipeline.get_gameObject().get_scene());

@@ -6,7 +6,7 @@ using UnityEngine.Video;
 namespace VRCSDK2
 {
 	[RequireComponent(typeof(VideoPlayer))]
-	public class VRC_SyncVideoPlayer : MonoBehaviour, INetworkID, IVRCEventProvider
+	public class VRC_SyncVideoPlayer : MonoBehaviour, IVRCEventProvider
 	{
 		[Serializable]
 		public class VideoEntry
@@ -50,14 +50,15 @@ namespace VRCSDK2
 
 		public static Action<VRC_SyncVideoPlayer> _Shuffle;
 
-		public static Action<VRC_SyncVideoPlayer> Initialize;
+		public static Action<VRC_SyncVideoPlayer> _Clear;
 
-		[HideInInspector]
-		public int NetworkID
-		{
-			get;
-			set;
-		}
+		public static Action<VRC_SyncVideoPlayer, string> _AddURL;
+
+		public static Action<VRC_SyncVideoPlayer> _SpeedUp;
+
+		public static Action<VRC_SyncVideoPlayer> _SpeedDown;
+
+		public static Action<VRC_SyncVideoPlayer> Initialize;
 
 		public VRC_SyncVideoPlayer()
 			: this()
@@ -148,6 +149,54 @@ namespace VRCSDK2
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Owner
+		})]
+		public void Clear()
+		{
+			if (_Clear != null)
+			{
+				_Clear(this);
+			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Owner
+		})]
+		public void AddURL(string url)
+		{
+			if (_AddURL != null)
+			{
+				_AddURL(this, url);
+			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Owner
+		})]
+		public void SpeedUp()
+		{
+			if (_SpeedUp != null)
+			{
+				_SpeedUp(this);
+			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Owner
+		})]
+		public void SpeedDown()
+		{
+			if (_SpeedDown != null)
+			{
+				_SpeedDown(this);
+			}
+		}
+
 		private void Awake()
 		{
 			if (Initialize != null)
@@ -220,6 +269,28 @@ namespace VRCSDK2
 				EventType = VRC_EventHandler.VrcEventType.SendRPC,
 				ParameterInt = 2,
 				ParameterString = "Shuffle",
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				}
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "SpeedUp",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 2,
+				ParameterString = "SpeedUp",
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				}
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "SpeedDown",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 2,
+				ParameterString = "SpeedDown",
 				ParameterObjects = (GameObject[])new GameObject[1]
 				{
 					this.get_gameObject()

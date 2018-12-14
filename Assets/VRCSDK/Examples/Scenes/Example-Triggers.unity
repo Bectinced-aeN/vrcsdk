@@ -404,6 +404,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 2
     BroadcastType: 0
@@ -444,6 +445,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &28838004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -875,6 +878,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 14
     BroadcastType: 0
@@ -915,6 +919,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &48958754
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1311,7 +1317,6 @@ MonoBehaviour:
   m_Script: {fileID: 762633, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  networkId: 0
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
 --- !u!54 &142807393
@@ -1346,6 +1351,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 8
     BroadcastType: 0
@@ -1386,6 +1392,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &142807395
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1803,20 +1811,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 159891590}
   m_Mesh: {fileID: 4300000, guid: 080bc076ed19adb4091adca05de83d66, type: 3}
---- !u!114 &160187570
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1128837458, guid: 4ecd63eff847044b68db9453ce219299, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friends: []
-  currentAvatarImageUrl: 
-  currentAvatarThumbnailImageUrl: 
 --- !u!1 &172623873
 GameObject:
   m_ObjectHideFlags: 0
@@ -1868,6 +1862,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -1908,6 +1903,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &172623877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3017,6 +3014,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -3028,10 +3026,11 @@ MonoBehaviour:
       ParameterBool: 0
       ParameterFloat: 0
       ParameterInt: 1
-      ParameterObject: {fileID: 1947386611}
-      ParameterObjects: []
+      ParameterObject: {fileID: 0}
+      ParameterObjects:
+      - {fileID: 1947386611}
       ParameterBytes: 
-    Name: 
+    Name: Unnamed
     Others: []
     Key: 0
     TriggerIndividuals: 1
@@ -3046,7 +3045,13 @@ MonoBehaviour:
     Duration: 0
     Timer: 0
     DataElementIdx: 0
-    DataStorageShadowValues: []
+    DataStorageShadowValues:
+    - ParameterString: 
+      ParameterBoolOp: 
+      ParameterFloat: 
+      ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &304439886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3058,67 +3063,7 @@ MonoBehaviour:
   m_Script: {fileID: -339397700, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Events:
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 2
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 0}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 1
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 1054415746}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 0}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: 
-    EventType: 6
-    ParameterString: SpawnObject
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 1947386611}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: SpawnObject
-    EventType: 6
-    ParameterString: SpawnObject
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 1947386611}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: DestroySpawnedObjects
-    EventType: 6
-    ParameterString: DestroySpawnedObjects
-    ParameterBoolOp: 0
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 1947386611}
-    ParameterObjects: []
-    ParameterBytes: 
+  Events: []
   CombinedNetworkId: -1
   _dispatcher: {fileID: 0}
   _registered: 0
@@ -5046,6 +4991,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -5081,6 +5027,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &517794628
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7082,7 +7030,6 @@ MonoBehaviour:
   m_Script: {fileID: 762633, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  networkId: 0
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
 --- !u!54 &646086840
@@ -7117,6 +7064,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 9
     BroadcastType: 0
@@ -7157,6 +7105,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &646086842
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8168,6 +8118,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -8203,6 +8154,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &782239521
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9042,6 +8995,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -9086,6 +9040,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &864544605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9276,8 +9232,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
-  blueprintId: wrld_28194c48-8530-469a-bc2f-2faf41323ad7
-  user: {fileID: 160187570}
+  blueprintId: 
   contentType: 1
   assetBundleUnityVersion: 5.6.0p3
 --- !u!114 &872619117
@@ -9299,7 +9254,6 @@ MonoBehaviour:
   ReferenceCamera: {fileID: 0}
   RespawnHeightY: -100
   ObjectBehaviourAtRespawnHeight: 1
-  ForbidFreeModification: 0
   ForbidUserPortals: 0
   UseCustomVoiceFalloffRange: 0
   VoiceFalloffRangeNear: 4
@@ -9353,7 +9307,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   LightMode: 2
-  LoadRenderSettings: 0
   RenderAmbientEquatorColor: {r: 0, g: 0, b: 0, a: 0}
   RenderAmbientGroundColor: {r: 0, g: 0, b: 0, a: 0}
   RenderAmbientIntensity: 0
@@ -9825,6 +9778,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 16
     BroadcastType: 0
@@ -9865,6 +9819,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &942766709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10002,6 +9958,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 3
     BroadcastType: 0
@@ -10050,6 +10007,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &961387360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10565,6 +10524,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 2
     BroadcastType: 0
@@ -10605,6 +10565,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &989011336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11142,9 +11104,10 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 23
-    BroadcastType: 0
+    BroadcastType: 4
     Events:
     - Name: 
       EventType: 10
@@ -11192,6 +11155,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1024119815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11203,27 +11168,7 @@ MonoBehaviour:
   m_Script: {fileID: -339397700, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Events:
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 2
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 0}
-    ParameterObjects: []
-    ParameterBytes: 
-  - Name: 
-    EventType: 10
-    ParameterString: 
-    ParameterBoolOp: 1
-    ParameterBool: 0
-    ParameterFloat: 0
-    ParameterInt: 1
-    ParameterObject: {fileID: 414253377}
-    ParameterObjects: []
-    ParameterBytes: 
+  Events: []
   CombinedNetworkId: -1
   _dispatcher: {fileID: 0}
   _registered: 0
@@ -12121,6 +12066,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -12152,6 +12098,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1078916025
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13123,6 +13071,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 5
     BroadcastType: 0
@@ -13163,6 +13112,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1142678178
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13228,6 +13179,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 13
     BroadcastType: 0
@@ -13268,6 +13220,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1150192009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15461,6 +15415,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 19
     BroadcastType: 0
@@ -15511,6 +15466,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1449952004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15758,6 +15715,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -15788,6 +15746,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1483514858
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16180,6 +16140,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 10
     BroadcastType: 0
@@ -16220,6 +16181,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1496005554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16467,6 +16430,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 15
     BroadcastType: 0
@@ -16507,6 +16471,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1521505066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18919,6 +18885,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 18
     BroadcastType: 0
@@ -18968,6 +18935,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1801021754
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20435,6 +20404,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 7
     BroadcastType: 0
@@ -20475,6 +20445,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1915712569
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20691,6 +20663,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 6
     BroadcastType: 0
@@ -20731,6 +20704,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1931402810
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20813,6 +20788,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 11
     BroadcastType: 0
@@ -20853,6 +20829,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1931939087
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21066,7 +21044,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ObjectPrefab: {fileID: 1397695816633726, guid: 20951a249466f6449882e950bfd20724,
     type: 2}
-  networkId: 0
 --- !u!1 &1949363700
 GameObject:
   m_ObjectHideFlags: 0
@@ -21682,7 +21659,6 @@ MonoBehaviour:
   m_Script: {fileID: 762633, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  networkId: 0
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
 --- !u!114 &1988244519
@@ -21713,6 +21689,7 @@ MonoBehaviour:
   proximity: 0.1
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 20
     BroadcastType: 4
@@ -21763,6 +21740,8 @@ MonoBehaviour:
       ParameterBoolOp: 
       ParameterFloat: 
       ParameterInt: 
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &1988244521
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21903,6 +21882,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -21923,6 +21903,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
   - TriggerType: 1
     BroadcastType: 0
     Events: []
@@ -21943,6 +21925,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &2024033054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22734,6 +22718,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 10
     BroadcastType: 0
@@ -22774,6 +22759,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &2115723476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23270,6 +23257,7 @@ MonoBehaviour:
   proximity: 2
   isHidden: 0
   UsesAdvancedOptions: 1
+  ShowHelp: 1
   Triggers:
   - TriggerType: 12
     BroadcastType: 0
@@ -23310,6 +23298,8 @@ MonoBehaviour:
     Timer: 0
     DataElementIdx: 0
     DataStorageShadowValues: []
+    ProbabilityLock: 
+    Probabilities: []
 --- !u!114 &2146354612
 MonoBehaviour:
   m_ObjectHideFlags: 0
