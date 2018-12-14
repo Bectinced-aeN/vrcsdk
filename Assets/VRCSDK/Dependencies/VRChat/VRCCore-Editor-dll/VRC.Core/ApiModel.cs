@@ -66,7 +66,7 @@ namespace VRC.Core
 			SetApiFieldsFromJson(fields, ref Error);
 			if (Error != null)
 			{
-				Debug.Log((object)("Error applying fields: " + Error));
+				Logger.LogFormat(DebugLevel.API, "Error applying fields: {0}", Error);
 			}
 		}
 
@@ -105,7 +105,7 @@ namespace VRC.Core
 				}
 				else if (!typeof(ApiModel).IsAssignableFrom(targetType))
 				{
-					Debug.LogError((object)"Expected an ApiModel type.");
+					Logger.LogErrorFormat(DebugLevel.API, "Expected an ApiModel type.");
 					return null;
 				}
 				ApiModel apiModel = Activator.CreateInstance(targetType) as ApiModel;
@@ -113,7 +113,7 @@ namespace VRC.Core
 				Dictionary<string, object> fields = ExtractApiFields();
 				if (!apiModel.SetApiFieldsFromJson(fields, ref Error))
 				{
-					Debug.LogError((object)("Unable to clone " + targetType.Name + ": " + Error));
+					Logger.LogErrorFormat(DebugLevel.API, "Unable to clone {0}: {1}", targetType.Name, Error);
 				}
 				if (newID != null)
 				{
@@ -121,7 +121,7 @@ namespace VRC.Core
 				}
 				apiModel.Endpoint = Endpoint;
 				return apiModel;
-				IL_0099:
+				IL_00a3:
 				ApiModel result;
 				return result;
 			}
@@ -129,7 +129,7 @@ namespace VRC.Core
 			{
 				Debug.LogException(ex);
 				return null;
-				IL_00ad:
+				IL_00b7:
 				ApiModel result;
 				return result;
 			}
@@ -272,7 +272,7 @@ namespace VRC.Core
 		{
 			if (string.IsNullOrEmpty(Endpoint))
 			{
-				Debug.LogError((object)"Cannot save to null endpoint");
+				Logger.LogErrorFormat(DebugLevel.API, "Cannot save to null endpoint");
 			}
 			else
 			{
@@ -376,7 +376,7 @@ namespace VRC.Core
 				ApiCache.Invalidate(GetType(), id);
 				if (Endpoint == null)
 				{
-					Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, DELETE ignored."));
+					Logger.LogErrorFormat(DebugLevel.API, "NULL endpoint for {0} object, DELETE ignored.", GetType().Name);
 					onFailure?.Invoke(new ApiContainer
 					{
 						Error = "NULL endpoint for " + GetType().Name + " object, DELETE ignored.",
@@ -399,7 +399,7 @@ namespace VRC.Core
 			string Error = null;
 			if (!SetApiFieldsFromJson(fields, ref Error))
 			{
-				Debug.LogError((object)("Unable to set fields from json: " + Error));
+				Logger.LogErrorFormat(DebugLevel.API, "Unable to set fields from json: {0}", Error);
 				return false;
 			}
 			return true;
@@ -475,7 +475,7 @@ namespace VRC.Core
 			PropertyInfo propertyInfo = FindProperty(fieldName);
 			if (propertyInfo == null)
 			{
-				Debug.LogError((object)(GetType().Name + ": Could not read property " + fieldName));
+				Logger.LogFormat(DebugLevel.API, "{0}: Could not read property {1}", GetType().Name, fieldName);
 				return false;
 			}
 			MethodInfo getMethod = propertyInfo.GetGetMethod();
@@ -486,7 +486,7 @@ namespace VRC.Core
 			}
 			if (!TryReadConvert(ref data))
 			{
-				Debug.LogError((object)(GetType().Name + ": Could not read property due to encoding failure, " + fieldName + " is a " + propertyInfo.PropertyType.FullName));
+				Logger.LogErrorFormat(DebugLevel.API, "{0}: Could not read property due to encoding failure, {1} is a {2}", GetType().Name, fieldName, propertyInfo.PropertyType.FullName);
 				return false;
 			}
 			return true;
@@ -535,7 +535,10 @@ namespace VRC.Core
 			PropertyInfo propertyInfo = FindProperty(fieldName);
 			if (propertyInfo == null)
 			{
-				Debug.LogError((object)(GetType().Name + ": Could not locate property to write to: " + fieldName + " with type " + data.GetType().FullName));
+				if (Application.get_isEditor() && Tools.isClient)
+				{
+					Logger.LogFormat(DebugLevel.API, "{0}: Could not locate property to write to: {1} with type {2}", GetType().Name, fieldName, data.GetType().FullName);
+				}
 				return false;
 			}
 			try
@@ -549,16 +552,16 @@ namespace VRC.Core
 					}
 					if (!success || !TryWriteConvert(propertyInfo.PropertyType, ref data))
 					{
-						Debug.LogError((object)(GetType().Name + ": Could not write property due to decoding failure, wanted " + propertyInfo.PropertyType.FullName + " for " + fieldName + "\n" + ((data != null) ? data.ToString() : "null")));
+						Logger.LogErrorFormat(DebugLevel.API, "{0}: Could not write property due to decoding failure, wanted {1} for {2}\n{3}", GetType().Name, propertyInfo.PropertyType.FullName, fieldName, (data != null) ? data.ToString() : "null");
 						return false;
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				Debug.LogError((object)(GetType().Name + ": could not write " + fieldName + " of type " + propertyInfo.PropertyType.Name + "\n" + ex.Message + "\n" + ex.StackTrace));
+				Logger.LogErrorFormat(DebugLevel.API, "{0}: could not write {1} of type {2}\n{3}", GetType().Name, fieldName, propertyInfo.PropertyType.Name, ex.Message);
 				return false;
-				IL_0170:;
+				IL_0135:;
 			}
 			try
 			{
@@ -574,9 +577,9 @@ namespace VRC.Core
 			}
 			catch (Exception ex2)
 			{
-				Debug.LogError((object)(GetType().Name + ": failed to set " + fieldName + "\n" + ex2.Message + "\n" + ex2.StackTrace));
+				Logger.LogErrorFormat(DebugLevel.API, "{0}: failed to set {1}\n", GetType().Name, fieldName, ex2.Message);
 				return false;
-				IL_01ff:;
+				IL_01a3:;
 			}
 			return true;
 		}
@@ -671,7 +674,7 @@ namespace VRC.Core
 			}
 			if (Endpoint == null)
 			{
-				Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, GET ignored."));
+				Logger.LogErrorFormat(DebugLevel.API, "NULL endpoint for {0} object, GET ignored.", GetType().Name);
 				if (responseContainer.OnError != null)
 				{
 					responseContainer.Error = "NULL endpoint for " + GetType().Name + " object, GET ignored.";
@@ -692,7 +695,7 @@ namespace VRC.Core
 			}
 			if (Endpoint == null)
 			{
-				Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, PUT ignored."));
+				Logger.LogErrorFormat(DebugLevel.API, "NULL endpoint for {0} object, PUT ignored.", GetType().Name);
 				if (responseContainer.OnError != null)
 				{
 					responseContainer.Error = "NULL endpoint for " + GetType().Name + " object, PUT ignored.";

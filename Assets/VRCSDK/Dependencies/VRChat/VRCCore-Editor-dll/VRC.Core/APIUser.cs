@@ -52,6 +52,10 @@ namespace VRC.Core
 
 		private List<string> _favoriteWorldIds;
 
+		public bool hasFetchedFavoriteAvatars;
+
+		private List<string> _favoriteAvatarIds;
+
 		public bool[] hasFetchedFavoriteFriendsInGroup = new bool[3];
 
 		private List<string>[] _favoriteFriendIdsInGroup = new List<string>[3];
@@ -73,78 +77,6 @@ namespace VRC.Core
 			{
 				UserStatus.Offline,
 				"Offline"
-			}
-		};
-
-		private static Hashtable friendGroupApiNames = new Hashtable
-		{
-			{
-				FriendGroups.Group_1,
-				"group_0"
-			},
-			{
-				FriendGroups.Group_2,
-				"group_1"
-			},
-			{
-				FriendGroups.Group_3,
-				"group_2"
-			}
-		};
-
-		private static Hashtable friendGroupStringToValueTable = new Hashtable
-		{
-			{
-				"group_0",
-				FriendGroups.Group_1
-			},
-			{
-				"group_1",
-				FriendGroups.Group_2
-			},
-			{
-				"group_2",
-				FriendGroups.Group_3
-			}
-		};
-
-		private static Hashtable statusValueToStringTable = new Hashtable
-		{
-			{
-				UserStatus.Active,
-				"active"
-			},
-			{
-				UserStatus.JoinMe,
-				"join me"
-			},
-			{
-				UserStatus.Busy,
-				"busy"
-			},
-			{
-				UserStatus.Offline,
-				"offline"
-			}
-		};
-
-		private static Hashtable statusStringToValueTable = new Hashtable
-		{
-			{
-				"active",
-				UserStatus.Active
-			},
-			{
-				"join me",
-				UserStatus.JoinMe
-			},
-			{
-				"busy",
-				UserStatus.Busy
-			},
-			{
-				"offline",
-				UserStatus.Offline
 			}
 		};
 
@@ -259,13 +191,6 @@ namespace VRC.Core
 		{
 			get;
 			protected set;
-		}
-
-		[ApiField(Required = false)]
-		public bool defaultMute
-		{
-			get;
-			set;
 		}
 
 		[ApiField(Required = false)]
@@ -452,6 +377,22 @@ namespace VRC.Core
 			}
 		}
 
+		public List<string> favoriteAvatarIds
+		{
+			get
+			{
+				if (_favoriteAvatarIds == null)
+				{
+					_favoriteAvatarIds = new List<string>();
+				}
+				return _favoriteAvatarIds;
+			}
+			set
+			{
+				_favoriteAvatarIds = value;
+			}
+		}
+
 		public bool isAccountVerified => true;
 
 		public bool hasNoPowers => !isAccountVerified || developerType == DeveloperType.None;
@@ -470,7 +411,29 @@ namespace VRC.Core
 
 		public bool canPublishWorlds => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_world_access") || RemoteConfig.GetBool("disableAvatarGating"));
 
+		public bool isUntrusted => isAccountVerified && !hasBasicTrustLevel;
+
+		public bool isNewUser => isAccountVerified && HasTag("system_new");
+
 		public bool hasBasicTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_basic"));
+
+		public bool hasKnownTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_known"));
+
+		public bool hasTrustedTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_trusted"));
+
+		public bool hasVeteranTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_veteran"));
+
+		public bool hasLegendTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_legend"));
+
+		public bool hasNegativeTrustLevel => isAccountVerified && (HasTag("system_probable_troll") || hasVeryNegativeTrustLevel);
+
+		public bool hasVeryNegativeTrustLevel => isAccountVerified && HasTag("system_troll");
+
+		public bool hasFeedbackAccess => isAccountVerified && HasTag("system_feedback_access");
+
+		public bool showSocialRank => HasTag("show_social_rank");
+
+		public bool showModTag => HasTag("show_mod_tag");
 
 		public bool canSetStatusOffline => isAccountVerified && (developerType == DeveloperType.Moderator || developerType == DeveloperType.Internal);
 
@@ -488,7 +451,7 @@ namespace VRC.Core
 		{
 			get
 			{
-				UserStatus result = (UserStatus)((status != null) ? ((int)statusStringToValueTable[status]) : 0);
+				UserStatus result = (status != null) ? StringToStatusValue(status) : UserStatus.Active;
 				if (location == "offline")
 				{
 					result = UserStatus.Offline;
@@ -553,7 +516,7 @@ namespace VRC.Core
 
 		public int GetTotalFavoriteFriendsInGroup(FriendGroups group)
 		{
-			return _favoriteFriendIdsInGroup[(int)group].Count;
+			return (_favoriteFriendIdsInGroup[(int)group] != null) ? _favoriteFriendIdsInGroup[(int)group].Count : 0;
 		}
 
 		public int GetTotalFavoriteFriendsInAllGroups()
@@ -566,13 +529,36 @@ namespace VRC.Core
 			return string.IsNullOrEmpty(statusString) ? string.Empty : ((statusString.Length <= 32) ? statusString : statusString.Substring(0, 32));
 		}
 
-		public static string GetFriendsGroupName(FriendGroups index)
+		public static string GetFriendsGroupName(FriendGroups value)
 		{
-			if (index < FriendGroups.MAX_GROUPS && (int)index < friendGroupApiNames.Count)
+			switch (value)
 			{
-				return (string)friendGroupApiNames[index];
+			case FriendGroups.Group_1:
+				return "group_0";
+			case FriendGroups.Group_2:
+				return "group_1";
+			case FriendGroups.Group_3:
+				return "group_2";
+			case FriendGroups.MAX_GROUPS:
+				return null;
+			default:
+				throw new Exception("Argument not handled in switch: " + value);
 			}
-			return null;
+		}
+
+		public static FriendGroups StringToFriendsGroup(string statusValue)
+		{
+			switch (statusValue)
+			{
+			case "group_0":
+				return FriendGroups.Group_1;
+			case "group_1":
+				return FriendGroups.Group_2;
+			case "group_2":
+				return FriendGroups.Group_3;
+			default:
+				throw new Exception("Argument not handled in switch: " + statusValue);
+			}
 		}
 
 		public string GetFriendsGroupDisplayName(int index)
@@ -885,10 +871,10 @@ namespace VRC.Core
 
 		public static void FetchFavoriteFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, string tag = null, bool bUseCache = true)
 		{
-			if (bUseCache)
+			if (bUseCache && CurrentUser.GetTotalFavoriteFriendsInGroup(StringToFriendsGroup(tag)) > 0)
 			{
 				List<APIUser> list = new List<APIUser>();
-				foreach (string item in CurrentUser.GetFavoriteFriendIdsInGroup((FriendGroups)(int)friendGroupStringToValueTable[tag]))
+				foreach (string item in CurrentUser.GetFavoriteFriendIdsInGroup(StringToFriendsGroup(tag)))
 				{
 					APIUser target = new APIUser();
 					if (!ApiCache.Fetch(item, ref target))
@@ -897,7 +883,7 @@ namespace VRC.Core
 					}
 					list.Add(target);
 				}
-				if (list.Count == CurrentUser.GetFavoriteFriendIdsInGroup((FriendGroups)(int)friendGroupStringToValueTable[tag]).Count)
+				if (list.Count == CurrentUser.GetTotalFavoriteFriendsInGroup(StringToFriendsGroup(tag)))
 				{
 					if (successCallback != null)
 					{
@@ -923,6 +909,26 @@ namespace VRC.Core
 			};
 			ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
 			API.SendGetRequest("auth/user/friends/favorite" + ((tag == null) ? string.Empty : ("?tag=" + tag)), responseContainer, null, disableCache: true);
+		}
+
+		public void FetchAllFavoriteFriends()
+		{
+			int num = 3;
+			for (int j = 0; j < num; j++)
+			{
+				if (!hasFetchedFavoriteFriendsInGroup[j])
+				{
+					int i = j;
+					ApiFavorite.FetchFavoriteIds(ApiFavorite.FavoriteType.Friend, delegate(List<string> userIds)
+					{
+						SetFavoriteFriendIdsInGroup(userIds, (FriendGroups)i);
+						hasFetchedFavoriteFriendsInGroup[i] = true;
+					}, delegate(string obj)
+					{
+						Debug.LogError((object)("Error fetching favorite friends: " + obj));
+					}, GetFriendsGroupName((FriendGroups)i));
+				}
+			}
 		}
 
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
@@ -953,7 +959,36 @@ namespace VRC.Core
 
 		public static string StatusValueToString(UserStatus statusValue)
 		{
-			return (string)statusValueToStringTable[statusValue];
+			switch (statusValue)
+			{
+			case UserStatus.Active:
+				return "active";
+			case UserStatus.JoinMe:
+				return "join me";
+			case UserStatus.Busy:
+				return "busy";
+			case UserStatus.Offline:
+				return "offline";
+			default:
+				throw new Exception("Argument not handled in switch: " + statusValue.ToString());
+			}
+		}
+
+		public static UserStatus StringToStatusValue(string statusValue)
+		{
+			switch (statusValue)
+			{
+			case "active":
+				return UserStatus.Active;
+			case "join me":
+				return UserStatus.JoinMe;
+			case "busy":
+				return UserStatus.Busy;
+			case "offline":
+				return UserStatus.Offline;
+			default:
+				throw new Exception("Argument not handled in switch: " + statusValue);
+			}
 		}
 
 		public void SetStatus(string status, string statusDescription, Action successCallback, Action<string> errorCallback)
@@ -1065,9 +1100,16 @@ namespace VRC.Core
 
 		public static bool IsFriendsWith(string userId)
 		{
-			if (CurrentUser != null && CurrentUser.friendIDs != null)
+			if (CurrentUser == null || CurrentUser.friendIDs == null)
 			{
-				return CurrentUser.friendIDs.Any((string u) => u == userId);
+				return false;
+			}
+			for (int i = 0; i < CurrentUser.friendIDs.Count; i++)
+			{
+				if (CurrentUser.friendIDs[i] == userId)
+				{
+					return true;
+				}
 			}
 			return false;
 		}
@@ -1138,6 +1180,29 @@ namespace VRC.Core
 				return false;
 			}
 			return tags.Contains(tag);
+		}
+
+		public bool AddTag(string tag)
+		{
+			if (string.IsNullOrEmpty(tag))
+			{
+				return false;
+			}
+			if (!tags.Contains(tag))
+			{
+				tags.Add(tag);
+				return true;
+			}
+			return false;
+		}
+
+		public bool RemoveTag(string tag)
+		{
+			if (string.IsNullOrEmpty(tag))
+			{
+				return false;
+			}
+			return tags.RemoveAll((string t) => t == tag) > 0;
 		}
 
 		public override string ToString()

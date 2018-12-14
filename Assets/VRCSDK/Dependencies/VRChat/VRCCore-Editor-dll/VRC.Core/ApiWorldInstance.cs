@@ -134,9 +134,17 @@ namespace VRC.Core
 		public ApiWorldInstance(ApiWorld world, Dictionary<string, object> dict, float dataTimestamp)
 		{
 			instanceWorld = world;
-			idWithTags = dict["id"].ToString();
+			if (dict != null && dict.TryGetValue("id", out object value))
+			{
+				idWithTags = value.ToString();
+			}
+			else
+			{
+				idWithTags = "unknownId";
+			}
 			string error = string.Empty;
-			List<object> json = dict["users"] as List<object>;
+			object value2;
+			List<object> json = (dict == null || !dict.TryGetValue("users", out value2)) ? new List<object>() : (value2 as List<object>);
 			List<APIUser> list = users = API.ConvertJsonListToModelList<APIUser>(json, ref error, dataTimestamp);
 			count = users.Count;
 		}

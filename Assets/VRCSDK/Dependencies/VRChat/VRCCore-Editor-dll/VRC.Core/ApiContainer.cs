@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using VRC.Core.BestHTTP.JSON;
 
@@ -43,6 +44,12 @@ namespace VRC.Core
 			protected set;
 		}
 
+		public string CreatedAt
+		{
+			get;
+			protected set;
+		}
+
 		public string Error
 		{
 			get
@@ -62,7 +69,8 @@ namespace VRC.Core
 				else
 				{
 					responseError = value;
-					Debug.Log((object)("<color=red>" + ((Model == null) ? string.Empty : (Model.GetType().Name + ":" + Model.id + ": ")) + value + "</color>"));
+					string text = responseError.Replace("{", "{{").Replace("}", "}}");
+					Debug.Log((object)("<color=red>" + ((Model == null) ? string.Empty : (Model.GetType().Name + ":" + Model.id + ": ")) + "</color>\n" + text + "\n\n" + CreatedAt));
 				}
 			}
 		}
@@ -71,6 +79,11 @@ namespace VRC.Core
 		{
 			get;
 			set;
+		}
+
+		public ApiContainer()
+		{
+			CreatedAt = new StackTrace().ToString();
 		}
 
 		protected virtual bool Validate(bool success, Func<byte[]> readData, Func<string> readTextData)

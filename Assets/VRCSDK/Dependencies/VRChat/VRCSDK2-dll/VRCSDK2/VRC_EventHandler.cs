@@ -107,6 +107,10 @@ namespace VRCSDK2
 			[HideInInspector]
 			[SerializeField]
 			public byte[] ParameterBytes;
+
+			[SerializeField]
+			[HideInInspector]
+			public int? ParameterBytesVersion;
 		}
 
 		public class EventInfo

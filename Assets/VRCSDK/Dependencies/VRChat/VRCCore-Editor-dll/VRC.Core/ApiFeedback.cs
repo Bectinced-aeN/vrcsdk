@@ -8,7 +8,8 @@ namespace VRC.Core
 		public enum ContentType
 		{
 			world,
-			avatar
+			avatar,
+			user
 		}
 
 		public enum ApprovalType
@@ -69,7 +70,7 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField]
+		[ApiField(Required = false)]
 		public int contentVersion
 		{
 			get;
@@ -83,14 +84,14 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField]
+		[ApiField(Required = false)]
 		public string contentAuthorId
 		{
 			get;
 			set;
 		}
 
-		[ApiField]
+		[ApiField(Required = false)]
 		public string contentAuthorName
 		{
 			get;
@@ -104,7 +105,7 @@ namespace VRC.Core
 			set;
 		}
 
-		public static void AddFeedback(string worldId, int version, ContentType contentType, ApprovalType approvalType, string reason, Action<ApiFeedback> successCallback, Action<string> errorCallback)
+		public static void AddFeedback(string contentId, int version, ContentType contentType, ApprovalType approvalType, string reason, Action<ApiFeedback> successCallback, Action<string> errorCallback)
 		{
 			ApiModelContainer<ApiFeedback> apiModelContainer = new ApiModelContainer<ApiFeedback>();
 			apiModelContainer.OnSuccess = delegate(ApiContainer c)
@@ -126,7 +127,14 @@ namespace VRC.Core
 			dictionary["contentType"] = contentType.ToString();
 			dictionary["type"] = approvalType.ToString();
 			dictionary["reason"] = reason;
-			API.SendPostRequest("/feedback/" + worldId + "/" + version.ToString(), responseContainer, dictionary);
+			if (contentType == ContentType.world)
+			{
+				API.SendPostRequest("/feedback/" + contentId + "/" + version.ToString(), responseContainer, dictionary);
+			}
+			else
+			{
+				API.SendPostRequest("/feedback/" + contentId + "/" + contentType.ToString(), responseContainer, dictionary);
+			}
 		}
 
 		public static void FetchFeedback(string worldId, int version, ContentType contentType, Action<List<ApiFeedback>> successCallback, Action<string> errorCallback)

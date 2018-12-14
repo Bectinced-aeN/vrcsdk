@@ -189,6 +189,20 @@ namespace VRC.Core
 			protected set;
 		}
 
+		[ApiField(Required = false)]
+		public DateTime created_at
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime updated_at
+		{
+			get;
+			set;
+		}
+
 		public AssetVersion assetVersion
 		{
 			get
@@ -273,7 +287,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool disableCache = false)
+		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool disableCache = false, bool areFavorites = false)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			if (owner == Owner.Mine)
@@ -286,7 +300,7 @@ namespace VRC.Core
 			}
 			if (owner == Owner.Developer)
 			{
-				dictionary.Add("tag", "developer");
+				dictionary.Add("tag", "admin_developer");
 			}
 			dictionary.Add("releaseStatus", relStatus.ToString().ToLower());
 			if (search != null)
@@ -333,7 +347,8 @@ namespace VRC.Core
 				}
 			};
 			ApiModelListContainer<ApiAvatar> responseContainer = apiModelListContainer;
-			API.SendRequest("avatars", HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, owner != Owner.Public, disableCache, 180f);
+			string endpoint = (!areFavorites) ? "avatars" : "avatars/favorites";
+			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, owner != Owner.Public, disableCache, 180f);
 		}
 
 		public override void Save(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
@@ -370,11 +385,64 @@ namespace VRC.Core
 			}
 		}
 
+		public bool HasTag(string tag)
+		{
+			if (string.IsNullOrEmpty(tag) || tags == null)
+			{
+				return false;
+			}
+			return tags.Contains(tag);
+		}
+
+		public bool AddTag(string tag)
+		{
+			if (string.IsNullOrEmpty(tag))
+			{
+				return false;
+			}
+			if (!tags.Contains(tag))
+			{
+				tags.Add(tag);
+				return true;
+			}
+			return false;
+		}
+
+		public bool RemoveTag(string tag)
+		{
+			if (string.IsNullOrEmpty(tag))
+			{
+				return false;
+			}
+			return tags.RemoveAll((string t) => t == tag) > 0;
+		}
+
 		private void UpdateVersionAndPlatform()
 		{
 			apiVersion = VERSION.ApiVersion;
 			unityVersion = VERSION.UnityVersion;
 			platform = API.GetAssetPlatformString();
+		}
+
+		public override bool SetApiFieldsFromJson(Dictionary<string, object> fields, ref string Error)
+		{
+			assetUrl = null;
+			return base.SetApiFieldsFromJson(fields, ref Error);
+		}
+
+		protected override bool WriteField(string fieldName, object data)
+		{
+			switch (fieldName)
+			{
+			case "assetUrl":
+				if (assetUrl == null)
+				{
+					assetUrl = (data as string);
+				}
+				return true;
+			default:
+				return base.WriteField(fieldName, data);
+			}
 		}
 	}
 }

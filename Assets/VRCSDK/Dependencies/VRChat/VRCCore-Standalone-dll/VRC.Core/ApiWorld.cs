@@ -129,6 +129,20 @@ namespace VRC.Core
 		}
 
 		[ApiField(Required = false)]
+		public int publicOccupants
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int privateOccupants
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
 		public string authorId
 		{
 			get;
@@ -205,8 +219,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
 		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
 		public string platform
 		{
 			get;
@@ -237,6 +251,8 @@ namespace VRC.Core
 		}
 
 		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("admin_approved"));
+
+		public bool IsCommunityLabsWorld => tags != null && tags.Contains("system_labs");
 
 		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public bool unityPackageUpdated
@@ -321,6 +337,10 @@ namespace VRC.Core
 			set;
 		}
 
+		public List<string> publicTags => (from tag in tags
+		where tag.StartsWith("user_") || tag.StartsWith("author_")
+		select tag).ToList();
+
 		public ApiWorld()
 			: base("worlds")
 		{
@@ -354,6 +374,13 @@ namespace VRC.Core
 			}
 		}
 
+		public override bool SetApiFieldsFromJson(Dictionary<string, object> fields, ref string Error)
+		{
+			assetUrl = null;
+			pluginUrl = null;
+			return base.SetApiFieldsFromJson(fields, ref Error);
+		}
+
 		protected override bool WriteField(string fieldName, object data)
 		{
 			switch (fieldName)
@@ -367,6 +394,18 @@ namespace VRC.Core
 				select new ApiWorldInstance(this, kvp.Key, kvp.Value)).ToList();
 				return true;
 			}
+			case "assetUrl":
+				if (assetUrl == null)
+				{
+					assetUrl = (data as string);
+				}
+				return true;
+			case "pluginUrl":
+				if (pluginUrl == null)
+				{
+					pluginUrl = (data as string);
+				}
+				return true;
 			default:
 				return base.WriteField(fieldName, data);
 			}
@@ -452,8 +491,8 @@ namespace VRC.Core
 					parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
 					parameters["maxAssetVersion"] = VERSION.ApiVersion;
 					parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
+					parameters["platform"] = API.GetAssetPlatformString();
 				}
-				parameters["platform"] = API.GetAssetPlatformString();
 				if (!string.IsNullOrEmpty(instanceID))
 				{
 					ApiDictContainer apiDictContainer = new ApiDictContainer("users");
@@ -499,7 +538,7 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true, bool disableCache = false)
+		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string[] userTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true, bool disableCache = false)
 		{
 			string endpoint = "worlds";
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
@@ -553,9 +592,20 @@ namespace VRC.Core
 			{
 				dictionary.Add("search", search);
 			}
-			if (tags != null && tags.Length > 0)
+			int num = (tags != null) ? tags.Length : 0;
+			int num2 = (userTags != null) ? userTags.Length : 0;
+			if (num + num2 > 0)
 			{
-				dictionary.Add("tag", string.Join(",", tags));
+				string[] array = new string[num + num2];
+				if (num > 0)
+				{
+					tags.CopyTo(array, 0);
+				}
+				if (num2 > 0)
+				{
+					userTags.CopyTo(array, num);
+				}
+				dictionary.Add("tag", string.Join(",", array));
 			}
 			if (excludeTags != null && excludeTags.Length > 0)
 			{

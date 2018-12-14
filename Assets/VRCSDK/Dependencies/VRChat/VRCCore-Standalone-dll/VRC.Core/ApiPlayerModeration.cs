@@ -12,7 +12,9 @@ namespace VRC.Core
 			None,
 			Block,
 			Mute,
-			Unmute
+			Unmute,
+			HideAvatar,
+			ShowAvatar
 		}
 
 		public const float ListCacheTime = 120f;
@@ -81,7 +83,7 @@ namespace VRC.Core
 			switch (fieldName)
 			{
 			case "type":
-				data = moderationType.ToString().ToLower();
+				data = ModerationTypeToAPIString(moderationType);
 				return true;
 			default:
 				return base.ReadField(fieldName, ref data);
@@ -95,7 +97,7 @@ namespace VRC.Core
 			case "type":
 			{
 				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((data as string).ToLower());
-				moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value);
+				moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value, ignoreCase: true);
 				return true;
 			}
 			case "targetUserId":
@@ -132,7 +134,7 @@ namespace VRC.Core
 			ApiPlayerModeration apiPlayerModeration = CreateRemovalModeration();
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary["moderated"] = targetUserId;
-			dictionary["type"] = mType.ToString().ToLower();
+			dictionary["type"] = ModerationTypeToAPIString(mType);
 			apiPlayerModeration.Put(delegate(ApiContainer c)
 			{
 				if (successCallback != null)
@@ -178,6 +180,19 @@ namespace VRC.Core
 			};
 			ApiModelListContainer<ApiPlayerModeration> responseContainer = apiModelListContainer;
 			API.SendGetRequest(endpoint, responseContainer, null, disableCache: false, 120f);
+		}
+
+		private static string ModerationTypeToAPIString(ModerationType type)
+		{
+			switch (type)
+			{
+			case ModerationType.ShowAvatar:
+				return "showAvatar";
+			case ModerationType.HideAvatar:
+				return "hideAvatar";
+			default:
+				return type.ToString().ToLower();
+			}
 		}
 	}
 }

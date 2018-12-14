@@ -18,6 +18,8 @@ namespace VRC.Core
 
 			public static FavoriteType Friend => new FavoriteType("friend");
 
+			public static FavoriteType Avatar => new FavoriteType("avatar");
+
 			private FavoriteType(string val)
 			{
 				value = val;
@@ -27,6 +29,10 @@ namespace VRC.Core
 		public const int MaxFavoriteWorlds = 32;
 
 		public const int MaxFavoriteFriends = 32;
+
+		public const int MaxFavoriteAvatars = 3;
+
+		public const int MaxFavoriteFriendGroups = 3;
 
 		public static void AddFavorite(string objectId, FavoriteType favoriteType, Action successCallback, Action<string> errorCallback, List<string> tags = null)
 		{
@@ -79,21 +85,19 @@ namespace VRC.Core
 
 		public static void FetchFavoriteIds(FavoriteType favoriteType, Action<List<string>> successCallback = null, Action<string> errorCallback = null, string tag = null)
 		{
-			List<string> favoriteWorldIds = new List<string>();
-			List<string> favoriteFriendIds = new List<string>();
-			if (favoriteType.value == "world")
+			if (favoriteType.value == "world" || favoriteType.value == "avatar" || favoriteType.value == "friend")
 			{
-				ApiModelListContainer<ApiWorld> apiModelListContainer = new ApiModelListContainer<ApiWorld>();
+				ApiModelListContainer<ApiModel> apiModelListContainer = new ApiModelListContainer<ApiModel>();
 				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 				{
-					favoriteWorldIds = new List<string>();
-					foreach (ApiWorld responseModel in (c as ApiModelListContainer<ApiWorld>).ResponseModels)
+					List<string> list = new List<string>();
+					foreach (ApiModel responseModel in (c as ApiModelListContainer<ApiModel>).ResponseModels)
 					{
-						favoriteWorldIds.Add(responseModel.id);
+						list.Add(responseModel.id);
 					}
 					if (successCallback != null)
 					{
-						successCallback(favoriteWorldIds);
+						successCallback(list);
 					}
 				};
 				apiModelListContainer.OnError = delegate(ApiContainer c)
@@ -104,38 +108,26 @@ namespace VRC.Core
 					}
 				};
 				ApiContainer responseContainer = apiModelListContainer;
-				API.SendGetRequest("worlds/favorites", responseContainer, null, disableCache: true);
-			}
-			else if (favoriteType.value == "friend")
-			{
-				ApiModelListContainer<APIUser> apiModelListContainer2 = new ApiModelListContainer<APIUser>();
-				apiModelListContainer2.OnSuccess = delegate(ApiContainer c)
-				{
-					favoriteFriendIds = new List<string>();
-					foreach (APIUser responseModel2 in (c as ApiModelListContainer<APIUser>).ResponseModels)
-					{
-						favoriteFriendIds.Add(responseModel2.id);
-					}
-					if (successCallback != null)
-					{
-						successCallback(favoriteFriendIds);
-					}
-				};
-				apiModelListContainer2.OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				};
-				ApiContainer responseContainer2 = apiModelListContainer2;
+				string target = string.Empty;
 				Dictionary<string, object> dictionary = null;
-				if (tag != null)
+				if (favoriteType.value == "world")
 				{
-					dictionary = new Dictionary<string, object>();
-					dictionary["tag"] = tag;
+					target = "worlds/favorites";
 				}
-				API.SendGetRequest("auth/user/friends/favorite", responseContainer2, dictionary, disableCache: true);
+				else if (favoriteType.value == "avatar")
+				{
+					target = "avatars/favorites";
+				}
+				else if (favoriteType.value == "friend")
+				{
+					target = "auth/user/friends/favorite";
+					if (tag != null)
+					{
+						dictionary = new Dictionary<string, object>();
+						dictionary["tag"] = tag;
+					}
+				}
+				API.SendGetRequest(target, responseContainer, dictionary, disableCache: true);
 			}
 			else
 			{

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -192,65 +193,24 @@ namespace VRCSDK2
 			{
 				//IL_0001: Unknown result type (might be due to invalid IL or missing references)
 				//IL_0007: Expected O, but got Unknown
-				//IL_002d: Unknown result type (might be due to invalid IL or missing references)
-				//IL_003b: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0049: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0057: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0065: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0073: Unknown result type (might be due to invalid IL or missing references)
-				//IL_0081: Unknown result type (might be due to invalid IL or missing references)
-				//IL_008f: Unknown result type (might be due to invalid IL or missing references)
 				Transform val = obj;
 				if (val.get_gameObject() == null)
 				{
 					throw new ArgumentException("Transform must have an associated gameObject.");
 				}
-				object[] parameters = new object[9]
-				{
-					val.get_position(),
-					val.get_rotation(),
-					val.get_localPosition(),
-					val.get_localRotation(),
-					val.get_localScale(),
-					val.get_forward(),
-					val.get_right(),
-					val.get_up(),
-					val.get_name()
-				};
 				string gameObjectPath = GetGameObjectPath(val.get_gameObject());
 				info.AddValue("path", gameObjectPath);
-				info.AddValue("data", ParameterEncoder(parameters));
 			}
 
 			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
 			{
-				//IL_0060: Unknown result type (might be due to invalid IL or missing references)
-				//IL_006f: Unknown result type (might be due to invalid IL or missing references)
-				//IL_007e: Unknown result type (might be due to invalid IL or missing references)
-				//IL_008d: Unknown result type (might be due to invalid IL or missing references)
-				//IL_009c: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00ab: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00ba: Unknown result type (might be due to invalid IL or missing references)
-				//IL_00c9: Unknown result type (might be due to invalid IL or missing references)
 				string @string = info.GetString("path");
 				GameObject val = FindGameObject(@string);
 				if (val == null)
 				{
 					throw new KeyNotFoundException("Could not locate Transform at path " + @string);
 				}
-				Transform transform = val.get_transform();
-				byte[] dataParameters = (byte[])info.GetValue("data", typeof(byte[]));
-				object[] array = ParameterDecoder(dataParameters);
-				transform.set_position((Vector3)array[0]);
-				transform.set_rotation((Quaternion)array[1]);
-				transform.set_localPosition((Vector3)array[2]);
-				transform.set_localRotation((Quaternion)array[3]);
-				transform.set_localScale((Vector3)array[4]);
-				transform.set_forward((Vector3)array[5]);
-				transform.set_right((Vector3)array[6]);
-				transform.set_up((Vector3)array[7]);
-				transform.set_name((string)array[8]);
-				return transform;
+				return val.get_transform();
 			}
 		}
 
@@ -384,6 +344,221 @@ namespace VRCSDK2
 					}
 				}
 				return val;
+			}
+		}
+
+		private class ArraySurrogate : ISerializationSurrogate
+		{
+			public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
+			{
+				Type type = obj.GetType();
+				Array array = obj as Array;
+				info.AddValue("type", type.AssemblyQualifiedName);
+				int arrayRank = type.GetArrayRank();
+				if (arrayRank <= 0 || arrayRank > 4)
+				{
+					info.AddValue("rank", 0);
+					Debug.LogError((object)"ArrayRank out of range (1-4) in serialized array - not transmitted");
+				}
+				else
+				{
+					info.AddValue("rank", arrayRank);
+					int num = 1;
+					int[] array2 = new int[4]
+					{
+						1,
+						1,
+						1,
+						1
+					};
+					for (int i = 0; i < arrayRank; i++)
+					{
+						array2[i] = array.GetLength(i);
+						num *= array2[i];
+					}
+					if (num > 65536)
+					{
+						Debug.LogError((object)"Too many elements in serialized array - not transmitted");
+						for (int j = 0; j < arrayRank; j++)
+						{
+							info.AddValue("dim_" + j.ToString(), 0);
+						}
+					}
+					else
+					{
+						for (int k = 0; k < arrayRank; k++)
+						{
+							info.AddValue("dim_" + k.ToString(), array2[k]);
+						}
+						int[] array3 = new int[arrayRank];
+						for (int l = 0; l < array2[3]; l++)
+						{
+							if (arrayRank > 3)
+							{
+								array3[3] = l;
+							}
+							for (int m = 0; m < array2[2]; m++)
+							{
+								if (arrayRank > 2)
+								{
+									array3[2] = m;
+								}
+								for (int n = 0; n < array2[1]; n++)
+								{
+									if (arrayRank > 1)
+									{
+										array3[1] = n;
+									}
+									for (int num2 = 0; num2 < array2[0]; num2++)
+									{
+										array3[0] = num2;
+										byte[] value = ParameterEncoder(array.GetValue(array3));
+										info.AddValue("elem_" + num2 + "." + n + "." + m + "." + l, value);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
+			{
+				string @string = info.GetString("type");
+				Type type = Type.GetType(@string, throwOnError: false);
+				if (type == null)
+				{
+					throw new KeyNotFoundException("Could not load type " + @string);
+				}
+				int num = (int)info.GetValue("rank", typeof(int));
+				if (num <= 0 || num > 4)
+				{
+					Debug.LogError((object)"ArrayRank out of range (1-4) in serialized array - not recieved");
+					return null;
+				}
+				int num2 = 1;
+				int[] array = new int[4]
+				{
+					1,
+					1,
+					1,
+					1
+				};
+				for (int i = 0; i < num; i++)
+				{
+					array[i] = (int)info.GetValue("dim_" + i.ToString(), typeof(int));
+					num2 *= array[i];
+				}
+				if (num2 > 65536)
+				{
+					Debug.LogError((object)"Too many elements in serialized array - not received");
+					return null;
+				}
+				Array array2 = Array.CreateInstance(type.GetElementType(), array);
+				int[] array3 = new int[num];
+				for (int j = 0; j < array[3]; j++)
+				{
+					if (num > 3)
+					{
+						array3[3] = j;
+					}
+					for (int k = 0; k < array[2]; k++)
+					{
+						if (num > 2)
+						{
+							array3[2] = k;
+						}
+						for (int l = 0; l < array[1]; l++)
+						{
+							if (num > 1)
+							{
+								array3[1] = l;
+							}
+							for (int m = 0; m < array[0]; m++)
+							{
+								array3[0] = m;
+								byte[] dataParameters = (byte[])info.GetValue("elem_" + m + "." + l + "." + k + "." + j, typeof(byte[]));
+								object value = ParameterDecoder(dataParameters);
+								array2.SetValue(Convert.ChangeType(value, type.GetElementType()), array3);
+							}
+						}
+					}
+				}
+				return array2;
+			}
+		}
+
+		private class GenericSurrogate : ISerializationSurrogate
+		{
+			public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
+			{
+				Type type = obj.GetType();
+				if (type.GetGenericTypeDefinition() == typeof(List<>))
+				{
+					List<object> list = ((IList)obj).Cast<object>().ToList();
+					short num = (short)list.Count;
+					info.AddValue("type", type.AssemblyQualifiedName);
+					info.AddValue("length", num);
+					for (short num2 = 0; num2 < num; num2 = (short)(num2 + 1))
+					{
+						byte[] value = ParameterEncoder(list[num2]);
+						info.AddValue(num2.ToString(), value);
+					}
+				}
+				else if (type.GetGenericTypeDefinition() == typeof(Dictionary<, >))
+				{
+					List<object> list2 = ((IDictionary)obj).Keys.Cast<object>().ToList();
+					List<object> list3 = ((IDictionary)obj).Values.Cast<object>().ToList();
+					short num3 = (short)((IDictionary)obj).Count;
+					info.AddValue("type", type.AssemblyQualifiedName);
+					info.AddValue("length", num3);
+					for (short num4 = 0; num4 < num3; num4 = (short)(num4 + 1))
+					{
+						byte[] value = ParameterEncoder(list2[num4]);
+						info.AddValue("key_" + num4.ToString(), value);
+						value = ParameterEncoder(list3[num4]);
+						info.AddValue("value_" + num4.ToString(), value);
+					}
+				}
+			}
+
+			public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
+			{
+				string @string = info.GetString("type");
+				Type type = Type.GetType(@string, throwOnError: false);
+				if (type == null)
+				{
+					throw new KeyNotFoundException("Could not load type " + @string);
+				}
+				object result = null;
+				Type[] genericArguments = type.GetGenericArguments();
+				if (type.GetGenericTypeDefinition() == typeof(List<>))
+				{
+					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(genericArguments));
+					short @int = info.GetInt16("length");
+					for (short num = 0; num < @int; num = (short)(num + 1))
+					{
+						byte[] dataParameters = (byte[])info.GetValue(num.ToString(), typeof(byte[]));
+						object[] array = ParameterDecoder(dataParameters);
+						list.Add(array[0]);
+					}
+					result = list;
+				}
+				else if (type.GetGenericTypeDefinition() == typeof(Dictionary<, >))
+				{
+					IDictionary dictionary = (IDictionary)Activator.CreateInstance(typeof(Dictionary<, >).MakeGenericType(genericArguments));
+					short int2 = info.GetInt16("length");
+					for (short num2 = 0; num2 < int2; num2 = (short)(num2 + 1))
+					{
+						byte[] dataParameters2 = (byte[])info.GetValue("key_" + num2.ToString(), typeof(byte[]));
+						object[] array2 = ParameterDecoder(dataParameters2);
+						byte[] dataParameters3 = (byte[])info.GetValue("value_" + num2.ToString(), typeof(byte[]));
+						object[] array3 = ParameterDecoder(dataParameters3);
+						dictionary.Add(array2[0], array3[0]);
+					}
+					result = dictionary;
+				}
+				return result;
 			}
 		}
 

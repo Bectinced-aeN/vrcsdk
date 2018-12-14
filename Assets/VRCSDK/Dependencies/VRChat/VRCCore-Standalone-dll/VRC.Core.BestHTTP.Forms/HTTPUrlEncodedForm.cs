@@ -27,17 +27,17 @@ namespace VRC.Core.BestHTTP.Forms
 				{
 					stringBuilder.Append("&");
 				}
-				stringBuilder.Append(Uri.EscapeDataString(hTTPFieldData.Name));
+				stringBuilder.Append(EscapeDataStringHelper(hTTPFieldData.Name));
 				stringBuilder.Append("=");
 				try
 				{
 					if (!string.IsNullOrEmpty(hTTPFieldData.Text) || hTTPFieldData.Binary == null)
 					{
-						stringBuilder.Append(Uri.EscapeDataString(hTTPFieldData.Text));
+						stringBuilder.Append(EscapeDataStringHelper(hTTPFieldData.Text));
 					}
 					else
 					{
-						stringBuilder.Append(Uri.EscapeDataString(Encoding.UTF8.GetString(hTTPFieldData.Binary, 0, hTTPFieldData.Binary.Length)));
+						stringBuilder.Append(EscapeDataStringHelper(Encoding.UTF8.GetString(hTTPFieldData.Binary, 0, hTTPFieldData.Binary.Length)));
 					}
 				}
 				catch (FormatException ex)
@@ -52,6 +52,21 @@ namespace VRC.Core.BestHTTP.Forms
 			}
 			base.IsChanged = false;
 			return CachedData = Encoding.UTF8.GetBytes(stringBuilder.ToString());
+		}
+
+		private string EscapeDataStringHelper(string text)
+		{
+			int num = 32000;
+			if (text.Length <= num)
+			{
+				return Uri.EscapeDataString(text);
+			}
+			StringBuilder stringBuilder = new StringBuilder();
+			for (int i = 0; i < text.Length; i += num)
+			{
+				stringBuilder.Append(Uri.EscapeDataString(text.Substring(i, Math.Min(num, text.Length - i))));
+			}
+			return stringBuilder.ToString();
 		}
 	}
 }

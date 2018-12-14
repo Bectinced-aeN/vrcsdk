@@ -20,6 +20,7 @@ namespace AmplitudeSDKWrapper
 				throw new ArgumentOutOfRangeException("maxDegreeOfParallelism");
 			}
 			_maxDegreeOfParallelism = maxDegreeOfParallelism;
+			Debug.Log((object)("LimitedConcurrencyLevelTaskScheduler created, threads: " + maxDegreeOfParallelism));
 		}
 
 		public void QueueTask(Action task)

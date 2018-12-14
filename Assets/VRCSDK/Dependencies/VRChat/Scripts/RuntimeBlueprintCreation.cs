@@ -39,6 +39,9 @@ namespace VRCSDK2
 
             base.Start();
 
+            var desc = pipelineManager.GetComponent<VRC_AvatarDescriptor>();
+            desc.PositionPortraitCamera(imageCapture.shotCamera.transform);
+
             Application.runInBackground = true;
             UnityEngine.VR.VRSettings.enabled = false;
 
@@ -64,7 +67,8 @@ namespace VRCSDK2
                 {
                     pipelineManager.user = user;
 
-                    API.Fetch<ApiAvatar>(pipelineManager.blueprintId,
+                    ApiAvatar av = new ApiAvatar() { id = pipelineManager.blueprintId };
+                    av.Get(false,
                         (c) =>
                         {
                             Debug.Log("<color=magenta>Updating an existing avatar.</color>");

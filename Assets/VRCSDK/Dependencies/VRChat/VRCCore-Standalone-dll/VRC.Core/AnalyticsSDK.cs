@@ -4,7 +4,7 @@ namespace VRC.Core
 {
 	public class AnalyticsSDK
 	{
-		private const string API_KEY = "05932e9b759849f1c921866f92047b03";
+		public const string API_KEY = "05932e9b759849f1c921866f92047b03";
 
 		private static bool _isInitialized;
 

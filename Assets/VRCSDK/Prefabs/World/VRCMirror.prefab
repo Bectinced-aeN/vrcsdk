@@ -62,6 +62,7 @@ MeshRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
+  m_SortingLayer: 0
   m_SortingOrder: 0
 --- !u!33 &3330516
 MeshFilter:
@@ -94,7 +95,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DisablePixelLights: 1
-  m_MaxAntiAliasing: 8
+  m_MaxAntiAliasing: 1
   TurnOffMirrorOcclusion: 1
   m_ReflectLayers:
     serializedVersion: 2

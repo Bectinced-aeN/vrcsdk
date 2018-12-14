@@ -6,6 +6,7 @@ using System.Collections;
 using System;
 using System.Reflection;
 using System.Linq;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Setup up SDK env on editor launch
@@ -30,7 +31,7 @@ public class EnvConfig
 
     static System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]> allowedGraphicsAPIs = new System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]>()
     {
-        { BuildTarget.Android, null },
+        { BuildTarget.Android, new [] { GraphicsDeviceType.OpenGLES3, GraphicsDeviceType.Vulkan }},
         { BuildTarget.iOS, null },
         { BuildTarget.StandaloneLinux, null },
         { BuildTarget.StandaloneLinux64, null },
@@ -116,11 +117,21 @@ public class EnvConfig
         "Sprites/Diffuse",
         "UI/Default",
         "VRChat/UI/Unlit/WebPanelTransparent",
+        "Toon/Lit",
+        "Toon/Lit (Double)",
+        "Toon/Lit Cutout",
+        "Toon/Lit Cutout (Double)",
+        "Toon/Lit Outline",
+        "Unlit/Color",
+        "Unlit/Transparent",
+        "Unlit/Transparent Cutout",
+        "Unlit/Texture",
+        "MatCap/Vertex/Textured Lit",
 #endif
     };
 
     private static bool _requestConfigureSettings = true;
-    
+
     static EnvConfig()
     {
         EditorApplication.update += EditorUpdate;
@@ -132,7 +143,7 @@ public class EnvConfig
         {
             if (ConfigureSettings())
             {
-                _requestConfigureSettings = false; 
+                _requestConfigureSettings = false;
             }
         }
     }
@@ -168,160 +179,233 @@ public class EnvConfig
         return true;
     }
 
+    static void SetDLLPlatforms(string dllName, bool active)
+    {
+        string[] assetGuids = AssetDatabase.FindAssets(dllName);
+
+        foreach (string guid in assetGuids)
+        {
+            string dllPath = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrEmpty(dllPath) || dllPath.ToLower().EndsWith(".dll") == false)
+                return;
+
+            PluginImporter importer = AssetImporter.GetAtPath(dllPath) as PluginImporter;
+
+            bool allCorrect = true;
+            if (importer.GetCompatibleWithAnyPlatform() != active)
+            {
+                allCorrect = false;
+            }
+            else
+            {
+                if (importer.GetCompatibleWithAnyPlatform())
+                {
+                    if (importer.GetExcludeEditorFromAnyPlatform() != !active ||
+                        importer.GetExcludeFromAnyPlatform(BuildTarget.StandaloneWindows) != !active)
+                    {
+                        allCorrect = false;
+                    }
+                }
+                else
+                {
+                    if (importer.GetCompatibleWithEditor() != active ||
+                        importer.GetCompatibleWithPlatform(BuildTarget.StandaloneWindows) != active)
+                    {
+                        allCorrect = false;
+                    }
+
+                }
+            }
+
+            if (allCorrect == false)
+            {
+                if (active)
+                {
+                    importer.SetCompatibleWithAnyPlatform(true);
+                    importer.SetExcludeEditorFromAnyPlatform(false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.Android, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneWindows, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneWindows64, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneLinux, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneLinux64, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneOSXIntel, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneOSXIntel64, false);
+                }
+                else
+                {
+                    importer.SetCompatibleWithAnyPlatform(false);
+                    importer.SetCompatibleWithEditor(false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.Android, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows64, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneLinux, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneLinux64, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSXIntel, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSXIntel64, false);
+                }
+                importer.SaveAndReimport();
+            }
+        }
+    }
+
     [MenuItem("VRChat SDK/Force Configure Player Settings")]
     public static void ConfigurePlayerSettings()
-	{
-		Debug.Log("Setting required PlayerSettings...");
+    {
+        Debug.Log("Setting required PlayerSettings...");
 
         SetBuildTarget();
 
-		// Needed for Microsoft.CSharp namespace in DLLMaker
-		// Doesn't seem to work though
-		if(PlayerSettings.GetApiCompatibilityLevel(EditorUserBuildSettings.selectedBuildTargetGroup) != ApiCompatibilityLevel.NET_2_0)
-			PlayerSettings.SetApiCompatibilityLevel(EditorUserBuildSettings.selectedBuildTargetGroup, ApiCompatibilityLevel.NET_2_0);
+        // Needed for Microsoft.CSharp namespace in DLLMaker
+        // Doesn't seem to work though
+        if (PlayerSettings.GetApiCompatibilityLevel(EditorUserBuildSettings.selectedBuildTargetGroup) != ApiCompatibilityLevel.NET_2_0)
+            PlayerSettings.SetApiCompatibilityLevel(EditorUserBuildSettings.selectedBuildTargetGroup, ApiCompatibilityLevel.NET_2_0);
 
-		if(!PlayerSettings.runInBackground)
-			PlayerSettings.runInBackground = true;
+        if (!PlayerSettings.runInBackground)
+            PlayerSettings.runInBackground = true;
+
+#if !VRC_CLIENT
+        SetDLLPlatforms("VRCCore-Standalone", false);
+        SetDLLPlatforms("VRCCore-Editor", true);
+#endif
 
         SetDefaultGraphicsAPIs();
         SetGraphicsSettings();
         SetPlayerSettings();
-        
+
 #if VRC_CLIENT
-        RefreshClientVRSDKs();
 #else
-		// SDK
+        // SDK
 
 		// default to steam runtime in sdk (shouldn't matter)
-		SetVRSDKs(new string[] { "None", "OpenVR", "Oculus" });
+		SetVRSDKs(EditorUserBuildSettings.selectedBuildTargetGroup, new string[] { "None", "OpenVR", "Oculus" });
 
         VRC.Core.AnalyticsSDK.Initialize(VRC.Core.SDKClientUtilities.GetSDKVersionDate());
 #endif
     }
 
     static void EnableBatching(bool enable)
-	{
-		PlayerSettings[] playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>();
-		if (playerSettings == null)
-			return;
+    {
+        PlayerSettings[] playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>();
+        if (playerSettings == null)
+            return;
 
-		SerializedObject playerSettingsSerializedObject = new SerializedObject(playerSettings);
-		SerializedProperty batchingSettings = playerSettingsSerializedObject.FindProperty("m_BuildTargetBatching");
-		if (batchingSettings == null)
-			return;
+        SerializedObject playerSettingsSerializedObject = new SerializedObject(playerSettings);
+        SerializedProperty batchingSettings = playerSettingsSerializedObject.FindProperty("m_BuildTargetBatching");
+        if (batchingSettings == null)
+            return;
 
-		for (int i = 0;i < batchingSettings.arraySize;i++)
-		{
-			SerializedProperty batchingArrayValue = batchingSettings.GetArrayElementAtIndex(i);
-			if (batchingArrayValue == null)
-				continue;
-			
-			IEnumerator batchingEnumerator = batchingArrayValue.GetEnumerator();
-			if (batchingEnumerator == null)
-				continue;
+        for (int i = 0; i < batchingSettings.arraySize; i++)
+        {
+            SerializedProperty batchingArrayValue = batchingSettings.GetArrayElementAtIndex(i);
+            if (batchingArrayValue == null)
+                continue;
 
-			while(batchingEnumerator.MoveNext())
-			{
-				SerializedProperty property = (SerializedProperty)batchingEnumerator.Current;
+            IEnumerator batchingEnumerator = batchingArrayValue.GetEnumerator();
+            if (batchingEnumerator == null)
+                continue;
+
+            while (batchingEnumerator.MoveNext())
+            {
+                SerializedProperty property = (SerializedProperty)batchingEnumerator.Current;
+
+                if (property != null && property.name == "m_BuildTarget")
+                {
+                    // only change setting on "Standalone" entry
+                    if (property.stringValue != "Standalone")
+                        break;
+                }
+
+
+                if (property != null && property.name == "m_StaticBatching")
+                {
+                    property.boolValue = enable;
+                }
+
+                if (property != null && property.name == "m_DynamicBatching")
+                {
+                    property.boolValue = enable;
+                }
+            }
+        }
+
+        playerSettingsSerializedObject.ApplyModifiedProperties();
+    }
+
+    public static void SetVRSDKs(BuildTargetGroup buildTargetGroup, string[] sdkNames)
+    {
+        Debug.Log("Setting virtual reality SDKs in PlayerSettings: ");
+        if (sdkNames != null)
+        {
+            foreach (string s in sdkNames)
+                Debug.Log("- " + s);
+        }
+
+        PlayerSettings[] playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>();
+        if (playerSettings == null)
+            return;
+
+        SerializedObject playerSettingsSerializedObject = new SerializedObject(playerSettings);
+        SerializedProperty settingsGroup = playerSettingsSerializedObject.FindProperty("m_BuildTargetVRSettings");
+        if (settingsGroup == null)
+            return;
+
+        for (int i = 0; i < settingsGroup.arraySize; i++)
+        {
+            SerializedProperty settingVal = settingsGroup.GetArrayElementAtIndex(i);
+            if (settingVal == null)
+                continue;
+
+            IEnumerator enumerator = settingVal.GetEnumerator();
+            if (enumerator == null)
+                continue;
+
+            while (enumerator.MoveNext())
+            {
+                SerializedProperty property = (SerializedProperty)enumerator.Current;
+
 
 				if (property != null && property.name == "m_BuildTarget")
 				{
-					// only change setting on "Standalone" entry
-					if (property.stringValue != "Standalone")
+					if (property.stringValue != buildTargetGroup.ToString())
 						break;
 				}
 
+                if (property != null && property.name == "m_Devices")
+                {
+                    property.ClearArray();
+                    property.arraySize = (sdkNames != null) ? sdkNames.Length : 0;
+                    for (int j = 0; j < property.arraySize; j++)
+                    {
+                        property.GetArrayElementAtIndex(j).stringValue = sdkNames[j];
+                    }
+                }
+            }
+        }
 
-				if (property != null && property.name == "m_StaticBatching")
-				{
-					property.boolValue = enable;
-				}
+        playerSettingsSerializedObject.ApplyModifiedProperties();
+    }
 
-				if (property != null && property.name == "m_DynamicBatching")
-				{
-					property.boolValue = enable;
-				}
-			}
-		}
-
-		playerSettingsSerializedObject.ApplyModifiedProperties();
-	}
-
-	public static void SetVRSDKs(string[] sdkNames)
-	{
-		Debug.Log("Setting virtual reality SDKs in PlayerSettings: ");
-		if (sdkNames != null)
-		{
-			foreach (string s in sdkNames)
-				Debug.Log("- " + s);
-		}
-
-		PlayerSettings[] playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>();
-		if (playerSettings == null)
-			return;
-
-		SerializedObject playerSettingsSerializedObject = new SerializedObject(playerSettings);
-		SerializedProperty settingsGroup = playerSettingsSerializedObject.FindProperty("m_BuildTargetVRSettings");
-		if (settingsGroup == null)
-			return;
-
-		for (int i = 0;i < settingsGroup.arraySize;i++)
-		{
-			SerializedProperty settingVal = settingsGroup.GetArrayElementAtIndex(i);
-			if (settingVal == null)
-				continue;
-
-			IEnumerator enumerator = settingVal.GetEnumerator();
-			if (enumerator == null)
-				continue;
-
-			while(enumerator.MoveNext())
-			{
-				SerializedProperty property = (SerializedProperty)enumerator.Current;
-
-				if (property != null && property.name == "m_BuildTarget")
-				{
-					// only change setting on "Standalone" entry
-					if (property.stringValue != "Standalone")
-						break;
-				}
-
-				if (property != null && property.name == "m_Devices")
-				{
-					property.ClearArray();
-					property.arraySize = (sdkNames != null) ? sdkNames.Length : 0;
-					for (int j = 0; j < property.arraySize; j++)
-					{
-						property.GetArrayElementAtIndex(j).stringValue = sdkNames[j];
-					}
-				}
-			}
-		}
-
-		playerSettingsSerializedObject.ApplyModifiedProperties();
-	}
-
-	static void RefreshClientVRSDKs()
-	{
+    static void RefreshClientVRSDKs()
+    {
 #if VRC_CLIENT
 
 #if VRC_VR_STEAM
-		SetVRSDKs(new string[] { "None", "OpenVR", "Oculus" });
+        SetVRSDKs( BuildTargetGroup.Standalone, new string[] { "None", "OpenVR", "Oculus" });
 #else
-		SetVRSDKs(new string[] { "None", "Oculus", "OpenVR" });
+		SetVRSDKs(BuildTargetGroup.Standalone, new string[] { "None", "Oculus", "OpenVR" });
 #endif
 
 #endif // VRC_CLIENT
     }
 
     public static bool CheckForFirstInit()
-	{
-		bool firstLaunch = UnityEditor.SessionState.GetBool("EnvConfigFirstLaunch", true);  
-		if (firstLaunch)
-    		UnityEditor.SessionState.SetBool("EnvConfigFirstLaunch", false);
+    {
+        bool firstLaunch = UnityEditor.SessionState.GetBool("EnvConfigFirstLaunch", true);
+        if (firstLaunch)
+            UnityEditor.SessionState.SetBool("EnvConfigFirstLaunch", false);
 
-		return firstLaunch;
-	}
+        return firstLaunch;
+    }
 
     static void SetDefaultGraphicsAPIs()
     {
@@ -431,7 +515,7 @@ public class EnvConfig
 
         SerializedProperty transparencySortAxis = graphicsManager.FindProperty("m_TransparencySortAxis");
         transparencySortAxis.vector3Value = Vector3.forward;
-        
+
         SerializedProperty defaultRenderingPath = graphicsManager.FindProperty("m_DefaultRenderingPath");
         defaultRenderingPath.intValue = 1;
 
@@ -495,11 +579,21 @@ public class EnvConfig
         graphicsManager.ApplyModifiedProperties();
     }
 
-    static void SetPlayerSettings()
+    static void SetPlayerSettings() 
     {
         // asset bundles MUST be built with settings that are compatible with VRC client
-        PlayerSettings.colorSpace = ColorSpace.Linear;
-        PlayerSettings.virtualRealitySupported = true;
+        #if VRC_OVERRIDE_COLORSPACE_GAMMA
+            PlayerSettings.colorSpace = ColorSpace.Gamma;
+        #else
+            PlayerSettings.colorSpace = ColorSpace.Linear;
+#endif
+
+#if !VRC_CLIENT // In client rely on platform-switcher
+            PlayerSettings.virtualRealitySupported = true;
+#endif
+
+        PlayerSettings.gpuSkinning = true;
+
         PlayerSettings.stereoRenderingPath = StereoRenderingPath.SinglePass;
 
         EnableBatching(true);

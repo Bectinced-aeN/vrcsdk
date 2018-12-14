@@ -24,10 +24,11 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			base.Data = (Json.Decode(readTextData()) as List<object>);
+			string json = readTextData();
+			base.Data = (Json.Decode(json) as List<object>);
 			if (!(base.Data is List<object>))
 			{
-				base.Error = "Could not decode list.";
+				base.Error = "Could not decode list";
 				return false;
 			}
 			return true;

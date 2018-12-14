@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -48,6 +47,8 @@ namespace VRC.Core
 		private static Dictionary<int, CachedResponse> apiResponseCache = new Dictionary<int, CachedResponse>();
 
 		public static Dictionary<Type, Dictionary<string, CacheEntry>> cache = new Dictionary<Type, Dictionary<string, CacheEntry>>();
+
+		private static List<string> cacheIdsToRemoveCached = new List<string>(5);
 
 		public ApiCache()
 			: this()
@@ -203,18 +204,23 @@ namespace VRC.Core
 
 		private static void RemoveWhere(Func<string, CacheEntry, bool> predicate)
 		{
-			foreach (KeyValuePair<Type, Dictionary<string, CacheEntry>> item in cache)
+			Dictionary<Type, Dictionary<string, CacheEntry>>.Enumerator enumerator = cache.GetEnumerator();
+			while (enumerator.MoveNext())
 			{
-				Dictionary<string, CacheEntry> value = item.Value;
-				string[] array = value.Keys.ToArray();
-				string[] array2 = array;
-				foreach (string text in array2)
+				Dictionary<string, CacheEntry> value = enumerator.Current.Value;
+				cacheIdsToRemoveCached.Clear();
+				Dictionary<string, CacheEntry>.Enumerator enumerator2 = value.GetEnumerator();
+				while (enumerator2.MoveNext())
 				{
-					CacheEntry arg = value[text];
-					if (predicate(text, arg))
+					KeyValuePair<string, CacheEntry> current = enumerator2.Current;
+					if (predicate(current.Key, current.Value))
 					{
-						value.Remove(text);
+						cacheIdsToRemoveCached.Add(current.Key);
 					}
+				}
+				for (int i = 0; i < cacheIdsToRemoveCached.Count; i++)
+				{
+					value.Remove(cacheIdsToRemoveCached[i]);
 				}
 			}
 		}

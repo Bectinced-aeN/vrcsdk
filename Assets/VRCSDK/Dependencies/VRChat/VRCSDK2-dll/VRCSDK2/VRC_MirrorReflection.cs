@@ -22,7 +22,7 @@ namespace VRCSDK2
 		public bool m_DisablePixelLights = true;
 
 		[Tooltip("Mirror will use up to the anti-aliasing level specified in QualitySettings, without exceeding this value (1, 2, 4, or 8)")]
-		public int m_MaxAntiAliasing = 8;
+		public int m_MaxAntiAliasing = 1;
 
 		public bool TurnOffMirrorOcclusion = true;
 

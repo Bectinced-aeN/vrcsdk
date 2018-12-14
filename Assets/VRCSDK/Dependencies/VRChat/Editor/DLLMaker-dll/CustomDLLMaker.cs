@@ -152,7 +152,7 @@ public class CustomDLLMaker
 	public static List<string> GetCustomScripts()
 	{
 		DLLMaker dLLMaker = new DLLMaker();
-		return dLLMaker.getAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
+		return dLLMaker.GetAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
 	}
 
 	public static bool AreCustomScriptsUsedInCurrentScene()
@@ -225,13 +225,14 @@ public class CustomDLLMaker
 		CreateNamespacedSourceFiles(dLLMaker, text);
 		dLLMaker.sourcePaths = new List<string>();
 		dLLMaker.sourcePaths.Add(SOURCE_TMP_PATH);
-		dLLMaker.dllDependencies = new List<string>();
-		dLLMaker.dllDependencies.Add(DLLMaker.unityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
-		dLLMaker.dllDependencies.Add(Application.get_dataPath() + Path.DirectorySeparatorChar + "VRCSDK" + Path.DirectorySeparatorChar + "Dependencies" + Path.DirectorySeparatorChar + "VRChat" + Path.DirectorySeparatorChar + "VRCSDK2.dll");
-		dLLMaker.buildTargetName = EXTERNAL_DLL_OUTPUT_FULL_PATH + "/" + text + ".dll";
+		dLLMaker.DllDependencies = new List<string>();
+		dLLMaker.DllDependencies.Add(DLLMaker.UnityExtensionDLLDirectoryPath + "GUISystem/UnityEngine.UI.dll");
+		dLLMaker.DllDependencies.Add(Application.get_dataPath() + "/VRCSDK/Dependencies/VRChat/VRCSDK2.dll");
+		dLLMaker.BuildTargetDir = EXTERNAL_DLL_OUTPUT_FULL_PATH;
+		dLLMaker.BuildTargetFile = text + ".dll";
 		try
 		{
-			dLLMaker.createDLL();
+			dLLMaker.CreateDLL();
 		}
 		catch (Exception ex)
 		{
@@ -241,15 +242,15 @@ public class CustomDLLMaker
 		{
 			CleanupNamespacedSourceFiles();
 		}
-		EditorPrefs.SetString("externalPluginPath", dLLMaker.buildTargetName);
-		EditorPrefs.SetString("lastExternalPluginPath", dLLMaker.buildTargetName);
+		EditorPrefs.SetString("externalPluginPath", dLLMaker.FinalDllOutputPath);
+		EditorPrefs.SetString("lastExternalPluginPath", dLLMaker.FinalDllOutputPath);
 		if (!recompileCurrentPlugin)
 		{
 			if (!Directory.Exists(INTERNAL_DLL_OUTPUT_FULL_PATH))
 			{
 				Directory.CreateDirectory(INTERNAL_DLL_OUTPUT_FULL_PATH);
 			}
-			File.Copy(dLLMaker.buildTargetName, INTERNAL_DLL_OUTPUT_FULL_PATH + "/" + text + ".dll");
+			File.Copy(dLLMaker.FinalDllOutputPath, INTERNAL_DLL_OUTPUT_FULL_PATH + "/" + text + ".dll");
 		}
 		return text;
 	}
@@ -903,7 +904,7 @@ public class CustomDLLMaker
 			Directory.Delete(SOURCE_TMP_PATH, recursive: true);
 		}
 		Directory.CreateDirectory(EXTERNAL_DLL_OUTPUT_FULL_PATH);
-		List<string> allSourceFromCSFilesInPathRecursive = maker.getAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
+		List<string> allSourceFromCSFilesInPathRecursive = maker.GetAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
 		foreach (string item in allSourceFromCSFilesInPathRecursive)
 		{
 			string text = SOURCE_TMP_PATH + "/" + Path.GetFileName(item);
@@ -924,7 +925,7 @@ public class CustomDLLMaker
 	{
 		bool flag = false;
 		DLLMaker dLLMaker = new DLLMaker();
-		List<string> allSourceFromCSFilesInPathRecursive = dLLMaker.getAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
+		List<string> allSourceFromCSFilesInPathRecursive = dLLMaker.GetAllSourceFromCSFilesInPathRecursive(SOURCE_FULL_PATH);
 		for (int i = 0; i < allSourceFromCSFilesInPathRecursive.Count; i++)
 		{
 			allSourceFromCSFilesInPathRecursive[i] = Path.GetFileNameWithoutExtension(allSourceFromCSFilesInPathRecursive[i]);

@@ -14,13 +14,19 @@ namespace VRC.Core
 
 		public static OnConfigInitialized onConfigInitialized;
 
-		private static object GetValue(string key)
+		public static object GetValue(string key)
 		{
 			if (config.ContainsKey(key))
 			{
 				return config[key];
 			}
 			return null;
+		}
+
+		public static void SetValue(string key, object value)
+		{
+			config[key] = value;
+			SaveConfig();
 		}
 
 		public static void Init(Action onInit = null, Action onError = null)
@@ -137,20 +143,25 @@ namespace VRC.Core
 			return config != null;
 		}
 
+		private static string getConfigpath()
+		{
+			return Application.get_persistentDataPath() + Path.DirectorySeparatorChar + "config.json";
+		}
+
 		private static void FetchConfig(Action onFetched = null, Action onError = null)
 		{
 			Debug.Log((object)"Fetching fresh local config");
 			Logger.Log("FetchLocalConfig", DebugLevel.All);
-			string text = Application.get_persistentDataPath() + Path.DirectorySeparatorChar + "config.json";
-			if (File.Exists(Application.get_persistentDataPath() + Path.PathSeparator + "config.json"))
+			string configpath = getConfigpath();
+			if (File.Exists(Application.get_persistentDataPath() + Path.PathSeparator + "config.json") && !File.Exists(configpath))
 			{
-				File.Move(Application.get_persistentDataPath() + Path.PathSeparator + "config.json", text);
+				File.Move(Application.get_persistentDataPath() + Path.PathSeparator + "config.json", configpath);
 			}
-			if (File.Exists(text))
+			if (File.Exists(configpath))
 			{
 				try
 				{
-					object obj = Json.Decode(File.ReadAllText(text));
+					object obj = Json.Decode(File.ReadAllText(configpath));
 					config = (Dictionary<string, object>)obj;
 					Logger.Log("finshed fetching and set local config", DebugLevel.All);
 					onFetched?.Invoke();
@@ -174,6 +185,27 @@ namespace VRC.Core
 				{
 					onConfigInitialized();
 				}
+			}
+		}
+
+		private static void SaveConfig(Action onSaved = null, Action onError = null)
+		{
+			if (!IsInitialized())
+			{
+				Init();
+			}
+			string configpath = getConfigpath();
+			try
+			{
+				string contents = Json.Encode(config, prettyPrint: true);
+				File.WriteAllText(configpath, contents);
+				Logger.Log("finshed fetching and set local config", DebugLevel.All);
+				onSaved?.Invoke();
+			}
+			catch (Exception)
+			{
+				Debug.LogError((object)"Error saving local config");
+				onError?.Invoke();
 			}
 		}
 	}

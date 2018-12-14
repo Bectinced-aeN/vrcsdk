@@ -19,6 +19,7 @@ namespace AmplitudeSDKWrapper
 			BadRequest,
 			TooManyEventsInRequest,
 			TooManyRequestsForDevice,
+			EventPayloadTooLarge,
 			TimedOut,
 			ServerError,
 			Exception
@@ -119,6 +120,7 @@ namespace AmplitudeSDKWrapper
 		{
 			if (instance == null)
 			{
+				Debug.Log((object)"AmplitudeWrapper initialized");
 				instance = new AmplitudeWrapper(api_key, userId);
 			}
 			return instance;
@@ -330,8 +332,8 @@ namespace AmplitudeSDKWrapper
 						{
 							logQueue.QueueTask(delegate
 							{
-								int maxId = (int)lastEvents.Last()["event_id"];
-								dbHelper.RemoveEvents(maxId);
+								int maxId3 = (int)lastEvents.Last()["event_id"];
+								dbHelper.RemoveEvents(maxId3);
 								isUploading = 0;
 								if (dbHelper.GetEventCount() > 30)
 								{
@@ -356,6 +358,28 @@ namespace AmplitudeSDKWrapper
 							case ErrorCode.TooManyEventsInRequest:
 								UpdateServerDelayed(1000, Mathf.Max(batchSize / 2, 1));
 								break;
+							case ErrorCode.EventPayloadTooLarge:
+								if (batchSize == 1)
+								{
+									int maxId2 = (int)lastEvents.Last()["event_id"];
+									dbHelper.RemoveEvents(maxId2);
+									if (dbHelper.GetEventCount() > 0)
+									{
+										UpdateServer(batchSize);
+									}
+								}
+								else
+								{
+									UpdateServer(Mathf.Max(batchSize / 2, 1));
+								}
+								break;
+							default:
+							{
+								Debug.LogError((object)("AmplitudeAPI: UpdateServer: unhandleable error code: " + errorCode + " - discarding this batch of " + batchSize + " events"));
+								int maxId = (int)lastEvents.Last()["event_id"];
+								dbHelper.RemoveEvents(maxId);
+								break;
+							}
 							}
 						});
 					});
@@ -435,6 +459,11 @@ namespace AmplitudeSDKWrapper
 				{
 					Debug.LogError((object)"AmplitudeAPI: PostEvents: failed to serialize events to JSON");
 					onError(ErrorCode.GeneralError);
+				}
+				else if (eventsJson.Length > 131072)
+				{
+					Debug.LogWarning((object)("AmplitudeAPI: PostEvents: events payload was two large, breaking up into smaller requests.  Length - " + eventsJson.Length));
+					onError(ErrorCode.EventPayloadTooLarge);
 				}
 				else if (string.IsNullOrEmpty(apiKey))
 				{

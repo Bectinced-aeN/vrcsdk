@@ -37,11 +37,12 @@ public class PlaymakerDLLMaker
 		dLLMaker.strongNameKeyFile = "PlaymakerVRC.snk";
 		dLLMaker.sourcePaths = new List<string>();
 		dLLMaker.sourcePaths.Add(SOURCE_FULL_PATH);
-		dLLMaker.dllDependencies = new List<string>();
-		dLLMaker.dllDependencies.Add(DLLMaker.unityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
-		dLLMaker.dllDependencies.Add("Assets/VRCSDK/Dependencies/VRChat/VRCSDK2.dll");
-		dLLMaker.dllDependencies.Add("Assets/Plugins/PlayMaker/PlayMaker.dll");
-		dLLMaker.buildTargetName = SDK_OUTPUT_FULL_PATH + "/VRCSDK/Playmaker_VRC.dll";
-		dLLMaker.createDLL();
+		dLLMaker.DllDependencies = new List<string>();
+		dLLMaker.DllDependencies.Add(DLLMaker.UnityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
+		dLLMaker.DllDependencies.Add("Assets/VRCSDK/Dependencies/VRChat/VRCSDK2.dll");
+		dLLMaker.DllDependencies.Add("Assets/Plugins/PlayMaker/PlayMaker.dll");
+		dLLMaker.BuildTargetDir = SDK_OUTPUT_FULL_PATH + "/VRCSDK";
+		dLLMaker.BuildTargetFile = "Playmaker_VRC.dll";
+		dLLMaker.CreateDLL();
 	}
 }

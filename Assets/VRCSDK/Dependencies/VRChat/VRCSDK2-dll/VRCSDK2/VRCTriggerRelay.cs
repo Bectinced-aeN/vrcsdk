@@ -13,6 +13,8 @@ namespace VRCSDK2
 
 		private int currentIdx;
 
+		private List<Collider> collidersToRemoveTemp = new List<Collider>(5);
+
 		public VRCTriggerRelay()
 			: this()
 		{
@@ -30,31 +32,56 @@ namespace VRCSDK2
 
 		private void Update()
 		{
-			triggersInside[0].RemoveWhere((Collider c) => c == null || c.get_gameObject() == null);
-			triggersInside[1].RemoveWhere((Collider c) => c == null || c.get_gameObject() == null);
+			RemoveNullFromSet(triggersInside[0]);
+			RemoveNullFromSet(triggersInside[1]);
 			int num = (currentIdx + 1) % 2;
 			bool flag = false;
-			foreach (Collider item in triggersInside[num])
+			HashSet<Collider> hashSet = triggersInside[currentIdx];
+			HashSet<Collider> hashSet2 = triggersInside[num];
+			HashSet<Collider>.Enumerator enumerator = hashSet2.GetEnumerator();
+			while (enumerator.MoveNext())
 			{
-				if (!triggersInside[currentIdx].Contains(item))
+				Collider current = enumerator.Current;
+				if (!hashSet.Contains(current))
 				{
-					Exit(item);
+					Exit(current);
 					flag = true;
 				}
 			}
-			foreach (Collider item2 in triggersInside[currentIdx])
+			HashSet<Collider>.Enumerator enumerator2 = hashSet.GetEnumerator();
+			while (enumerator2.MoveNext())
 			{
-				if (!triggersInside[num].Contains(item2))
+				Collider current2 = enumerator2.Current;
+				if (!hashSet2.Contains(current2))
 				{
-					Enter(item2);
+					Enter(current2);
 					flag = true;
 				}
 			}
 			if (flag)
 			{
-				triggersInside[num] = new HashSet<Collider>(triggersInside[currentIdx]);
+				hashSet2.Clear();
+				hashSet2.UnionWith(hashSet);
 			}
 			currentIdx = num;
+		}
+
+		private void RemoveNullFromSet(HashSet<Collider> colliders)
+		{
+			collidersToRemoveTemp.Clear();
+			HashSet<Collider>.Enumerator enumerator = colliders.GetEnumerator();
+			while (enumerator.MoveNext())
+			{
+				Collider current = enumerator.Current;
+				if (current == null || current.get_gameObject() == null)
+				{
+					collidersToRemoveTemp.Add(current);
+				}
+			}
+			for (int i = 0; i < collidersToRemoveTemp.Count; i++)
+			{
+				colliders.Remove(collidersToRemoveTemp[i]);
+			}
 		}
 
 		private void Enter(Collider col)

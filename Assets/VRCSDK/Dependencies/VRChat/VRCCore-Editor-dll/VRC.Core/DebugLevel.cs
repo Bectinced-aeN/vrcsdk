@@ -6,6 +6,9 @@ namespace VRC.Core
 		API,
 		AssetBundleDownloadManager,
 		ContentCreator,
+		NetworkTransport,
+		NetworkData,
+		NetworkProcessing,
 		All
 	}
 }

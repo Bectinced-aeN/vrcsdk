@@ -64,12 +64,12 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string UseUpEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string PickupEventName;
 
 		[HideInInspector]

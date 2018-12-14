@@ -52,6 +52,20 @@ namespace VRC.Core
 			return result;
 		}
 
+		public static object GetObject(string key)
+		{
+			if (!IsInitialized())
+			{
+				Init();
+			}
+			object result = null;
+			if (IsInitialized() && HasKey(key))
+			{
+				result = GetValue(key);
+			}
+			return result;
+		}
+
 		public static string GetString(string key)
 		{
 			if (!IsInitialized())
@@ -128,6 +142,45 @@ namespace VRC.Core
 			return result;
 		}
 
+		public static List<Dictionary<string, string>> GetListOfDictionaries(string key)
+		{
+			if (!IsInitialized())
+			{
+				Init();
+			}
+			List<Dictionary<string, string>> list = new List<Dictionary<string, string>>();
+			if (IsInitialized())
+			{
+				object value = GetValue(key);
+				if (value != null)
+				{
+					try
+					{
+						List<object> list2 = (List<object>)value;
+						if (list2 != null)
+						{
+							foreach (object item2 in list2)
+							{
+								if (item2 != null)
+								{
+									Dictionary<string, string> item = Tools.ObjDictToStringDict((Dictionary<string, object>)item2);
+									list.Add(item);
+								}
+							}
+							return list;
+						}
+						return list;
+					}
+					catch (Exception arg)
+					{
+						Debug.LogError((object)("Failed casting type from RemoteConfig - " + arg));
+						return list;
+					}
+				}
+			}
+			return list;
+		}
+
 		public static bool IsInitialized()
 		{
 			return config != null;
@@ -135,7 +188,6 @@ namespace VRC.Core
 
 		private static void FetchConfig(Action onFetched = null, Action onError = null)
 		{
-			Debug.Log((object)"Fetching fresh config");
 			Logger.Log("FetchConfig", DebugLevel.All);
 			API.SendRequest("config", HTTPMethods.Get, new ApiDictContainer
 			{
@@ -160,7 +212,7 @@ namespace VRC.Core
 						onError();
 					}
 				}
-			}, null, needsAPIKey: false, authenticationRequired: false);
+			}, null, needsAPIKey: false, authenticationRequired: false, disableCache: true);
 		}
 	}
 }

@@ -152,7 +152,6 @@ namespace VRCSDK2
 			AudioClip val = Current;
 			if (val != null)
 			{
-				Debug.Log((object)(this.get_gameObject().get_name() + " playing " + val.get_name()));
 				if (Source != null)
 				{
 					Source.set_pitch(Random.Range(MinPitchRange, MaxPitchRange));

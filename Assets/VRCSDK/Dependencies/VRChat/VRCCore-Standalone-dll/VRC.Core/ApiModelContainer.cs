@@ -38,9 +38,9 @@ namespace VRC.Core
 			}
 			catch (Exception ex)
 			{
-				base.Error = "An exception was caught when filling the model: " + ex.Message + "\n" + ex.StackTrace;
+				base.Error = "An exception was caught when filling the model: " + ex.Message;
 				return false;
-				IL_006e:;
+				IL_0063:;
 			}
 			if (!string.IsNullOrEmpty(base.Model.id))
 			{

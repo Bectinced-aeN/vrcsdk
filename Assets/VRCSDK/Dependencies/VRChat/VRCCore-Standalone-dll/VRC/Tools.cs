@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using UnityEngine;
 using VRC.Core;
@@ -14,6 +15,39 @@ namespace VRC
 {
 	public static class Tools
 	{
+		private static bool? _isClient;
+
+		public static bool isClient
+		{
+			get
+			{
+				bool? isClient = _isClient;
+				if (!isClient.HasValue)
+				{
+					_isClient = HasType("VRCApplication");
+				}
+				bool? isClient2 = _isClient;
+				return isClient2.Value;
+			}
+		}
+
+		private static bool HasType(string typeStr)
+		{
+			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			foreach (Assembly assembly in assemblies)
+			{
+				Type[] types = assembly.GetTypes();
+				foreach (Type type in types)
+				{
+					if (type.Name == typeStr)
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		public static void SetLayerRecursively(GameObject obj, int newLayer, int except = -1)
 		{
 			//IL_002a: Unknown result type (might be due to invalid IL or missing references)

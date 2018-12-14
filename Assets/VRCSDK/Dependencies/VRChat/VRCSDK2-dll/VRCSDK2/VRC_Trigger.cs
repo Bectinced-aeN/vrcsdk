@@ -209,10 +209,10 @@ namespace VRCSDK2
 
 		public static void Trigger(GameObject obj, TriggerType type)
 		{
-			if (!(obj == null))
+			if (!(obj == null) && InitializeTrigger != null)
 			{
 				VRC_Trigger component = obj.GetComponent<VRC_Trigger>();
-				if (component != null && InitializeTrigger != null)
+				if (component != null)
 				{
 					InitializeTrigger(component);
 					component.ExecuteTriggerType(type);

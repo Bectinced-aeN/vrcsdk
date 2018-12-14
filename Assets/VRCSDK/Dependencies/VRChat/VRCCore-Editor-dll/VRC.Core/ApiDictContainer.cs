@@ -41,10 +41,11 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			base.Data = Json.Decode(readTextData());
+			string text = readTextData();
+			base.Data = Json.Decode(text);
 			if (!(base.Data is Dictionary<string, object>))
 			{
-				base.Error = "Could not decode dictionary.";
+				base.Error = "Could not decode dictionary from:\n" + text;
 				return false;
 			}
 			string[] array = (from f in requiredFields

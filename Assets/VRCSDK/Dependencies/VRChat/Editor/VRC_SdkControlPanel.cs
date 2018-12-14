@@ -344,15 +344,11 @@ public class VRC_SdkControlPanel : EditorWindow
                 OnGUIError(scene, VRCSDK2.VRC_PlaymakerHelper.GetErrors());
         #endif
 
-        scene.useAssignedLayers = true;
-        if (scene.useAssignedLayers)
-        {
-            if (!UpdateLayers.AreLayersSetup())
-                OnGUIWarning(scene, "Layers are not setup properly. Please press the button above.");
+        if (!UpdateLayers.AreLayersSetup())
+            OnGUIError(scene, "Layers are not yet configured for VRChat. Please press the 'Setup Layers for VRChat' button above to apply layer settings and enable Test/Publish.");
 
-            if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup())
-                OnGUIWarning(scene, "Physics Collision Layer Matrix is not setup correctly. Please press the button above.");
-        }
+        if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup())
+            OnGUIError(scene, "Physics Collision Layer Matrix is not yet configured for VRChat. Please press the 'Setup Collision Layer Matrix for VRChat' button above to apply collision settings and enable Test/Publish.");
 
         // warn those without scripting access if they choose to script locally
         if(VRC.Core.APIUser.CurrentUser != null && !VRC.Core.APIUser.CurrentUser.hasScriptingAccess && CustomDLLMaker.DoesScriptDirExist())
@@ -409,24 +405,21 @@ public class VRC_SdkControlPanel : EditorWindow
 
         EditorGUILayout.Space();
 
-        if (scene.useAssignedLayers)
+        if (!UpdateLayers.AreLayersSetup() && GUILayout.Button("Setup Layers for VRChat"))
         {
-            if (!UpdateLayers.AreLayersSetup() && GUILayout.Button("Setup Layers"))
+            bool doIt = EditorUtility.DisplayDialog("Setup Layers for VRChat", "This adds all VRChat layers to your project and pushes any custom layers down the layer list. If you have custom layers assigned to gameObjects, you'll need to reassign them. Are you sure you want to continue?", "Do it!", "Don't do it");
+            if (doIt)
             {
-                bool doIt = EditorUtility.DisplayDialog("Setup Layers for VRChat", "This adds all VRChat layers to your project and pushes any custom layers down the layer list. If you have custom layers assigned to gameObjects, you'll need to reassign them. Are you sure you want to continue?", "Do it!", "Don't do it");
-                if (doIt)
-                {
-                    UpdateLayers.SetupEditorLayers();
-                }
+                UpdateLayers.SetupEditorLayers();
             }
+        }
 
-            if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup() && GUILayout.Button("Setup Collision Layer Matrix"))
+        if (UpdateLayers.AreLayersSetup() && !UpdateLayers.IsCollisionLayerMatrixSetup() && GUILayout.Button("Setup Collision Layer Matrix for VRChat"))
+        {
+            bool doIt = EditorUtility.DisplayDialog("Setup Collision Layer Matrix for VRChat", "This will setup the correct physics collisions in the PhysicsManager for VRChat layers. Are you sure you want to continue?", "Do it!", "Don't do it");
+            if (doIt)
             {
-                bool doIt = EditorUtility.DisplayDialog("Setup Collision Layer Matrix for VRChat", "This will setup the correct physics collisions in the PhysicsManager for VRChat layers. Are you sure you want to continue?", "Do it!", "Don't do it");
-                if (doIt)
-                {
-                    UpdateLayers.SetupCollisionLayerMatrix();
-                }
+                UpdateLayers.SetupCollisionLayerMatrix();
             }
         }
 

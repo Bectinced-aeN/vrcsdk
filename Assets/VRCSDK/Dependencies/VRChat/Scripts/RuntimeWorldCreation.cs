@@ -40,9 +40,15 @@ namespace VRCSDK2
         public Toggle showInPopularWorlds;
         public Toggle showInNewWorlds;
 
+        public InputField userTags;
+
         public UnityEngine.UI.Button uploadButton;
 
         private ApiWorld worldRecord;
+
+        private const int MAX_USER_TAGS_FOR_WORLD = 5;
+        private const int MAX_CHARACTERS_ALLOWED_IN_USER_TAG = 20;
+        List<String> customTags;
 
 #if UNITY_EDITOR
         new void Start()
@@ -51,6 +57,9 @@ namespace VRCSDK2
                 return;
 
             base.Start();
+
+            var desc = pipelineManager.GetComponent<VRC_SceneDescriptor>();
+            desc.PositionPortraitCamera(imageCapture.shotCamera.transform);
 
             Application.runInBackground = true;
             UnityEngine.VR.VRSettings.enabled = false;
@@ -80,7 +89,9 @@ namespace VRCSDK2
         {
             pipelineManager.user = user;
 
-            API.Fetch<ApiWorld>(pipelineManager.blueprintId,
+            ApiWorld model = new ApiWorld();
+            model.id = pipelineManager.blueprintId;
+            model.Fetch(null, false,
                 (c) =>
                 {
                     Debug.Log("<color=magenta>Updating an existing world.</color>");
@@ -162,6 +173,13 @@ namespace VRCSDK2
 
                     blueprintDescription.text = worldRecord.description;
 
+                    userTags.text = "";
+                    foreach (var tag in worldRecord.publicTags)
+                    {
+                        userTags.text = userTags.text + tag.Replace("author_tag_", "");
+                        userTags.text = userTags.text + " ";
+                    }
+
                     ImageDownloader.DownloadImage(worldRecord.imageUrl, delegate (Texture2D obj) {
                         bpImage.texture = obj;
                     });
@@ -195,6 +213,9 @@ namespace VRCSDK2
 
         public void SetupUpload()
         {
+            if (!ParseUserTags())
+                return;
+
             uploadTitle = "Preparing For Upload";
             isUploading = true;
 
@@ -333,7 +354,68 @@ namespace VRCSDK2
                     tags.Add("admin_hide_new");
             }
 
+            // add any author tags
+            foreach (var word in customTags)
+            {
+                // add all custom tags with "author_tag_" prefix
+                tags.Add("author_tag_" + word);
+            }
+
             return tags;
+        }
+
+        bool ParseUserTags()
+        {
+            bool validTags = true;
+            customTags = new List<string>();
+            char[] delimiterChars = { ' ', ',', '.', ':', '\t', '\n', '"', '#' };
+
+            // split user tags into individual words
+            string[] words = userTags.text.Split(delimiterChars, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var word in words)
+            {
+                customTags.Add(word.ToLower());
+            }
+
+            // check that number of tags is within tag limit
+            if (words.Count() > MAX_USER_TAGS_FOR_WORLD)
+            {
+                validTags = false;
+                UnityEditor.EditorUtility.DisplayDialog("Tags are limited to a maximum of " + MAX_USER_TAGS_FOR_WORLD + " per world.", "Please remove excess tags before uploading!", "OK");
+            }
+            else
+            {
+                // check that no tags exceed maximum tag length
+                int maximumTagLength = 0;
+                foreach (string item in words)
+                {
+                    if (item.Length > maximumTagLength)
+                    {
+                        maximumTagLength = item.Length;
+                    }
+                }
+
+                if (maximumTagLength > MAX_CHARACTERS_ALLOWED_IN_USER_TAG)
+                {
+                    validTags = false;
+                    UnityEditor.EditorUtility.DisplayDialog("Tags are limited to a maximum of " + MAX_CHARACTERS_ALLOWED_IN_USER_TAG + " characters per tag.", "One or more of your tags exceeds the maximum " + MAX_CHARACTERS_ALLOWED_IN_USER_TAG + " character limit.\n\n" + "Please shorten tags before uploading!", "OK");
+                }
+                else
+                {
+                    // make sure tags are all alphanumeric
+                    foreach (var word in words)
+                    {
+                        if (!word.All(char.IsLetterOrDigit))
+                        {
+                            validTags = false;
+                            UnityEditor.EditorUtility.DisplayDialog("Tags should consist of alphanumeric characters only.", "Please remove any non-alphanumeric characters from tags before uploading!", "OK");
+                        }
+                    }
+                }
+            }
+
+            return validTags;
         }
 
         protected override IEnumerator CreateBlueprint()

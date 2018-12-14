@@ -121,6 +121,7 @@ namespace VRC.Core
 
 		public unsafe static T Fetch<T>(string id, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, bool disableCache = false) where T : ApiModel, ApiCacheObject, new()
 		{
+			id = id?.Trim();
 			T val = new T();
 			val.id = id;
 			T model = (T)val;
@@ -591,6 +592,27 @@ namespace VRC.Core
 			{
 				responseContainer.OnError(responseContainer);
 			}
+		}
+
+		public static void GenerateMergeCode(Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
+		{
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback((c as ApiDictContainer).ResponseDictionary);
+				}
+			};
+			apiDictContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiDictContainer responseContainer = apiDictContainer;
+			SendPutRequest("auth/user/mergeToken", responseContainer);
 		}
 	}
 }

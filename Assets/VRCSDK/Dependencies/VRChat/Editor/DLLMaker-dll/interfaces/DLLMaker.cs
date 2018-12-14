@@ -12,17 +12,17 @@ namespace interfaces
 {
 	public class DLLMaker
 	{
-		public class NoFilesInDLLException : Exception
-		{
-		}
+		private const string DllFolder = "Dlls";
 
-		private static readonly string unityDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "Managed" + Path.DirectorySeparatorChar);
+		public static readonly string UnityExtensionDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "UnityExtensions/Unity/");
 
-		public static readonly string unityExtensionDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "UnityExtensions" + Path.DirectorySeparatorChar + "Unity" + Path.DirectorySeparatorChar);
+		private static readonly string UnityDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "Managed/");
 
-		private static readonly string unityDLLPath = unityDLLDirectoryPath + "UnityEngine.dll";
+		private static readonly string TempBuildDir = Application.get_dataPath() + "/../Temp/DllMaker";
 
-		private static readonly string unityEditorDLLPath = unityDLLDirectoryPath + "UnityEditor.dll";
+		private static readonly string UnityDLLPath = UnityDLLDirectoryPath + "UnityEngine.dll";
+
+		private static readonly string UnityEditorDLLPath = UnityDLLDirectoryPath + "UnityEditor.dll";
 
 		public bool optimize = true;
 
@@ -30,11 +30,11 @@ namespace interfaces
 
 		public List<string> blackList;
 
-		public string dllFolder = "Dlls";
-
 		public string strongNameKeyFile;
 
 		public List<string> sourcePaths;
+
+		public List<string> sourceFilePaths;
 
 		public List<string> defines = new List<string>
 		{
@@ -44,53 +44,53 @@ namespace interfaces
 
 		private readonly UnityDirectoryAdapter directory = new UnityDirectoryAdapter();
 
-		public string dllRootOutputFolder => Path.GetFullPath(Application.get_dataPath() + Path.DirectorySeparatorChar + "..") + Path.DirectorySeparatorChar + dllFolder + Path.DirectorySeparatorChar;
+		public string DllRootOutputFolder => Path.GetFullPath(Application.get_dataPath() + "/../Dlls/");
 
-		public string buildTargetName
+		public string BuildTargetDir
 		{
 			get;
 			set;
 		}
 
-		public List<string> dllDependencies
+		public string BuildTargetFile
 		{
 			get;
 			set;
 		}
 
-		public bool isEditor
+		public List<string> DllDependencies
 		{
 			get;
 			set;
 		}
 
-		public void cleanAllDLLs()
+		public bool IsEditor
 		{
-			directory.deleteAllFilesInDirectory(dllFolder);
+			get;
+			set;
 		}
 
-		public void cleanAllDLLMatchingName(string name)
+		public string FinalDllOutputPath => BuildTargetDir + "/" + BuildTargetFile;
+
+		public string TempDllOutputPath => TempBuildDir + "/" + BuildTargetFile;
+
+		public void CleanAllDLLs()
 		{
-			string fullPath = finalDLLOutputRootPath();
-			directory.createDirectory(fullPath);
-			directory.deleteFileInDirectoryIfItExists(fullPath, name);
+			directory.deleteAllFilesInDirectory("Dlls");
 		}
 
-		public string finalDLLOutputRootPath()
+		public void CleanAllDLLMatchingName(string name)
 		{
-			return Path.GetDirectoryName(finalDllOutputPath());
-		}
-
-		public string finalDllOutputPath()
-		{
-			return buildTargetName;
+			string buildTargetDir = BuildTargetDir;
+			directory.createDirectory(buildTargetDir);
+			directory.deleteFileInDirectoryIfItExists(buildTargetDir, name);
 		}
 
 		private void AddDllDependenciesToReferencedAssemblies(CompilerParameters compileParams)
 		{
-			if (dllDependencies != null)
+			if (DllDependencies != null)
 			{
-				foreach (string dllDependency in dllDependencies)
+				foreach (string dllDependency in DllDependencies)
 				{
 					if (!string.IsNullOrEmpty(dllDependency))
 					{
@@ -105,10 +105,10 @@ namespace interfaces
 			}
 		}
 
-		private CompilerParameters getStandardCompilerParameters()
+		private CompilerParameters GetStandardCompilerParameters(string outputPath)
 		{
 			CompilerParameters compilerParameters = new CompilerParameters();
-			compilerParameters.OutputAssembly = finalDllOutputPath();
+			compilerParameters.OutputAssembly = outputPath;
 			compilerParameters.CompilerOptions = string.Empty;
 			if (optimize)
 			{
@@ -122,16 +122,16 @@ namespace interfaces
 				compilerParameters.TempFiles = new TempFileCollection(Environment.GetEnvironmentVariable("TEMP"), keepFiles: true);
 				compilerParameters.CompilerOptions += " /debug";
 			}
-			if (!File.Exists(unityDLLPath) || !File.Exists(unityEditorDLLPath))
+			if (!File.Exists(UnityDLLPath) || !File.Exists(UnityEditorDLLPath))
 			{
 				throw new Exception("quilt: Error unity path dll path does not exist");
 			}
-			compilerParameters.ReferencedAssemblies.Add(unityDLLPath);
+			compilerParameters.ReferencedAssemblies.Add(UnityDLLPath);
 			defines.RemoveAll((string matchToRemove) => string.IsNullOrEmpty(matchToRemove));
-			if (isEditor)
+			if (IsEditor)
 			{
 				defines.Add("UNITY_EDITOR");
-				compilerParameters.ReferencedAssemblies.Add(unityEditorDLLPath);
+				compilerParameters.ReferencedAssemblies.Add(UnityEditorDLLPath);
 			}
 			if (defines.Count > 1)
 			{
@@ -146,75 +146,111 @@ namespace interfaces
 			return compilerParameters;
 		}
 
-		public string createDLL()
+		public CompilerResults CreateDLL(bool explicitFiles = false)
 		{
-			if (File.Exists(buildTargetName))
+			if (TestIfCannotOverwriteDll(FinalDllOutputPath))
 			{
-				FileUtil.DeleteFileOrDirectory(buildTargetName);
+				Debug.LogError((object)("Cannot build DLL, existing DLL is not overwritable, locked. DLL: " + FinalDllOutputPath));
+				return null;
 			}
-			ShowErrorIfCannotOverwriteDLL(finalDllOutputPath());
-			if (blackList == null)
+			HashSet<string> allSourceDirectories = GetAllSourceDirectories();
+			if (allSourceDirectories.Count == 0 && (sourceFilePaths == null || sourceFilePaths.Count == 0))
 			{
-				blackList = new List<string>();
+				Debug.LogError((object)("Cannot build DLL, no source directories to compile for DLL:" + FinalDllOutputPath));
+				return null;
 			}
-			List<string> list = new List<string>();
-			foreach (string sourcePath in sourcePaths)
+			if (File.Exists(TempDllOutputPath))
 			{
-				list.AddRange(getAllSourceFromCSFilesInPathRecursive(sourcePath));
-				List<string> allDllsInPathRecursive = getAllDllsInPathRecursive(sourcePath);
-				if (dllDependencies == null)
+				FileUtil.DeleteFileOrDirectory(TempDllOutputPath);
+			}
+			if (!Directory.Exists(TempBuildDir))
+			{
+				Directory.CreateDirectory(TempBuildDir);
+			}
+			DeleteSuperflousExtensions(FinalDllOutputPath);
+			CompilerParameters standardCompilerParameters = GetStandardCompilerParameters(TempDllOutputPath);
+			AddDllDependenciesToReferencedAssemblies(standardCompilerParameters);
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			dictionary.Add("CompilerVersion", "v3.5");
+			CSharpCodeProvider cSharpCodeProvider = new CSharpCodeProvider(dictionary);
+			CompilerResults compilerResults = (!explicitFiles) ? cSharpCodeProvider.CompileAssemblyFromFile(standardCompilerParameters, allSourceDirectories.ToArray()) : cSharpCodeProvider.CompileAssemblyFromFile(standardCompilerParameters, sourceFilePaths.ToArray());
+			LogCompileResults(compilerResults);
+			if (!compilerResults.Errors.HasErrors)
+			{
+				string directoryName = Path.GetDirectoryName(FinalDllOutputPath);
+				if (!Directory.Exists(directoryName))
 				{
-					dllDependencies = new List<string>();
+					Directory.CreateDirectory(directoryName);
 				}
-				foreach (string item2 in allDllsInPathRecursive)
-				{
-					if (!dllDependencies.Contains(item2))
-					{
-						dllDependencies.Add(item2);
-					}
-				}
+				File.Copy(compilerResults.PathToAssembly, FinalDllOutputPath, overwrite: true);
 			}
-			if (list.Count == 0)
-			{
-				throw new NoFilesInDLLException();
-			}
+			return compilerResults;
+		}
+
+		private HashSet<string> GetAllSourceDirectories()
+		{
+			List<string> allSourceFiles = GetAllSourceFiles();
 			HashSet<string> hashSet = new HashSet<string>();
-			foreach (string item3 in list)
+			foreach (string item2 in allSourceFiles)
 			{
-				string item = Path.GetDirectoryName(item3) + "/*.cs";
+				string item = Path.GetDirectoryName(item2) + "/*.cs";
 				if (!hashSet.Contains(item))
 				{
 					hashSet.Add(item);
 				}
 			}
-			CompilerParameters standardCompilerParameters = getStandardCompilerParameters();
-			AddDllDependenciesToReferencedAssemblies(standardCompilerParameters);
-			string directoryName = Path.GetDirectoryName(finalDllOutputPath());
-			if (!Directory.Exists(directoryName))
+			return hashSet;
+		}
+
+		private void DeleteSuperflousExtensions(string dllFullPath)
+		{
+			List<string> list = new List<string>();
+			list.Add(".dll.mdb.meta");
+			list.Add(".dll.mdb");
+			list.Add(".sln");
+			list.Add(".sln.meta");
+			list.Add(".userprefs");
+			list.Add(".userprefs.meta");
+			List<string> list2 = list;
+			string str = Path.GetDirectoryName(dllFullPath) + "/" + Path.GetFileNameWithoutExtension(dllFullPath);
+			foreach (string item in list2)
 			{
-				Directory.CreateDirectory(directoryName);
-			}
-			List<string> list2 = new List<string>();
-			list2.Add(".dll.mdb.meta");
-			list2.Add(".dll.mdb");
-			list2.Add(".sln");
-			list2.Add(".sln.meta");
-			list2.Add(".userprefs");
-			list2.Add(".userprefs.meta");
-			List<string> list3 = list2;
-			string str = directoryName + "/" + Path.GetFileNameWithoutExtension(finalDllOutputPath());
-			foreach (string item4 in list3)
-			{
-				if (File.Exists(str + item4))
+				if (File.Exists(str + item))
 				{
-					File.Delete(str + item4);
+					File.Delete(str + item);
 				}
 			}
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary.Add("CompilerVersion", "v3.5");
-			CSharpCodeProvider cSharpCodeProvider = new CSharpCodeProvider(dictionary);
-			CompilerResults compilerResults = cSharpCodeProvider.CompileAssemblyFromFile(standardCompilerParameters, hashSet.ToArray());
-			if (compilerResults.Errors.Count > 0)
+		}
+
+		private List<string> GetAllSourceFiles()
+		{
+			List<string> list = new List<string>();
+			foreach (string sourcePath in sourcePaths)
+			{
+				list.AddRange(GetAllSourceFromCSFilesInPathRecursive(sourcePath));
+				List<string> allDllsInPathRecursive = GetAllDllsInPathRecursive(sourcePath);
+				if (DllDependencies == null)
+				{
+					DllDependencies = new List<string>();
+				}
+				foreach (string item in allDllsInPathRecursive)
+				{
+					if (!DllDependencies.Contains(item))
+					{
+						DllDependencies.Add(item);
+					}
+				}
+			}
+			return list;
+		}
+
+		private static void LogCompileResults(CompilerResults compilerResults)
+		{
+			if (!compilerResults.Errors.HasErrors)
+			{
+				Debug.Log((object)("<color=green>Compiled: " + compilerResults.PathToAssembly + "</color>"));
+			}
+			if (compilerResults.Errors.Count != 0)
 			{
 				StringBuilder stringBuilder = new StringBuilder();
 				StringBuilder stringBuilder2 = new StringBuilder();
@@ -231,15 +267,10 @@ namespace interfaces
 						Debug.LogWarning((object)("WARNING:" + error));
 					}
 				}
-				if (stringBuilder.Length > 0)
-				{
-					throw new Exception(stringBuilder.ToString());
-				}
 			}
-			return finalDllOutputPath();
 		}
 
-		public List<string> getAllSourceFromCSFilesInPathRecursive(string pathIn)
+		public List<string> GetAllSourceFromCSFilesInPathRecursive(string pathIn)
 		{
 			if (blackList == null)
 			{
@@ -249,13 +280,13 @@ namespace interfaces
 			return directory.getAllMatchingFilesRecursive(directoryIn, blackList, "*.cs");
 		}
 
-		public List<string> getAllDllsInPathRecursive(string pathIn)
+		public List<string> GetAllDllsInPathRecursive(string pathIn)
 		{
 			string directoryIn = directory.cleanPath(pathIn);
 			return directory.getAllMatchingFilesRecursive(directoryIn, blackList, "*.dll");
 		}
 
-		public static void ShowErrorIfCannotOverwriteDLL(string dllPath)
+		public static bool TestIfCannotOverwriteDll(string dllPath)
 		{
 			bool flag = false;
 			UnityDirectoryAdapter unityDirectoryAdapter = new UnityDirectoryAdapter();
@@ -285,6 +316,7 @@ namespace interfaces
 					}
 				}
 			}
+			return flag;
 		}
 	}
 }

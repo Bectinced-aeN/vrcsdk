@@ -16,6 +16,12 @@ namespace VRCSDK2
     {
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
         {
+            if (Application.isPlaying)
+            {
+                EditorGUI.HelpBox(rect, "Trigger Editor disabled while application is running.", MessageType.Info);
+                return;
+            }
+
             if (property == null)
                 return;
 

@@ -52,10 +52,10 @@ namespace VRC.Core.BestHTTP.JSON
 			return null;
 		}
 
-		public static string Encode(object json)
+		public static string Encode(object json, bool prettyPrint = false)
 		{
 			StringBuilder stringBuilder = new StringBuilder(2000);
-			return (!SerializeValue(json, stringBuilder)) ? null : stringBuilder.ToString();
+			return (!SerializeValue(json, stringBuilder, prettyPrint ? 1 : (-1))) ? null : stringBuilder.ToString();
 		}
 
 		protected static Dictionary<string, object> ParseObject(char[] json, ref int index, ref bool success)
@@ -342,7 +342,7 @@ namespace VRC.Core.BestHTTP.JSON
 			return 0;
 		}
 
-		protected static bool SerializeValue(object value, StringBuilder builder)
+		protected static bool SerializeValue(object value, StringBuilder builder, int depth = -1)
 		{
 			bool result = true;
 			if (value is string)
@@ -351,11 +351,11 @@ namespace VRC.Core.BestHTTP.JSON
 			}
 			else if (value is IDictionary)
 			{
-				result = SerializeObject((IDictionary)value, builder);
+				result = SerializeObject((IDictionary)value, builder, depth);
 			}
 			else if (value is IList)
 			{
-				result = SerializeArray(value as IList, builder);
+				result = SerializeArray(value as IList, builder, depth);
 			}
 			else if (value is bool && (bool)value)
 			{
@@ -380,7 +380,19 @@ namespace VRC.Core.BestHTTP.JSON
 			return result;
 		}
 
-		protected static bool SerializeObject(IDictionary anObject, StringBuilder builder)
+		protected static void AddWhitespace(StringBuilder builder, int depth)
+		{
+			if (depth > -1)
+			{
+				builder.Append("\r\n");
+				for (int i = 0; i < depth; i++)
+				{
+					builder.Append("\t");
+				}
+			}
+		}
+
+		protected static bool SerializeObject(IDictionary anObject, StringBuilder builder, int depth = -1)
 		{
 			builder.Append("{");
 			IDictionaryEnumerator enumerator = anObject.GetEnumerator();
@@ -391,21 +403,23 @@ namespace VRC.Core.BestHTTP.JSON
 				object value = enumerator.Value;
 				if (!flag)
 				{
-					builder.Append(", ");
+					builder.Append((depth != -1) ? "," : ", ");
 				}
+				AddWhitespace(builder, depth);
 				SerializeString(aString, builder);
-				builder.Append(":");
-				if (!SerializeValue(value, builder))
+				builder.Append((depth != -1) ? ": " : ":");
+				if (!SerializeValue(value, builder, (depth != -1) ? (depth + 1) : depth))
 				{
 					return false;
 				}
 				flag = false;
 			}
+			AddWhitespace(builder, depth - 1);
 			builder.Append("}");
 			return true;
 		}
 
-		protected static bool SerializeArray(IList anArray, StringBuilder builder)
+		protected static bool SerializeArray(IList anArray, StringBuilder builder, int depth = -1)
 		{
 			builder.Append("[");
 			bool flag = true;
@@ -414,14 +428,16 @@ namespace VRC.Core.BestHTTP.JSON
 				object value = anArray[i];
 				if (!flag)
 				{
-					builder.Append(", ");
+					builder.Append((depth != -1) ? "," : ", ");
 				}
-				if (!SerializeValue(value, builder))
+				AddWhitespace(builder, depth);
+				if (!SerializeValue(value, builder, (depth != -1) ? (depth + 1) : depth))
 				{
 					return false;
 				}
 				flag = false;
 			}
+			AddWhitespace(builder, depth - 1);
 			builder.Append("]");
 			return true;
 		}

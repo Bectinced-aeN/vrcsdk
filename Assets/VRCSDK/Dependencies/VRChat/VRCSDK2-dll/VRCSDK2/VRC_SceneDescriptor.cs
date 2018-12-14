@@ -51,9 +51,6 @@ namespace VRCSDK2
 		public float VoiceFalloffRangeFar = 350f;
 
 		[HideInInspector]
-		public bool useAssignedLayers;
-
-		[HideInInspector]
 		public bool autoSpatializeAudioSources = true;
 
 		[HideInInspector]
@@ -82,8 +79,8 @@ namespace VRCSDK2
 
 		public string unityVersion;
 
-		[Obsolete("Property is not used.")]
 		[HideInInspector]
+		[Obsolete("Property is not used.")]
 		public string Name;
 
 		[Obsolete("Property is not used.")]
@@ -98,6 +95,9 @@ namespace VRCSDK2
 
 		[HideInInspector]
 		public float DrawDistance;
+
+		[HideInInspector]
+		public bool useAssignedLayers;
 
 		public List<GameObject> DynamicPrefabs = new List<GameObject>();
 
@@ -192,6 +192,10 @@ namespace VRCSDK2
 
 		private static VRC_SceneDescriptor _instance;
 
+		public Vector3 portraitCameraPositionOffset = new Vector3(0f, 0f, 0f);
+
+		public Quaternion portraitCameraRotationOffset = Quaternion.AngleAxis(180f, Vector3.get_up());
+
 		public static VRC_SceneDescriptor Instance
 		{
 			get
@@ -270,6 +274,17 @@ namespace VRCSDK2
 			{
 				Initialize(this);
 			}
+		}
+
+		public void PositionPortraitCamera(Transform cam)
+		{
+			//IL_0008: Unknown result type (might be due to invalid IL or missing references)
+			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001e: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0024: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0029: Unknown result type (might be due to invalid IL or missing references)
+			cam.set_position(this.get_transform().TransformPoint(portraitCameraPositionOffset));
+			cam.set_rotation(this.get_transform().get_rotation() * portraitCameraRotationOffset);
 		}
 	}
 }

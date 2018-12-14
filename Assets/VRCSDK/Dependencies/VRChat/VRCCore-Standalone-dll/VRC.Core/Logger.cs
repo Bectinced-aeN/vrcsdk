@@ -41,6 +41,10 @@ namespace VRC.Core
 		private static Dictionary<int, string> _levelMap = new Dictionary<int, string>
 		{
 			{
+				7,
+				"[<color=orange>All</color>] "
+			},
+			{
 				0,
 				"[<color=orange>Always</color>] "
 			},
@@ -58,9 +62,19 @@ namespace VRC.Core
 			},
 			{
 				4,
-				"[<color=orange>All</color>] "
+				"[<color=red>Network Transport</color>] "
+			},
+			{
+				5,
+				"[<color=red>Network Data</color>] "
+			},
+			{
+				6,
+				"[<color=red>Network Processing</color>] "
 			}
 		};
+
+		public static IEnumerable<KeyValuePair<int, string>> KnownLevels => _levelMap.AsEnumerable();
 
 		public static void DescribeDebugLevel(int level, string name, Color color = Color.yellow)
 		{
@@ -73,6 +87,11 @@ namespace VRC.Core
 			{
 				_levelMap.Add(level, name);
 			}
+		}
+
+		public static bool DebugLevelIsDescribed(int level)
+		{
+			return _levelMap.ContainsKey(level);
 		}
 
 		public static void SetDebugLevel(DebugLevel level)
@@ -127,6 +146,16 @@ namespace VRC.Core
 				enabledDebugLevels = new List<int>();
 			}
 			enabledDebugLevels.Remove(level);
+		}
+
+		public static bool DebugLevelIsEnabled(DebugLevel level)
+		{
+			return DebugLevelIsEnabled((int)level);
+		}
+
+		public static bool DebugLevelIsEnabled(int level)
+		{
+			return (enabledDebugLevels != null && enabledDebugLevels.Contains(7)) || level == 0 || (enabledDebugLevels != null && enabledDebugLevels.Contains(level));
 		}
 
 		public static void Log(string message, DebugLevel debugLevel = DebugLevel.Always, Object context = null)
@@ -269,7 +298,7 @@ namespace VRC.Core
 
 		public static void LogOnceEveryFormat(float seconds, Object obj, string format, params object[] args)
 		{
-			LogOnceEveryHashFormat(4, seconds, obj, format, args);
+			LogOnceEveryHashFormat(7, seconds, obj, format, args);
 		}
 
 		private static void LogOnceEveryHashFormat(int debugLevel, float seconds, Object context, string format, params object[] args)
@@ -293,11 +322,6 @@ namespace VRC.Core
 			int a = Tools.CombineHashCodes(method.ReflectedType.Name.GetHashCode(), method.Name.GetHashCode());
 			int a2 = Tools.CombineHashCodes(a, stackFrame.GetNativeOffset());
 			return Tools.CombineHashCodes(a2, instance?.GetHashCode() ?? 0);
-		}
-
-		private static bool DebugLevelIsEnabled(int level)
-		{
-			return (enabledDebugLevels != null && enabledDebugLevels.Contains(4)) || level == 0 || (enabledDebugLevels != null && enabledDebugLevels.Contains(level));
 		}
 
 		private static string MakePrefix(int level)
