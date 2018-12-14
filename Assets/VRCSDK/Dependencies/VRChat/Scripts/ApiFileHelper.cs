@@ -277,7 +277,7 @@ namespace VRC.Core
 
                     if (!string.IsNullOrEmpty(errorStr))
                     {
-                        Error(onError, apiFile, "Failed to delete previous incomplete version!", errorStr);
+                        Error(onError, apiFile, "Failed to delete previous failed version!", errorStr);
                         if (!worthRetry)
                         {
                             CleanupTempFiles(apiFile.id);
@@ -1026,6 +1026,13 @@ namespace VRC.Core
                     apiFile.HasExistingOrPendingVersion() ? "has existing or pending version" : "no previous version",
                     apiFile.IsLatestVersionQueued(checkDelta) ? "latest version queued" : "latest version not queued",
                     apiFile.name);
+
+            if (apiFile != null && apiFile.IsInitialized)
+            {
+                var apiFields = apiFile.ExtractApiFields();
+                if (apiFields != null)
+                    Debug.LogFormat("<color=yellow>{0}</color>", VRC.Tools.JsonEncode(apiFields));
+            }
         }
 
         public IEnumerator CreateOptimizedFileInternal(string filename, string outputFilename, Action<FileOpResult> onSuccess, Action<string> onError)

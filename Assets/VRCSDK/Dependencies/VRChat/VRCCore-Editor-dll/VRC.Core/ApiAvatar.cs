@@ -139,14 +139,14 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public List<string> unityPackages
 		{
 			get;
 			set;
 		}
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public bool unityPackageUpdated
 		{
 			get;
@@ -181,8 +181,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[DefaultValue("standalonewindows")]
 		[ApiField(Required = false)]
+		[DefaultValue("standalonewindows")]
 		public string platform
 		{
 			get;

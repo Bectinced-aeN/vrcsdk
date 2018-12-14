@@ -16,8 +16,8 @@ namespace VRCSDK2
         public GameObject waitingPanel;
         public GameObject blueprintPanel;
         public GameObject errorPanel;
-       
-		public Text titleText;
+
+        public Text titleText;
         public InputField blueprintName;
         public InputField blueprintDescription;
         public InputField worldCapacity;
@@ -25,15 +25,15 @@ namespace VRCSDK2
         public Image liveBpImage;
         public Toggle shouldUpdateImageToggle;
         public Toggle releasePublic;
-		public Toggle contentNsfw;
+        public Toggle contentNsfw;
 
         public Toggle contentSex;
         public Toggle contentViolence;
         public Toggle contentGore;
         public Toggle contentOther;
 
-		public Toggle contentFeatured;
-		public Toggle contentSDKExample;
+        public Toggle contentFeatured;
+        public Toggle contentSDKExample;
 
         public Image showInWorldsMenuGroup;
         public Toggle showInActiveWorlds;
@@ -56,7 +56,7 @@ namespace VRCSDK2
             UnityEngine.VR.VRSettings.enabled = false;
 
             uploadButton.onClick.AddListener(SetupUpload);
-               
+
             shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
 
             releasePublic.gameObject.SetActive(false);
@@ -76,11 +76,11 @@ namespace VRCSDK2
             );
         }
 
-        void UserLoggedInCallback( APIUser user )
+        void UserLoggedInCallback(APIUser user)
         {
             pipelineManager.user = user;
 
-            API.Fetch<ApiWorld>(pipelineManager.blueprintId, 
+            API.Fetch<ApiWorld>(pipelineManager.blueprintId,
                 (c) =>
                 {
                     Debug.Log("<color=magenta>Updating an existing world.</color>");
@@ -108,16 +108,16 @@ namespace VRCSDK2
                 return;
             }
 
-			contentFeatured.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
-			contentSDKExample.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
+            contentFeatured.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
+            contentSDKExample.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
 
-            if(APIUser.Exists(pipelineManager.user))
+            if (APIUser.Exists(pipelineManager.user))
             {
                 waitingPanel.SetActive(false);
                 blueprintPanel.SetActive(true);
                 errorPanel.SetActive(false);
 
-                if (string.IsNullOrEmpty(worldRecord.authorId ) || worldRecord.authorId == pipelineManager.user.id)
+                if (string.IsNullOrEmpty(worldRecord.authorId) || worldRecord.authorId == pipelineManager.user.id)
                 {
                     titleText.text = "Configure World";
                     blueprintName.text = worldRecord.name;
@@ -179,7 +179,7 @@ namespace VRCSDK2
                 blueprintPanel.SetActive(false);
                 errorPanel.SetActive(false);
 
-				if (!APIUser.CurrentUser.hasSuperPowers)
+                if (!APIUser.CurrentUser.hasSuperPowers)
                 {
                     releasePublic.gameObject.SetActive(false);
                     releasePublic.isOn = false;
@@ -192,23 +192,23 @@ namespace VRCSDK2
                 }
             }
         }
-        
+
         public void SetupUpload()
         {
             uploadTitle = "Preparing For Upload";
             isUploading = true;
-           
+
             string abPath = UnityEditor.EditorPrefs.GetString("currentBuildingAssetBundlePath");
 
             string pluginPath = "";
-            if(APIUser.CurrentUser.hasScriptingAccess)
+            if (APIUser.CurrentUser.hasScriptingAccess)
                 pluginPath = UnityEditor.EditorPrefs.GetString("externalPluginPath");
 
 
-			string unityPackagePath = UnityEditor.EditorPrefs.GetString("VRC_exportedUnityPackagePath");
+            string unityPackagePath = UnityEditor.EditorPrefs.GetString("VRC_exportedUnityPackagePath");
 
-            UnityEditor.EditorPrefs.SetBool("VRCSDK2_scene_changed", true );
-            UnityEditor.EditorPrefs.SetInt("VRCSDK2_capacity", System.Convert.ToInt16( worldCapacity.text ));
+            UnityEditor.EditorPrefs.SetBool("VRCSDK2_scene_changed", true);
+            UnityEditor.EditorPrefs.SetInt("VRCSDK2_capacity", System.Convert.ToInt16(worldCapacity.text));
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_sex", contentSex.isOn);
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_violence", contentViolence.isOn);
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_gore", contentGore.isOn);
@@ -227,22 +227,22 @@ namespace VRCSDK2
             int version = Mathf.Max(1, worldRecord.version + 1);
             PrepareVRCPathForS3(abPath, blueprintId, version, ApiWorld.VERSION);
 
-			if(!string.IsNullOrEmpty(pluginPath) && System.IO.File.Exists(pluginPath))
+            if (!string.IsNullOrEmpty(pluginPath) && System.IO.File.Exists(pluginPath))
             {
-				Debug.Log("Found plugin path. Preparing to upload!");
+                Debug.Log("Found plugin path. Preparing to upload!");
                 PreparePluginPathForS3(pluginPath, blueprintId, version, ApiWorld.VERSION);
             }
             else
             {
-				Debug.Log("Did not find plugin path. No upload occuring!");
+                Debug.Log("Did not find plugin path. No upload occuring!");
             }
 
-			if(!string.IsNullOrEmpty(unityPackagePath) && System.IO.File.Exists(unityPackagePath))
-			{
-				Debug.Log("Found unity package path. Preparing to upload!");
-				PrepareUnityPackageForS3(unityPackagePath, blueprintId, version, ApiWorld.VERSION);
-			}
-            
+            if (!string.IsNullOrEmpty(unityPackagePath) && System.IO.File.Exists(unityPackagePath))
+            {
+                Debug.Log("Found unity package path. Preparing to upload!");
+                PrepareUnityPackageForS3(unityPackagePath, blueprintId, version, ApiWorld.VERSION);
+            }
+
             StartCoroutine(UploadNew());
         }
 
@@ -258,7 +258,7 @@ namespace VRCSDK2
             // upload unity package
             if (!string.IsNullOrEmpty(uploadUnityPackagePath))
             {
-                yield return StartCoroutine(UploadFile(uploadUnityPackagePath, isUpdate ? worldRecord.unityPackageUrl : "", GetFriendlyWorldFileName("Unity package"), "Unity package", 
+                yield return StartCoroutine(UploadFile(uploadUnityPackagePath, isUpdate ? worldRecord.unityPackageUrl : "", GetFriendlyWorldFileName("Unity package"), "Unity package",
                     delegate (string fileUrl)
                     {
                         cloudFrontUnityPackageUrl = fileUrl;
@@ -314,11 +314,11 @@ namespace VRCSDK2
             if (contentOther.isOn)
                 tags.Add("content_other");
 
-            if(APIUser.CurrentUser.hasSuperPowers)
+            if (APIUser.CurrentUser.hasSuperPowers)
             {
-                if(contentFeatured.isOn)
+                if (contentFeatured.isOn)
                     tags.Add("content_featured");
-                if(contentSDKExample.isOn)
+                if (contentSDKExample.isOn)
                     tags.Add("content_sdk_example");
             }
 
@@ -379,10 +379,10 @@ namespace VRCSDK2
                 },
                 (c) => { doneUploading = true; Debug.LogError(c.Error); });
 
-            while(!doneUploading)
+            while (!doneUploading)
                 yield return null;
         }
-        
+
         protected override IEnumerator UpdateBlueprint()
         {
             bool doneUploading = false;
@@ -394,7 +394,7 @@ namespace VRCSDK2
             worldRecord.pluginUrl = cloudFrontPluginUrl;
             worldRecord.tags = BuildTags();
             worldRecord.releaseStatus = (releasePublic.isOn) ? ("public") : ("private");
-			worldRecord.unityPackageUrl = cloudFrontUnityPackageUrl;
+            worldRecord.unityPackageUrl = cloudFrontUnityPackageUrl;
             worldRecord.isCurated = contentFeatured.isOn || contentSDKExample.isOn;
             if (UnityEditor.EditorPrefs.HasKey("pluginNamespace"))
                 worldRecord.scriptNamespace = UnityEditor.EditorPrefs.GetString("pluginNamespace");
@@ -404,22 +404,18 @@ namespace VRCSDK2
                 yield return StartCoroutine(UpdateImage(isUpdate ? worldRecord.imageUrl : "", GetFriendlyWorldFileName("Image")));
 
                 worldRecord.imageUrl = cloudFrontImageUrl;
-                SetUploadProgress("Saving Blueprint", "Almost finished!!", 0.0f);
-                worldRecord.Save((c) => doneUploading = true, (c) => { doneUploading = true; Debug.LogError(c.Error); });
             }
-            else
-            {
-                SetUploadProgress("Saving Blueprint", "Almost finished!!", 0.0f);
-                worldRecord.Save((c) => doneUploading = true, (c) => { doneUploading = true; Debug.LogError(c.Error); });
-            }
+
+            SetUploadProgress("Saving Blueprint", "Almost finished!!", 0.0f);
+            worldRecord.Save((c) => doneUploading = true, (c) => { doneUploading = true; Debug.LogError(c.Error); });
 
             while (!doneUploading)
                 yield return null;
         }
-        
+
         void ToggleUpdateImage(bool isOn)
         {
-            if(isOn)
+            if (isOn)
             {
                 bpImage.enabled = false;
                 liveBpImage.enabled = true;
@@ -428,12 +424,12 @@ namespace VRCSDK2
             {
                 bpImage.enabled = true;
                 liveBpImage.enabled = false;
-                ImageDownloader.DownloadImage(worldRecord.imageUrl, delegate(Texture2D obj) {
+                ImageDownloader.DownloadImage(worldRecord.imageUrl, delegate (Texture2D obj) {
                     bpImage.texture = obj;
                 });
             }
         }
-        
+
         void OnDestroy()
         {
             UnityEditor.EditorUtility.ClearProgressBar();

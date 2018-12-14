@@ -244,7 +244,7 @@ namespace VRC.Core
 			}
 
 			[ApiField]
-			public List<double> parts
+			public List<object> parts
 			{
 				get;
 				set;

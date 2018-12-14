@@ -334,6 +334,10 @@ namespace VRC.Core
 					}
 					string uriPath = baseUri.Uri.PathAndQuery;
 					bool useCache = !disableCache && method == HTTPMethods.Get;
+					if (endpoint == "worlds/recent")
+					{
+						ApiCache.recentWorldsQuery = uriPath;
+					}
 					ApiCache.CachedResponse cachedResponse = (!useCache) ? null : ApiCache.GetOrClearCachedResponse(baseUri.Uri.PathAndQuery, cacheLifetime);
 					if (cachedResponse != null)
 					{

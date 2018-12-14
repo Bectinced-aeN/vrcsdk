@@ -290,6 +290,13 @@ namespace VRC.Core
 						requestParams.Remove(item.Key);
 					}
 				}
+				List<KeyValuePair<string, object>> list2 = (from kvp in requestParams
+				where IsApiWritableOnly(FindProperty(kvp.Key))
+				select kvp).ToList();
+				foreach (KeyValuePair<string, object> item2 in list2)
+				{
+					requestParams.Remove(item2.Key);
+				}
 				Action<ApiContainer> onSuccess2 = delegate(ApiContainer c)
 				{
 					ApiCache.Save(c.Model.id, c.Model, andClone: true);
@@ -323,22 +330,22 @@ namespace VRC.Core
 					ApiModel target = null;
 					if (ApiCache.Fetch(GetType(), id + "_copy", ref target, 3.40282347E+38f))
 					{
-						foreach (KeyValuePair<string, object> item2 in target.ExtractApiFields())
+						foreach (KeyValuePair<string, object> item3 in target.ExtractApiFields())
 						{
-							if (requestParams.ContainsKey(item2.Key))
+							if (requestParams.ContainsKey(item3.Key))
 							{
-								if (typeof(IList).IsAssignableFrom(item2.Value.GetType()) && typeof(IList).IsAssignableFrom(requestParams[item2.Key].GetType()))
+								if (typeof(IList).IsAssignableFrom(item3.Value.GetType()) && typeof(IList).IsAssignableFrom(requestParams[item3.Key].GetType()))
 								{
-									IList a = item2.Value as IList;
-									IList b = requestParams[item2.Key] as IList;
+									IList a = item3.Value as IList;
+									IList b = requestParams[item3.Key] as IList;
 									if (!b.Cast<object>().Any((object bo) => !a.Contains(bo)) && !a.Cast<object>().Any((object ao) => !b.Contains(ao)))
 									{
-										requestParams.Remove(item2.Key);
+										requestParams.Remove(item3.Key);
 									}
 								}
-								else if (item2.Value.Equals(requestParams[item2.Key]))
+								else if (item3.Value.Equals(requestParams[item3.Key]))
 								{
-									requestParams.Remove(item2.Key);
+									requestParams.Remove(item3.Key);
 								}
 							}
 						}
@@ -717,6 +724,15 @@ namespace VRC.Core
 				return false;
 			}
 			return ((ApiFieldAttribute)pi.GetCustomAttributes(inherit: true).FirstOrDefault((object a) => a is ApiFieldAttribute))?.IsAdminWritableOnly ?? false;
+		}
+
+		private bool IsApiWritableOnly(PropertyInfo pi)
+		{
+			if (pi == null)
+			{
+				return false;
+			}
+			return ((ApiFieldAttribute)pi.GetCustomAttributes(inherit: true).FirstOrDefault((object a) => a is ApiFieldAttribute))?.IsApiWritableOnly ?? false;
 		}
 	}
 }

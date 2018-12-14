@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace VRCSDK2
 {
-	[RequireComponent(typeof(AudioSource))]
 	[ExecuteInEditMode]
+	[RequireComponent(typeof(AudioSource))]
 	public class VRC_WebPanel : VRC_Interactable, IVRCEventProvider
 	{
 		[Serializable]

@@ -766,7 +766,7 @@ namespace VRC.Core
 						errorCallback(c.Error);
 					}
 				}
-			});
+			}, dictionary);
 		}
 
 		public static bool Exists(APIUser user)

@@ -16,6 +16,7 @@ namespace VRC.Core
 			Updated,
 			Created,
 			Active,
+			Recent,
 			None
 		}
 
@@ -220,7 +221,7 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public List<string> unityPackages
 		{
 			get;
@@ -229,7 +230,7 @@ namespace VRC.Core
 
 		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("admin_approved"));
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public bool unityPackageUpdated
 		{
 			get;
@@ -271,7 +272,7 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
+		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public List<APIUser> users
 		{
 			get;
@@ -280,6 +281,13 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public bool shouldAddToAuthor
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string instanceId
 		{
 			get;
 			set;
@@ -505,6 +513,9 @@ namespace VRC.Core
 				break;
 			case SortHeading.Active:
 				endpoint = "worlds/active";
+				break;
+			case SortHeading.Recent:
+				endpoint = "worlds/recent";
 				break;
 			}
 			switch (owner)

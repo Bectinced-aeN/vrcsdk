@@ -78,8 +78,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField]
 		[DefaultValue(DeveloperType.None)]
+		[ApiField]
 		public DeveloperType developerType
 		{
 			get;
@@ -766,7 +766,7 @@ namespace VRC.Core
 						errorCallback(c.Error);
 					}
 				}
-			});
+			}, dictionary);
 		}
 
 		public static bool Exists(APIUser user)

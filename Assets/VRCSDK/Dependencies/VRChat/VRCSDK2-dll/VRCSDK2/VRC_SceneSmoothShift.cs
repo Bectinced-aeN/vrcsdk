@@ -73,6 +73,10 @@ namespace VRCSDK2
 			this.get_transform().set_localScale(localScale);
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.All
+		})]
 		private void Shift()
 		{
 			if (TargetPosition == 0f)

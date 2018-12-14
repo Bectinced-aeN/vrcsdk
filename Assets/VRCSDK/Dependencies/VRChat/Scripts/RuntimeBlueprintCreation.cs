@@ -7,13 +7,13 @@ using VRC.Core;
 
 namespace VRCSDK2
 {
-    public class RuntimeBlueprintCreation : RuntimeAPICreation 
+    public class RuntimeBlueprintCreation : RuntimeAPICreation
     {
         public GameObject waitingPanel;
         public GameObject blueprintPanel;
         public GameObject errorPanel;
-        
-		public Text titleText;
+
+        public Text titleText;
         public InputField blueprintName;
         public InputField blueprintDescription;
         public RawImage bpImage;
@@ -23,7 +23,7 @@ namespace VRCSDK2
         public Toggle contentViolence;
         public Toggle contentGore;
         public Toggle contentOther;
-		public Toggle developerAvatar;
+        public Toggle developerAvatar;
         public Toggle sharePrivate;
         public Toggle sharePublic;
 
@@ -31,7 +31,7 @@ namespace VRCSDK2
 
         private ApiAvatar apiAvatar;
 
-        #if UNITY_EDITOR       
+#if UNITY_EDITOR
         new void Start()
         {
             if (!Application.isEditor || !Application.isPlaying)
@@ -43,15 +43,15 @@ namespace VRCSDK2
             UnityEngine.VR.VRSettings.enabled = false;
 
             uploadButton.onClick.AddListener(SetupUpload);
-               
+
             shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
-                
+
             Login();
         }
-        
+
         void LoginErrorCallback(string obj)
         {
-            VRC.Core.Logger.LogError("Could not log in - " + obj, DebugLevel.Always);    
+            VRC.Core.Logger.LogError("Could not log in - " + obj, DebugLevel.Always);
             blueprintPanel.SetActive(false);
             errorPanel.SetActive(true);
         }
@@ -60,11 +60,11 @@ namespace VRCSDK2
         {
             ApiCredentials.Load();
             APIUser.Login(
-                delegate(APIUser user) 
+                delegate (APIUser user)
                 {
                     pipelineManager.user = user;
 
-                    API.Fetch<ApiAvatar>(pipelineManager.blueprintId, 
+                    API.Fetch<ApiAvatar>(pipelineManager.blueprintId,
                         (c) =>
                         {
                             Debug.Log("<color=magenta>Updating an existing avatar.</color>");
@@ -82,7 +82,7 @@ namespace VRCSDK2
                         });
                 }, LoginErrorCallback);
         }
-        
+
         void SetupUI()
         {
             if (!ValidateAssetBundleBlueprintID(apiAvatar.id))
@@ -93,7 +93,7 @@ namespace VRCSDK2
                 return;
             }
 
-            if ( APIUser.Exists(pipelineManager.user) )
+            if (APIUser.Exists(pipelineManager.user))
             {
                 waitingPanel.SetActive(false);
                 blueprintPanel.SetActive(true);
@@ -104,7 +104,7 @@ namespace VRCSDK2
                     // bp update
                     if (apiAvatar.authorId == pipelineManager.user.id)
                     {
-						titleText.text= "Update Avatar";
+                        titleText.text = "Update Avatar";
                         // apiAvatar = pipelineManager.user.GetBlueprint(pipelineManager.blueprintId) as ApiAvatar;
                         blueprintName.text = apiAvatar.name;
                         contentSex.isOn = apiAvatar.tags.Contains("content_sex");
@@ -120,7 +120,7 @@ namespace VRCSDK2
                         liveBpImage.enabled = false;
                         bpImage.enabled = true;
 
-                        ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate(Texture2D obj) {
+                        ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate (Texture2D obj) {
                             bpImage.texture = obj;
                         });
                     }
@@ -133,7 +133,7 @@ namespace VRCSDK2
                 }
                 else
                 {
-					titleText.text = "New Avatar";
+                    titleText.text = "New Avatar";
                     shouldUpdateImageToggle.interactable = false;
                     shouldUpdateImageToggle.isOn = true;
                     liveBpImage.enabled = true;
@@ -147,22 +147,22 @@ namespace VRCSDK2
                 errorPanel.SetActive(false);
             }
 
-			if(APIUser.CurrentUser != null && APIUser.CurrentUser.hasSuperPowers)
-				developerAvatar.gameObject.SetActive(true);
-			else
-				developerAvatar.gameObject.SetActive(false);
+            if (APIUser.CurrentUser != null && APIUser.CurrentUser.hasSuperPowers)
+                developerAvatar.gameObject.SetActive(true);
+            else
+                developerAvatar.gameObject.SetActive(false);
         }
-        
+
         public void SetupUpload()
         {
             uploadTitle = "Preparing For Upload";
             isUploading = true;
-           
+
             string abPath = UnityEditor.EditorPrefs.GetString("currentBuildingAssetBundlePath");
 
-			string unityPackagePath = UnityEditor.EditorPrefs.GetString("VRC_exportedUnityPackagePath");
+            string unityPackagePath = UnityEditor.EditorPrefs.GetString("VRC_exportedUnityPackagePath");
 
-            UnityEditor.EditorPrefs.SetBool("VRCSDK2_scene_changed", true );
+            UnityEditor.EditorPrefs.SetBool("VRCSDK2_scene_changed", true);
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_sex", contentSex.isOn);
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_violence", contentViolence.isOn);
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_gore", contentGore.isOn);
@@ -176,15 +176,15 @@ namespace VRCSDK2
             }
 
             string avatarId = apiAvatar.id;
-            int version = isUpdate ? apiAvatar.version+1 : 1;
+            int version = isUpdate ? apiAvatar.version + 1 : 1;
             PrepareVRCPathForS3(abPath, avatarId, version, ApiAvatar.VERSION);
 
-			if(!string.IsNullOrEmpty(unityPackagePath) && System.IO.File.Exists(unityPackagePath))
-			{
-				Debug.Log("Found unity package path. Preparing to upload!");
-				PrepareUnityPackageForS3(unityPackagePath, avatarId, version, ApiAvatar.VERSION);
-			}
-            
+            if (!string.IsNullOrEmpty(unityPackagePath) && System.IO.File.Exists(unityPackagePath))
+            {
+                Debug.Log("Found unity package path. Preparing to upload!");
+                PrepareUnityPackageForS3(unityPackagePath, avatarId, version, ApiAvatar.VERSION);
+            }
+
             StartCoroutine(UploadNew());
         }
 
@@ -245,7 +245,7 @@ namespace VRCSDK2
             if (contentOther.isOn)
                 tags.Add("content_other");
 
-            if(APIUser.CurrentUser.hasSuperPowers)
+            if (APIUser.CurrentUser.hasSuperPowers)
             {
                 if (developerAvatar.isOn)
                     tags.Add("developer");
@@ -315,23 +315,24 @@ namespace VRCSDK2
             {
                 yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
                 apiAvatar.imageUrl = cloudFrontImageUrl;
-                SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
-                apiAvatar.Save(
-                        (c) => { AnalyticsSDK.AvatarUploaded(apiAvatar, true); doneUploading = true; },
-                        (c) => {
-                            Debug.LogError(c.Error);
-                            SetUploadProgress("Saving Avatar", "Error saving blueprint.", 0.0f);
-                            doneUploading = true;
-                        });
             }
+
+            SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
+            apiAvatar.Save(
+                    (c) => { AnalyticsSDK.AvatarUploaded(apiAvatar, true); doneUploading = true; },
+                    (c) => {
+                        Debug.LogError(c.Error);
+                        SetUploadProgress("Saving Avatar", "Error saving blueprint.", 0.0f);
+                        doneUploading = true;
+                    });
 
             while (!doneUploading)
                 yield return null;
         }
-        
+
         void ToggleUpdateImage(bool isOn)
         {
-            if(isOn)
+            if (isOn)
             {
                 bpImage.enabled = false;
                 liveBpImage.enabled = true;
@@ -340,19 +341,19 @@ namespace VRCSDK2
             {
                 bpImage.enabled = true;
                 liveBpImage.enabled = false;
-                ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate(Texture2D obj) {
+                ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate (Texture2D obj) {
                     bpImage.texture = obj;
                 });
             }
         }
-        
+
         void OnDestroy()
         {
             UnityEditor.EditorUtility.ClearProgressBar();
             UnityEditor.EditorPrefs.DeleteKey("currentBuildingAssetBundlePath");
             UnityEditor.EditorPrefs.DeleteKey("externalPluginPath");
         }
-        #endif
+#endif
     }
 }
 

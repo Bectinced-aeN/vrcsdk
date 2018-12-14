@@ -9,5 +9,7 @@ namespace VRC.Core
 		public string Name;
 
 		public bool IsAdminWritableOnly;
+
+		public bool IsApiWritableOnly;
 	}
 }

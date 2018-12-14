@@ -76,6 +76,8 @@ namespace VRCSDK2
             {
                 string json = File.ReadAllText(GetUploadRetryStateFilePath());
                 mRetryState = VRC.Tools.ObjDictToStringDict(VRC.Tools.JsonDecode(json) as Dictionary<string, object>);
+
+                Debug.LogFormat("<color=yellow> loaded retry state: {0}</color>", json);
             }
             catch (Exception)
             {
@@ -99,7 +101,10 @@ namespace VRCSDK2
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(GetUploadRetryStateFilePath()));
-                File.WriteAllText(GetUploadRetryStateFilePath(), VRC.Tools.JsonEncode(mRetryState));
+                string json = VRC.Tools.JsonEncode(mRetryState);
+                File.WriteAllText(GetUploadRetryStateFilePath(), json);
+
+                Debug.LogFormat("<color=yellow> wrote retry state: {0}</color>", json);
             }
             catch (Exception e)
             {
@@ -334,7 +339,7 @@ namespace VRCSDK2
             Debug.Log("Uploading " + fileType + "(" + filename + ") ...");
             SetUploadProgress("Uploading " + fileType + "...", "", 0.0f);
 
-            string fileId = GetUploadRetryStateValue(fileType);
+            string fileId = GetUploadRetryStateValue(filename);
             if (string.IsNullOrEmpty(fileId))
                 fileId = isUpdate ? ApiFile.ParseFileIdFromFileAPIUrl(existingFileUrl) : "";
             string errorStr = "";
@@ -349,7 +354,7 @@ namespace VRCSDK2
                 },
                 delegate (ApiFile apiFile, string error)
                 {
-                    SaveUploadRetryState(fileType, apiFile.id);
+                    SaveUploadRetryState(filename, apiFile.id);
 
                     errorStr = error;
                     Debug.LogError(fileType + " upload failed: " + error + " (" + filename +
