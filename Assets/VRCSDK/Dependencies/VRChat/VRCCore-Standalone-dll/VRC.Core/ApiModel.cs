@@ -537,7 +537,7 @@ namespace VRC.Core
 			{
 				if (Application.get_isEditor() && Tools.isClient)
 				{
-					Logger.LogFormat(DebugLevel.API, "{0}: Could not locate property to write to: {1} with type {2}", GetType().Name, fieldName, data.GetType().FullName);
+					Logger.LogFormat(DebugLevel.API, "{0}: Could not locate property to write to: {1} with type {2}", GetType().Name, fieldName, (data != null) ? data.GetType().FullName : "null");
 				}
 				return false;
 			}
@@ -561,7 +561,7 @@ namespace VRC.Core
 			{
 				Logger.LogErrorFormat(DebugLevel.API, "{0}: could not write {1} of type {2}\n{3}", GetType().Name, fieldName, propertyInfo.PropertyType.Name, ex.Message);
 				return false;
-				IL_0135:;
+				IL_0145:;
 			}
 			try
 			{
@@ -579,7 +579,7 @@ namespace VRC.Core
 			{
 				Logger.LogErrorFormat(DebugLevel.API, "{0}: failed to set {1}\n", GetType().Name, fieldName, ex2.Message);
 				return false;
-				IL_01a3:;
+				IL_01b3:;
 			}
 			return true;
 		}

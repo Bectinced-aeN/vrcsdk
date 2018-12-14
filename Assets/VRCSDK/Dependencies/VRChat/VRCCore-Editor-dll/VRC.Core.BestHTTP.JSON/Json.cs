@@ -495,5 +495,11 @@ namespace VRC.Core.BestHTTP.JSON
 			builder.Append(Convert.ToString(number, CultureInfo.InvariantCulture));
 			return true;
 		}
+
+		protected static bool SerializeULong(ulong number, StringBuilder builder)
+		{
+			builder.Append(Convert.ToString(number, CultureInfo.InvariantCulture));
+			return true;
+		}
 	}
 }

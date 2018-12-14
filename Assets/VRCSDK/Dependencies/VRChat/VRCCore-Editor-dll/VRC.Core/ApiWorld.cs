@@ -18,6 +18,7 @@ namespace VRC.Core
 			Active,
 			Recent,
 			Favorite,
+			Labs,
 			None
 		}
 
@@ -219,8 +220,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[DefaultValue("standalonewindows")]
 		[ApiField(Required = false)]
+		[DefaultValue("standalonewindows")]
 		public string platform
 		{
 			get;

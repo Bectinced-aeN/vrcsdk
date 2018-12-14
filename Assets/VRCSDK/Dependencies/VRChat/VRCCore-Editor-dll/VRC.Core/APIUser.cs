@@ -129,8 +129,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField]
 		[DefaultValue(DeveloperType.None)]
+		[ApiField]
 		public DeveloperType developerType
 		{
 			get;
@@ -737,7 +737,7 @@ namespace VRC.Core
 			};
 			apiModelContainer.OnError = delegate(ApiContainer c)
 			{
-				Logger.LogError("NOT Authenticated: " + c.Error, DebugLevel.All);
+				Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.All);
 				if (errorCallback != null)
 				{
 					errorCallback(c.Error);
@@ -768,7 +768,8 @@ namespace VRC.Core
 				}
 			};
 			ApiModelContainer<APIUser> responseContainer = apiModelContainer;
-			API.SendPostRequest("auth/" + endpoint, responseContainer, parameters);
+			int retryCount = 0;
+			API.SendRequest("auth/" + endpoint, HTTPMethods.Post, responseContainer, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: false, 3600f, retryCount);
 		}
 
 		public static void Logout()

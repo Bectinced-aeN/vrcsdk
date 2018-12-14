@@ -40,7 +40,7 @@ public class CameraImageCapture : MonoBehaviour
 		RenderTexture.set_active(null);
 		shotCamera.set_aspect(aspect);
 		Object.Destroy(val);
-		byte[] bytes = val2.EncodeToPNG();
+		byte[] bytes = ImageConversion.EncodeToPNG(val2);
 		if (string.IsNullOrEmpty(savePath))
 		{
 			savePath = Application.get_temporaryCachePath();

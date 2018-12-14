@@ -18,7 +18,7 @@ public class EnvConfig
         BuildTarget.Android, BuildTarget.iOS,
         BuildTarget.StandaloneLinux, BuildTarget.StandaloneLinux64, BuildTarget.StandaloneLinuxUniversal,
         BuildTarget.StandaloneWindows, BuildTarget.StandaloneWindows64,
-        BuildTarget.StandaloneOSXIntel, BuildTarget.StandaloneOSXIntel64, BuildTarget.StandaloneOSXUniversal
+        BuildTarget.StandaloneOSX
     };
 
 #if !VRC_CLIENT
@@ -38,9 +38,7 @@ public class EnvConfig
         { BuildTarget.StandaloneLinuxUniversal, null },
         { BuildTarget.StandaloneWindows, new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.Direct3D11 } },
         { BuildTarget.StandaloneWindows64, new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.Direct3D11 } },
-        { BuildTarget.StandaloneOSXIntel, null },
-        { BuildTarget.StandaloneOSXIntel64, null },
-        { BuildTarget.StandaloneOSXUniversal, null }
+        { BuildTarget.StandaloneOSX, null }
     };
 
     static string[] ensureTheseShadersAreAvailable = new string[]
@@ -228,8 +226,7 @@ public class EnvConfig
                     importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneWindows64, false);
                     importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneLinux, false);
                     importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneLinux64, false);
-                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneOSXIntel, false);
-                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneOSXIntel64, false);
+                    importer.SetExcludeFromAnyPlatform(BuildTarget.StandaloneOSX, false);
                 }
                 else
                 {
@@ -240,8 +237,7 @@ public class EnvConfig
                     importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows64, false);
                     importer.SetCompatibleWithPlatform(BuildTarget.StandaloneLinux, false);
                     importer.SetCompatibleWithPlatform(BuildTarget.StandaloneLinux64, false);
-                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSXIntel, false);
-                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSXIntel64, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSX, false);
                 }
                 importer.SaveAndReimport();
             }

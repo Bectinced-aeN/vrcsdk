@@ -43,7 +43,7 @@ namespace VRCSDK2
             desc.PositionPortraitCamera(imageCapture.shotCamera.transform);
 
             Application.runInBackground = true;
-            UnityEngine.VR.VRSettings.enabled = false;
+            UnityEngine.XR.XRSettings.enabled = false;
 
             uploadButton.onClick.AddListener(SetupUpload);
 

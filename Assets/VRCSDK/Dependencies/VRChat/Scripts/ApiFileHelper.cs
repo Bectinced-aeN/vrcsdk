@@ -1042,6 +1042,8 @@ namespace VRC.Core
             // assume it's a .gz, or a .unitypackage
             // else nothing to do
 
+#if !UNITY_ANDROID
+
             if (!IsGZipCompressed(filename))
             {
                 Debug.Log("CreateOptimizedFile: (not gzip compressed, done)");
@@ -1193,11 +1195,15 @@ namespace VRC.Core
             if (outStream != null)
                 outStream.Close();
             outStream = null;
-
             yield return null;
 
             if (onSuccess != null)
                 onSuccess(FileOpResult.Success);
+#else
+            yield return null;
+            if (onError != null)
+                onError("Not supported on ANDROID platform.");
+#endif
         }
 
         public IEnumerator CreateFileSignatureInternal(string filename, string outputSignatureFilename, Action onSuccess, Action<string> onError)

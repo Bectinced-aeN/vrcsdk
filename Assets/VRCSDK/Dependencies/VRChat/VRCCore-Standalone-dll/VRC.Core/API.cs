@@ -289,17 +289,17 @@ namespace VRC.Core
 			return null;
 		}
 
-		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f)
+		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2)
 		{
 			string text = (!disableCache) ? "cyan" : "red";
-			Logger.LogFormat(DebugLevel.API, "<color={0}>Dispatch {1} {2} {3} disableCache: {4}</color>", text, method, endpoint, (requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams)), disableCache.ToString());
+			Logger.LogFormat(DebugLevel.API, "<color={0}>Dispatch {1} {2} {3} disableCache: {4} retryCount: {5}</color>", text, method, endpoint, (requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams)), disableCache.ToString(), retryCount.ToString());
 			UpdateDelegator.Dispatch(delegate
 			{
-				SendRequestInternal(endpoint, method, responseContainer, requestParams, needsAPIKey, authenticationRequired, disableCache, cacheLifetime);
+				SendRequestInternal(endpoint, method, responseContainer, requestParams, needsAPIKey, authenticationRequired, disableCache, cacheLifetime, retryCount);
 			});
 		}
 
-		private static void SendRequestInternal(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f)
+		private static void SendRequestInternal(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2)
 		{
 			if (responseContainer == null)
 			{
@@ -383,7 +383,7 @@ namespace VRC.Core
 							}
 							try
 							{
-								APIResponseHandler.HandleReponse(0, req, resp, responseContainer, 2, useCache);
+								APIResponseHandler.HandleReponse(0, req, resp, responseContainer, retryCount, useCache);
 							}
 							catch (Exception ex2)
 							{
@@ -401,7 +401,7 @@ namespace VRC.Core
 							{
 								activeRequests.Remove(uriPath);
 							}
-							APIResponseHandler.HandleReponse(requestId, req, resp, responseContainer, 2, useCache);
+							APIResponseHandler.HandleReponse(requestId, req, resp, responseContainer, retryCount, useCache);
 						});
 						if (method == HTTPMethods.Get)
 						{

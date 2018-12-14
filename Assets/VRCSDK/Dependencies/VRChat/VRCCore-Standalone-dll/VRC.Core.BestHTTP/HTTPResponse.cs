@@ -139,7 +139,7 @@ namespace VRC.Core.BestHTTP
 					return texture;
 				}
 				texture = new Texture2D(0, 0, 5, false);
-				texture.LoadImage(Data);
+				ImageConversion.LoadImage(texture, Data, true);
 				return texture;
 			}
 		}

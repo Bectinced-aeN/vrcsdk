@@ -85,6 +85,7 @@ namespace VRCSDK2
         public static int ps_collision_penalty_med = 60;
         public static int ps_collision_penalty_low = 10;
         public static int ps_trails_penalty = 10;
+        public static int ps_max_particle_force = 0; // can not be disabled
         
         public static IEnumerable<Component> FindIllegalComponents(string Name, GameObject currentAvatar)
         {
@@ -252,9 +253,6 @@ namespace VRCSDK2
 
         public static void EnforceRealtimeParticleSystemLimits(Dictionary<ParticleSystem, int> particleSystems, bool includeDisabled = false, bool stopSystems = true)
         {
-            if (!ps_limiter_enabled)
-                return;
-
             float totalEmission = 0;
             ParticleSystem ps = null;
             int max = 0;
@@ -272,28 +270,35 @@ namespace VRCSDK2
                 em_penalty = 1;
                 if (ps.collision.enabled)
                 {
-                    switch (ps.collision.quality)
+                    // particle force is always restricted (not dependent on ps_limiter_enabled)
+                    var restrictedCollision = ps.collision;
+                    restrictedCollision.colliderForce = ps_max_particle_force;
+
+                    if (ps_limiter_enabled)
                     {
-                        case ParticleSystemCollisionQuality.High:
-                            max = max / ps_collision_penalty_high;
-                            em_penalty += 3;
-                            break;
-                        case ParticleSystemCollisionQuality.Medium:
-                            max = max / ps_collision_penalty_med;
-                            em_penalty += 2;
-                            break;
-                        case ParticleSystemCollisionQuality.Low:
-                            max = max / ps_collision_penalty_low;
-                            em_penalty += 2;
-                            break;
+                        switch (ps.collision.quality)
+                        {
+                            case ParticleSystemCollisionQuality.High:
+                                max = max / ps_collision_penalty_high;
+                                em_penalty += 3;
+                                break;
+                            case ParticleSystemCollisionQuality.Medium:
+                                max = max / ps_collision_penalty_med;
+                                em_penalty += 2;
+                                break;
+                            case ParticleSystemCollisionQuality.Low:
+                                max = max / ps_collision_penalty_low;
+                                em_penalty += 2;
+                                break;
+                        }
                     }
                 }
-                if (ps.trails.enabled)
+                if (ps_limiter_enabled && ps.trails.enabled)
                 {
                     max = max / ps_trails_penalty;
                     em_penalty += 3;
                 }
-                if (ps.emission.enabled)
+                if (ps_limiter_enabled && ps.emission.enabled)
                 {
                     em = ps.emission;
                     emission = 0;
@@ -318,7 +323,7 @@ namespace VRCSDK2
                         // Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle emission limits, it has been stopped");
                     }
                 }
-                if (ps.main.maxParticles > Mathf.Clamp(max, 1, kp.Value))
+                if (ps_limiter_enabled && ps.main.maxParticles > Mathf.Clamp(max, 1, kp.Value))
                 {
                     ParticleSystem.MainModule psm = ps.main;
                     psm.maxParticles = Mathf.Clamp(psm.maxParticles, 1, max);
@@ -640,6 +645,14 @@ namespace VRCSDK2
             {
                 int realtime_max = ps_max_particles;
 
+                // always limit collision force
+                var collision = ps.collision;
+                if (collision.colliderForce > ps_max_particle_force)
+                {
+                    collision.colliderForce = ps_max_particle_force;
+                    Debug.LogError("Collision force is restricted on avatars, particle system named " + ps.gameObject.name + " collision force restricted to " + ps_max_particle_force );
+                }
+
                 if (ps_limiter_enabled)
                 {
                     if (particleSystems.Count > ps_max_systems)
@@ -650,7 +663,6 @@ namespace VRCSDK2
                     else
                     {
                         var main = ps.main;
-                        var collision = ps.collision;
                         var emission = ps.emission;
 
 

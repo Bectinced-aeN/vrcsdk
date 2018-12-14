@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{9D339B1B-47BA-496C-8DE1-CD183F1D9263}</ProjectGuid>
+    <ProjectGuid>{03E3AD72-27D7-4CF1-BF90-14F54748A29E}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -819,6 +819,9 @@
     <Compile Include="VRC.Core.BestHTTP.Decompression.Zlib\ZlibException.cs" />
     <Compile Include="VRC.Core.BestHTTP.Decompression.Zlib\ZlibStreamFlavor.cs" />
     <Compile Include="VRC.Core.BestHTTP.Decompression.Zlib\ZTree.cs" />
+    <Compile Include="VRC.Core.BestHTTP.Examples\AssetBundleSample.cs" />
+    <Compile Include="VRC.Core.BestHTTP.Examples\GUIHelper.cs" />
+    <Compile Include="VRC.Core.BestHTTP.Examples\GUIMessageList.cs" />
     <Compile Include="VRC.Core.BestHTTP.Extensions\ExceptionHelper.cs" />
     <Compile Include="VRC.Core.BestHTTP.Extensions\Extensions.cs" />
     <Compile Include="VRC.Core.BestHTTP.Extensions\HeartbeatManager.cs" />

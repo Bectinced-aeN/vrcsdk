@@ -38,8 +38,7 @@ namespace interfaces
 
 		public List<string> defines = new List<string>
 		{
-			"UNITY_5_0",
-			"UNITY_5"
+			"UNITY_4_6"
 		};
 
 		private readonly UnityDirectoryAdapter directory = new UnityDirectoryAdapter();

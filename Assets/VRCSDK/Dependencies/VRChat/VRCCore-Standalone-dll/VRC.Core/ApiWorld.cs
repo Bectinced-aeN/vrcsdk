@@ -18,6 +18,7 @@ namespace VRC.Core
 			Active,
 			Recent,
 			Favorite,
+			Labs,
 			None
 		}
 

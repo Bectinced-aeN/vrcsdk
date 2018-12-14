@@ -206,7 +206,7 @@ namespace VRC
 		public static void ClearUserData()
 		{
 			APIUser.Logout();
-			Caching.CleanCache();
+			Caching.ClearCache();
 			PlayerPrefs.DeleteAll();
 			HTTPCacheService.BeginClear();
 			string path = Application.get_persistentDataPath() + "/ab";

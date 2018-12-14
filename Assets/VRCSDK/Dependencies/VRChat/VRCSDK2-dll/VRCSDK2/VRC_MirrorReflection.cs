@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.VR;
+using UnityEngine.XR;
 
 namespace VRCSDK2
 {
@@ -184,7 +184,7 @@ namespace VRCSDK2
 			return Vector3.Dot(cam.get_transform().get_position() - this.get_transform().get_position(), GetNormalDirection()) > 0f;
 		}
 
-		private Vector3 GetWorldEyePos(Camera cam, VRNode eye)
+		private Vector3 GetWorldEyePos(Camera cam, XRNode eye)
 		{
 			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
@@ -195,7 +195,7 @@ namespace VRCSDK2
 			return parentTransform.MultiplyPoint3x4(localPosition);
 		}
 
-		private Quaternion GetWorldEyeRot(Camera cam, VRNode eye)
+		private Quaternion GetWorldEyeRot(Camera cam, XRNode eye)
 		{
 			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
@@ -207,7 +207,7 @@ namespace VRCSDK2
 			return parentRotation * localRotation;
 		}
 
-		private Matrix4x4 GetEyeProjectionMatrix(Camera cam, VRNode eye)
+		private Matrix4x4 GetEyeProjectionMatrix(Camera cam, XRNode eye)
 		{
 			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0003: Invalid comparison between Unknown and I4
