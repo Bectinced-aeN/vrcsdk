@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.JSON;
 
 namespace VRC.Core
@@ -25,193 +23,225 @@ namespace VRC.Core
 			OneDay
 		}
 
-		public ModerationType moderationType;
+		public const float ListCacheTime = 120f;
 
-		public string moderatorUserId;
+		public ModerationTimeRange? expiresRange;
 
-		public string moderatorDisplayName;
-
-		public string targetUserId;
-
-		public string targetDisplayName;
-
-		public string reason;
-
-		public Dictionary<string, object> details;
-
-		public DateTime created;
-
-		public DateTime expires;
-
-		public string worldId;
-
-		public string instanceId;
-
-		public void Init(Dictionary<string, object> jsonObject)
+		[ApiField(Required = false, Name = "type")]
+		public ModerationType moderationType
 		{
-			mId = (jsonObject["id"] as string);
-			if (jsonObject.ContainsKey("type"))
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string moderatorUserId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string moderatorDisplayName
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string targetUserId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string targetDisplayName
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false, Name = "reason")]
+		public string reasonMessage
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public Dictionary<string, object> details
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime created
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime expires
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string worldId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string instanceId
+		{
+			get;
+			set;
+		}
+
+		public ApiModeration(string targetUserId, string moderationSubRequest = "moderations")
+			: base("user/" + targetUserId + "/" + moderationSubRequest)
+		{
+		}
+
+		public ApiModeration()
+			: base(null)
+		{
+		}
+
+		public override bool ShouldCache()
+		{
+			return false;
+		}
+
+		protected override bool ReadField(string fieldName, ref object data)
+		{
+			switch (fieldName)
 			{
-				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["type"] as string).ToLower());
-				moderationType = ModerationType.None;
-				try
+			case "type":
+				data = moderationType.ToString().ToLower();
+				return true;
+			case "expires":
+				if (expiresRange.HasValue)
 				{
-					moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value, ignoreCase: true);
+					data = ModerationTimeRangeToString(expiresRange.Value);
+					return !string.IsNullOrEmpty(data.ToString());
 				}
-				catch (Exception)
-				{
-					moderationType = ModerationType.None;
-				}
+				return false;
+			default:
+				return base.ReadField(fieldName, ref data);
 			}
-			if (jsonObject.ContainsKey("moderatorUserId"))
+		}
+
+		protected override bool WriteField(string fieldName, object data)
+		{
+			switch (fieldName)
 			{
-				moderatorUserId = (jsonObject["moderatorUserId"] as string);
+			case "details":
+				details = (Json.Decode(data as string) as Dictionary<string, object>);
+				return true;
+			default:
+				return base.WriteField(fieldName, data);
 			}
-			if (jsonObject.ContainsKey("moderatorDisplayName"))
-			{
-				moderatorDisplayName = (jsonObject["moderatorDisplayName"] as string);
-			}
-			if (jsonObject.ContainsKey("targetUserId"))
-			{
-				targetUserId = (jsonObject["targetUserId"] as string);
-			}
-			if (jsonObject.ContainsKey("targetDisplayName"))
-			{
-				targetDisplayName = (jsonObject["targetDisplayName"] as string);
-			}
-			if (jsonObject.ContainsKey("reason"))
-			{
-				reason = (jsonObject["reason"] as string);
-			}
-			if (jsonObject.ContainsKey("details"))
-			{
-				details = (Json.Decode(jsonObject["details"] as string) as Dictionary<string, object>);
-			}
-			if (jsonObject.ContainsKey("created"))
-			{
-				created = DateTime.Parse(jsonObject["created"] as string);
-			}
-			if (jsonObject.ContainsKey("expires"))
-			{
-				expires = DateTime.Parse(jsonObject["expires"] as string);
-			}
-			if (jsonObject.ContainsKey("worldId"))
-			{
-				worldId = (jsonObject["worldId"] as string);
-			}
-			if (jsonObject.ContainsKey("instanceId"))
-			{
-				instanceId = (jsonObject["instanceId"] as string);
-			}
+		}
+
+		protected override ApiContainer MakeModelContainer(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			ApiContainer apiContainer = new ApiContainer();
+			apiContainer.OnSuccess = onSuccess;
+			apiContainer.OnError = onFailure;
+			return apiContainer;
 		}
 
 		public static void SendModeration(string targetUserId, ModerationType mType, string reason, ModerationTimeRange expires, string worldId = "", string worldInstanceId = "", Action successCallback = null, Action<string> errorCallback = null)
 		{
-			string value = mType.ToString().ToLower();
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["type"] = value;
-			dictionary["reason"] = reason;
-			string value2 = ModerationTimeRangeToString(expires);
-			if (!string.IsNullOrEmpty(value2))
-			{
-				dictionary["expires"] = value2;
-			}
-			if (!string.IsNullOrEmpty(worldId))
-			{
-				dictionary["worldId"] = worldId;
-			}
-			if (!string.IsNullOrEmpty(worldInstanceId))
-			{
-				dictionary["instanceId"] = worldInstanceId;
-			}
-			ApiModel.SendPostRequest("user/" + targetUserId + "/moderations", dictionary, delegate
+			ApiModeration apiModeration = new ApiModeration(targetUserId);
+			apiModeration.moderationType = mType;
+			apiModeration.reasonMessage = reason;
+			apiModeration.worldId = worldId;
+			apiModeration.instanceId = worldInstanceId;
+			apiModeration.expiresRange = expires;
+			ApiModeration apiModeration2 = apiModeration;
+			apiModeration2.Save(delegate
 			{
 				if (successCallback != null)
 				{
 					successCallback();
 				}
-			}, delegate(string obj)
+			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(obj);
+					errorCallback(c.Error);
 				}
 			});
 		}
 
-		public static void SendVoteKick(string targetUserId, string worldId = "", string worldInstanceId = "", Dictionary<string, object> details = null, Action<ApiModeration> successCallback = null, Action<string> errorCallback = null)
+		public static void SendVoteKick(string targetUserId, string worldId = "", string worldInstanceId = "", Dictionary<string, object> details = null, Action successCallback = null, Action<string> errorCallback = null)
 		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			if (!string.IsNullOrEmpty(worldId))
+			ApiModeration apiModeration = new ApiModeration(targetUserId, "votekick");
+			apiModeration.details = details;
+			apiModeration.worldId = worldId;
+			apiModeration.instanceId = worldInstanceId;
+			ApiModeration apiModeration2 = apiModeration;
+			apiModeration2.Save(delegate
 			{
-				dictionary["worldId"] = worldId;
-			}
-			if (!string.IsNullOrEmpty(worldInstanceId))
-			{
-				dictionary["instanceId"] = worldInstanceId;
-			}
-			if (details != null)
-			{
-				dictionary["details"] = Json.Encode(details);
-			}
-			ApiModel.SendPostRequest("user/" + targetUserId + "/votekick", dictionary, delegate(Dictionary<string, object> obj)
-			{
-				ApiModeration apiModeration = new ApiModeration();
-				apiModeration.Init(obj);
 				if (successCallback != null)
 				{
-					successCallback(apiModeration);
+					successCallback();
 				}
-			}, delegate(string obj)
+			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(obj);
+					errorCallback(c.Error);
 				}
 			});
 		}
 
 		public static void DeleteModeration(string targetUserId, string moderationId, Action successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendRequest("/user/" + targetUserId + "/moderations/" + moderationId, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
+			ApiModeration apiModeration = new ApiModeration(targetUserId, "moderations/" + moderationId);
+			apiModeration.Delete(delegate
 			{
 				if (successCallback != null)
 				{
 					successCallback();
 				}
-			}, (Action<string>)delegate(string obj)
+			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(obj);
+					errorCallback(c.Error);
 				}
-			}, needsAPIKey: true, authenticationRequired: true, -1f);
+			});
 		}
 
 		public static void LocalFetchAll(Action<List<ApiModeration>> successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendGetRequest("auth/user/moderations", delegate(List<object> objects)
+			ApiModelListContainer<ApiModeration> apiModelListContainer = new ApiModelListContainer<ApiModeration>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
-				List<ApiModeration> list = new List<ApiModeration>();
-				if (objects != null)
-				{
-					foreach (object @object in objects)
-					{
-						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						ApiModeration apiModeration = new ApiModeration();
-						apiModeration.Init(jsonObject);
-						list.Add(apiModeration);
-					}
-				}
 				if (successCallback != null)
 				{
-					successCallback(list);
+					successCallback((c as ApiModelListContainer<ApiModeration>).ResponseModels);
 				}
-			}, delegate(string message)
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
 			{
-				Debug.LogError((object)("Could not fetch moderations with error - " + message));
-				errorCallback(message);
-			});
+				Debug.LogError((object)("Could not fetch moderations with error - " + c.Error));
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<ApiModeration> responseContainer = apiModelListContainer;
+			API.SendGetRequest("auth/user/moderations", responseContainer, null, disableCache: false, 120f);
 		}
 
 		public static string ModerationTimeRangeToString(ModerationTimeRange timeRange)
@@ -225,7 +255,7 @@ namespace VRC.Core
 			case ModerationTimeRange.OneDay:
 				return "1_day_ahead";
 			default:
-				return string.Empty;
+				return "<unknown_ModerationTimeRange>";
 			}
 		}
 	}

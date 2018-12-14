@@ -30,7 +30,7 @@ namespace VRC.Core
 				{
 					eventType = eventType,
 					location = location,
-					parameters = (string.IsNullOrEmpty(detail) ? new Dictionary<string, object>() : new Dictionary<string, object>
+					parameters = (string.IsNullOrEmpty(detail) ? new Dictionary<string, string>() : new Dictionary<string, string>
 					{
 						{
 							"parameter",
@@ -42,7 +42,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void Send(ApiAnalyticEvent.EventType eventType, Dictionary<string, object> details, Vector3? location = default(Vector3?), Action<bool> completeCallback = null)
+		public static void Send(ApiAnalyticEvent.EventType eventType, Dictionary<string, string> details, Vector3? location = default(Vector3?), Action<bool> completeCallback = null)
 		{
 			Send(new ApiAnalyticEvent.EventInfo[1]
 			{

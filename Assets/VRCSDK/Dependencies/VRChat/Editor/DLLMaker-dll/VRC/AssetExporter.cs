@@ -361,10 +361,6 @@ namespace VRC
 								{
 									materials.Add(val2);
 								}
-								else
-								{
-									Object.Destroy(val2);
-								}
 							}
 						}
 					}

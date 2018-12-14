@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ComponentModel;
 using UnityEngine;
 using VRC.Core.BestHTTP;
 
@@ -35,37 +35,13 @@ namespace VRC.Core
 			Any
 		}
 
+		public const float ListCacheTime = 180f;
+
+		public const float SingleRecordCacheTime = 180f;
+
 		private static AssetVersion _VERSION = null;
 
 		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.5.0f1", 0);
-
-		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.6.3p1", 0);
-
-		protected string mName;
-
-		protected string mImageUrl;
-
-		protected string mAuthorName;
-
-		protected string mAuthorId;
-
-		protected string mAssetUrl;
-
-		protected string mDescription;
-
-		protected string mReleaseStatus;
-
-		protected List<string> mTags = new List<string>();
-
-		protected int mVersion;
-
-		protected string mUnityPackageUrl;
-
-		public string thumbnailImageUrl;
-
-		private AssetVersion mAssetVersion;
-
-		private string mPlatform;
 
 		public static AssetVersion VERSION
 		{
@@ -79,355 +55,227 @@ namespace VRC.Core
 			}
 		}
 
-		public new string id
-		{
-			get
-			{
-				return mId;
-			}
-			set
-			{
-				mId = value;
-			}
-		}
-
+		[ApiField]
 		public string name
 		{
-			get
-			{
-				return mName;
-			}
-			set
-			{
-				mName = value;
-			}
+			get;
+			set;
 		}
 
+		[ApiField]
 		public string imageUrl
 		{
-			get
-			{
-				return mImageUrl;
-			}
-			set
-			{
-				mImageUrl = value;
-			}
+			get;
+			set;
 		}
 
-		public string authorName => mAuthorName;
+		[ApiField]
+		public string authorName
+		{
+			get;
+			set;
+		}
 
-		public string authorId => mAuthorId;
+		[ApiField]
+		public string authorId
+		{
+			get;
+			set;
+		}
 
+		[ApiField]
 		public string assetUrl
 		{
-			get
-			{
-				return mAssetUrl;
-			}
-			set
-			{
-				mAssetUrl = value;
-			}
+			get;
+			set;
 		}
 
+		[ApiField]
 		public string description
 		{
-			get
-			{
-				return mDescription;
-			}
-			set
-			{
-				mDescription = value;
-			}
+			get;
+			set;
 		}
 
-		public string releaseStatus
-		{
-			get
-			{
-				return mReleaseStatus;
-			}
-			set
-			{
-				mReleaseStatus = value;
-			}
-		}
-
+		[ApiField(Required = false)]
 		public List<string> tags
 		{
-			get
-			{
-				return mTags;
-			}
-			set
-			{
-				mTags = value;
-			}
+			get;
+			set;
 		}
 
-		public int version
-		{
-			get
-			{
-				return mVersion;
-			}
-			set
-			{
-				mVersion = value;
-			}
-		}
-
+		[ApiField(Required = false)]
 		public string unityPackageUrl
 		{
-			get
-			{
-				return mUnityPackageUrl;
-			}
-			set
-			{
-				mUnityPackageUrl = value;
-			}
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string thumbnailImageUrl
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int version
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string releaseStatus
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false, IsAdminWritableOnly = true)]
+		public bool featured
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public List<string> unityPackages
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public bool unityPackageUpdated
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string unityVersion
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false, Name = "assetVersion")]
+		public int apiVersion
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int totalLikes
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int totalVisits
+		{
+			get;
+			set;
+		}
+
+		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
+		public string platform
+		{
+			get;
+			protected set;
 		}
 
 		public AssetVersion assetVersion
 		{
 			get
 			{
-				return mAssetVersion;
+				return new AssetVersion(unityVersion, apiVersion);
 			}
 			set
 			{
-				mAssetVersion = value;
+				unityVersion = value.UnityVersion;
+				apiVersion = value.ApiVersion;
 			}
 		}
 
-		public string platform
+		public ApiAvatar()
+			: base("avatars")
 		{
-			get
-			{
-				return mPlatform;
-			}
-			set
-			{
-				mPlatform = value;
-			}
-		}
-
-		public void Init(APIUser author, string name, string imageUrl, string assetUrl, string description, string releaseStatus, List<string> tags, string packageUrl = "")
-		{
-			mName = name;
-			mImageUrl = imageUrl;
-			mAssetUrl = assetUrl;
-			mDescription = description;
-			mReleaseStatus = releaseStatus;
-			mTags = tags;
-			mAuthorName = author.displayName;
-			mAuthorId = author.id;
-			mUnityPackageUrl = packageUrl;
 			UpdateVersionAndPlatform();
 		}
 
-		public void Init()
+		public override bool ShouldCache()
 		{
-			mId = string.Empty;
-			mName = string.Empty;
-			mImageUrl = string.Empty;
-			mAssetUrl = string.Empty;
-			mDescription = string.Empty;
-			mReleaseStatus = string.Empty;
-			mTags = new List<string>();
-			mAuthorName = string.Empty;
-			mAuthorId = string.Empty;
-			mVersion = -1;
-			UpdateVersionAndPlatform();
+			return base.ShouldCache() && !string.IsNullOrEmpty(assetUrl);
 		}
 
-		public void Init(Dictionary<string, object> jsonObject)
+		public override float GetLifeSpan()
 		{
-			List<string> list = new List<string>();
-			list.Add("id");
-			list.Add("name");
-			list.Add("imageUrl");
-			list.Add("authorName");
-			list.Add("authorId");
-			list.Add("assetUrl");
-			list.Add("description");
-			list.Add("releaseStatus");
-			list.Add("tags");
-			list.Add("version");
-			List<string> source = list;
-			if (source.Any((string s) => !jsonObject.ContainsKey(s)))
+			return 180f;
+		}
+
+		protected override bool ReadField(string fieldName, ref object data)
+		{
+			switch (fieldName)
 			{
-				Debug.LogError((object)("Could not initialize Avatar due to insufficient json parameters.\nMissing: " + string.Join(", ", (from s in source
-				where !jsonObject.ContainsKey(s)
-				select s).ToArray())));
-			}
-			else
-			{
-				mId = (jsonObject["id"] as string);
-				mName = (jsonObject["name"] as string);
-				mImageUrl = (jsonObject["imageUrl"] as string);
-				mAuthorName = (jsonObject["authorName"] as string);
-				mAuthorId = (jsonObject["authorId"] as string);
-				mAssetUrl = (jsonObject["assetUrl"] as string);
-				if (jsonObject.ContainsKey("unityPackageUrl"))
+			case "imageUrl":
+				if (string.IsNullOrEmpty(imageUrl))
 				{
-					mUnityPackageUrl = (jsonObject["unityPackageUrl"] as string);
+					return false;
 				}
-				mDescription = (jsonObject["description"] as string);
-				mReleaseStatus = (jsonObject["releaseStatus"] as string);
-				mTags = Tools.ObjListToStringList((List<object>)jsonObject["tags"]);
-				mVersion = (int)(double)jsonObject["version"];
-				if (jsonObject.ContainsKey("thumbnailImageUrl"))
-				{
-					thumbnailImageUrl = (jsonObject["thumbnailImageUrl"] as string);
-				}
-				string unityVersion = DefaultAssetVersion.UnityVersion;
-				if (jsonObject.ContainsKey("unityVersion"))
-				{
-					unityVersion = (jsonObject["unityVersion"] as string);
-				}
-				int result = DefaultAssetVersion.ApiVersion;
-				if (jsonObject.ContainsKey("assetVersion"))
-				{
-					string text = jsonObject["assetVersion"] as string;
-					if (string.IsNullOrEmpty(text) || !int.TryParse(text, out result))
-					{
-						Debug.LogError((object)("Invalid assetVersion string: " + text));
-					}
-				}
-				mAssetVersion = new AssetVersion(unityVersion, result);
-				mPlatform = "standalonewindows";
-				if (jsonObject.ContainsKey("platform"))
-				{
-					mPlatform = (jsonObject["platform"] as string);
-				}
+				data = imageUrl;
+				return true;
+			default:
+				return base.ReadField(fieldName, ref data);
 			}
 		}
 
-		public void UpdateVersionAndPlatform()
+		public override void Get(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
 		{
-			mAssetVersion = VERSION;
-			mPlatform = ApiModel.GetAssetPlatformString();
+			Get(compatibleVersionsOnly: true, onSuccess, onFailure, parameters, disableCache);
 		}
 
-		protected override Dictionary<string, string> BuildWebParameters()
+		public void Get(bool compatibleVersionsOnly, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
 		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["name"] = name;
-			dictionary["imageUrl"] = imageUrl;
-			dictionary["authorName"] = authorName;
-			dictionary["authorId"] = authorId;
-			dictionary["assetUrl"] = assetUrl;
-			dictionary["description"] = description;
-			dictionary["releaseStatus"] = releaseStatus;
-			dictionary["tags"] = string.Join(", ", tags.ToArray());
-			if (!string.IsNullOrEmpty(unityPackageUrl))
+			if (parameters == null)
 			{
-				dictionary["unityPackageUrl"] = unityPackageUrl;
+				parameters = new Dictionary<string, object>();
 			}
-			dictionary["unityVersion"] = mAssetVersion.UnityVersion.ToString();
-			dictionary["assetVersion"] = mAssetVersion.ApiVersion.ToString();
-			dictionary["platform"] = mPlatform;
-			return dictionary;
-		}
-
-		public void Save(bool overwrite, Action<ApiModel> onSuccess = null, Action<string> onError = null)
-		{
-			if (!APIUser.IsLoggedInWithCredentials)
-			{
-				Logger.Log("Must be logged in with account to create or edit a blueprint.");
-			}
-			else if (APIUser.CurrentUser.id != authorId)
-			{
-				Logger.LogError("Only the blueprint's author can update this blueprint.");
-			}
-			else
-			{
-				Dictionary<string, string> dictionary = BuildWebParameters();
-				dictionary["id"] = id;
-				if (overwrite)
-				{
-					ApiModel.SendPutRequest("avatars/" + id, dictionary, delegate
-					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
-					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
-				}
-				else
-				{
-					ApiModel.SendPostRequest("avatars", dictionary, delegate
-					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
-					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
-				}
-			}
-		}
-
-		public static void Fetch(string id, Action<ApiAvatar> successCallback, Action<string> errorCallback)
-		{
-			Fetch(id, compatibleVersionsOnly: true, successCallback, errorCallback);
-		}
-
-		public static void Fetch(string id, bool compatibleVersionsOnly, Action<ApiAvatar> successCallback, Action<string> errorCallback)
-		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
 			if (compatibleVersionsOnly)
 			{
-				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
-				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
-				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
-				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+				parameters["maxUnityVersion"] = VERSION.UnityVersion;
+				parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
+				parameters["maxAssetVersion"] = VERSION.ApiVersion;
+				parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
+				parameters["platform"] = API.GetAssetPlatformString();
+				base.Get(onSuccess, onFailure, parameters, disableCache);
 			}
-			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
-			ApiModel.SendRequest("avatars/" + id, HTTPMethods.Get, dictionary, delegate(Dictionary<string, object> obj)
+			else
 			{
-				ApiAvatar apiAvatar = new ApiAvatar();
-				apiAvatar.Init(obj);
-				if (successCallback != null)
-				{
-					successCallback(apiAvatar);
-				}
-			}, delegate(string message)
-			{
-				errorCallback(message);
-			}, needsAPIKey: true, Application.get_isEditor(), 180f);
+				base.Get(onSuccess, onFailure, parameters, disableCache);
+			}
 		}
 
 		public void AssignToThisUser()
 		{
-			string endpoint = "avatars/" + id + "/select";
-			ApiModel.SendPutRequest(endpoint, delegate
+			string target = "avatars/" + base.id + "/select";
+			API.SendPutRequest(target, new ApiContainer
 			{
-			}, delegate(string message)
-			{
-				Logger.Log("Could not assign current avatar" + message);
+				OnError = delegate(ApiContainer c)
+				{
+					Logger.LogError("Could not assign current avatar" + c.Error);
+				},
+				Model = this
 			});
 		}
 
-		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool bypassCache = false)
+		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool disableCache = false)
 		{
-			string endpoint = "avatars";
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			if (owner == Owner.Mine)
 			{
 				dictionary.Add("user", "me");
@@ -445,8 +293,8 @@ namespace VRC.Core
 			{
 				dictionary.Add("search", search);
 			}
-			dictionary.Add("n", number.ToString());
-			dictionary.Add("offset", offset.ToString());
+			dictionary.Add("n", number);
+			dictionary.Add("offset", offset);
 			if (heading != 0)
 			{
 				dictionary.Add("sort", heading.ToString().ToLower());
@@ -462,53 +310,71 @@ namespace VRC.Core
 			}
 			if (compatibleVersionsOnly)
 			{
-				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
-				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
-				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
-				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
+				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
+				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
+				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
 			}
-			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
-			float cacheLifetime = 180f;
-			if (bypassCache)
+			dictionary.Add("platform", API.GetAssetPlatformString());
+			ApiModelListContainer<ApiAvatar> apiModelListContainer = new ApiModelListContainer<ApiAvatar>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
-				cacheLifetime = 0f;
-			}
-			ApiModel.SendRequest(endpoint, HTTPMethods.Get, dictionary, delegate(List<object> objs)
-			{
-				List<ApiAvatar> list = new List<ApiAvatar>();
-				if (objs != null)
-				{
-					foreach (object obj in objs)
-					{
-						Dictionary<string, object> jsonObject = obj as Dictionary<string, object>;
-						ApiAvatar apiAvatar = new ApiAvatar();
-						apiAvatar.Init(jsonObject);
-						list.Add(apiAvatar);
-					}
-				}
 				if (successCallback != null)
 				{
-					successCallback(list);
+					successCallback((c as ApiModelListContainer<ApiAvatar>).ResponseModels);
 				}
-			}, delegate(string message)
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
 			{
-				Logger.Log("Could not fetch avatars with error - " + message);
-				errorCallback(message);
-			}, needsAPIKey: true, owner != Owner.Public, cacheLifetime);
+				Logger.Log("Could not fetch avatars with error - " + c.Error);
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<ApiAvatar> responseContainer = apiModelListContainer;
+			API.SendRequest("avatars", HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, owner != Owner.Public, disableCache, 180f);
 		}
 
-		public static void Delete(string id, Action successCallback, Action<string> errorCallback)
+		public override void Save(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
 		{
-			ApiModel.SendRequest("avatars/" + id, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
+			UpdateVersionAndPlatform();
+			base.Save(onSuccess, onFailure);
+		}
+
+		public void SaveReleaseStatus(Action<ApiContainer> onSuccess, Action<ApiContainer> onFailure)
+		{
+			if (string.IsNullOrEmpty(base.Endpoint))
 			{
-				if (successCallback != null)
+				Debug.LogError((object)"Cannot save to null endpoint");
+			}
+			else if (string.IsNullOrEmpty(base.id))
+			{
+				Debug.LogError((object)"Cannot save release status with no id");
+			}
+			else
+			{
+				Dictionary<string, object> dictionary = new Dictionary<string, object>();
+				dictionary.Add("id", base.id);
+				dictionary.Add("releaseStatus", releaseStatus);
+				Dictionary<string, object> parameters = dictionary;
+				Action<ApiContainer> onSuccess2 = delegate(ApiContainer c)
 				{
-					successCallback();
-				}
-			}, (Action<string>)delegate(string message)
-			{
-				errorCallback(message);
-			}, needsAPIKey: true, authenticationRequired: true, -1f);
+					ApiCache.Save(c.Model.id, c.Model, andClone: true);
+					if (onSuccess != null)
+					{
+						onSuccess(c);
+					}
+				};
+				Put(onSuccess2, onFailure, parameters);
+			}
+		}
+
+		private void UpdateVersionAndPlatform()
+		{
+			apiVersion = VERSION.ApiVersion;
+			unityVersion = VERSION.UnityVersion;
+			platform = API.GetAssetPlatformString();
 		}
 	}
 }

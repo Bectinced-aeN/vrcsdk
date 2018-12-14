@@ -29,7 +29,7 @@ public class SDKUpdater : MonoBehaviour
 		if(!isSilent)
 			EditorUtility.DisplayProgressBar("SDK Updater", "Checking for updates...", 1f);
 		
-		VRC.Core.RemoteConfig.Init(true, delegate() {
+		VRC.Core.RemoteConfig.Init(delegate() {
 			string currentSdkVersion = GetCurrentVersion();
 			string sdkVersion = VRC.Core.RemoteConfig.GetString("devSdkVersion");
 			string sdkUrl = VRC.Core.RemoteConfig.GetString("devSdkUrl");

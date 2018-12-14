@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{663278CE-4B73-40CF-9419-9EEDDCE36C2D}</ProjectGuid>
+    <ProjectGuid>{E103B84C-8632-4859-9DEB-AC58FB8BB85B}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -1003,26 +1003,38 @@
     <Compile Include="VRC.Core.BestHTTP\SupportedProtocols.cs" />
     <Compile Include="VRC.Core\AnalyticsInterface.cs" />
     <Compile Include="VRC.Core\AnalyticsSDK.cs" />
+    <Compile Include="VRC.Core\API.cs" />
     <Compile Include="VRC.Core\ApiAnalyticEvent.cs" />
     <Compile Include="VRC.Core\ApiAvatar.cs" />
-    <Compile Include="VRC.Core\ApiCachedResponse.cs" />
+    <Compile Include="VRC.Core\ApiByteContainer.cs" />
+    <Compile Include="VRC.Core\ApiCache.cs" />
+    <Compile Include="VRC.Core\ApiCacheObject.cs" />
+    <Compile Include="VRC.Core\ApiContainer.cs" />
     <Compile Include="VRC.Core\ApiCredentials.cs" />
+    <Compile Include="VRC.Core\ApiDictContainer.cs" />
+    <Compile Include="VRC.Core\ApiFieldAttribute.cs" />
     <Compile Include="VRC.Core\ApiFile.cs" />
+    <Compile Include="VRC.Core\ApiListContainer.cs" />
     <Compile Include="VRC.Core\ApiModel.cs" />
+    <Compile Include="VRC.Core\ApiModelContainer.cs" />
+    <Compile Include="VRC.Core\ApiModelListContainer.cs" />
     <Compile Include="VRC.Core\ApiModeration.cs" />
     <Compile Include="VRC.Core\ApiNotification.cs" />
+    <Compile Include="VRC.Core\ApiOnlineMode.cs" />
     <Compile Include="VRC.Core\ApiPlayerModeration.cs" />
     <Compile Include="VRC.Core\APIResponseHandler.cs" />
     <Compile Include="VRC.Core\ApiServerEnvironment.cs" />
+    <Compile Include="VRC.Core\ApiStringContainer.cs" />
     <Compile Include="VRC.Core\APIUser.cs" />
     <Compile Include="VRC.Core\ApiWorld.cs" />
+    <Compile Include="VRC.Core\ApiWorldInstance.cs" />
     <Compile Include="VRC.Core\AssetVersion.cs" />
     <Compile Include="VRC.Core\DebugLevel.cs" />
-    <Compile Include="VRC.Core\EditorAPIResponseHandler.cs" />
     <Compile Include="VRC.Core\Logger.cs" />
     <Compile Include="VRC.Core\PipelineManager.cs" />
     <Compile Include="VRC.Core\RemoteConfig.cs" />
     <Compile Include="VRC.Core\ThreadDispatcher.cs" />
+    <Compile Include="VRC.Core\UpdateDelegator.cs" />
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCProjectSettings.cs" />
     <Compile Include="VRC\HttpRequest.cs" />

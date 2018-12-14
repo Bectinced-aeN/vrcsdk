@@ -52,9 +52,10 @@ namespace VRC.Core
 				owned = Ownership.Querried;
 				if (contentType == ContentType.world)
 				{
-					ApiWorld.Fetch(testId, delegate(ApiWorld world)
+					API.Fetch<ApiWorld>(testId, delegate(ApiContainer c)
 					{
-						if (world.authorId == user.id)
+						ApiWorld apiWorld = c.Model as ApiWorld;
+						if (apiWorld.authorId == user.id)
 						{
 							owned = Ownership.Owned;
 						}
@@ -69,9 +70,10 @@ namespace VRC.Core
 				}
 				else
 				{
-					ApiAvatar.Fetch(testId, delegate(ApiAvatar avatar)
+					API.Fetch<ApiAvatar>(testId, delegate(ApiContainer c)
 					{
-						if (avatar.authorId == user.id)
+						ApiAvatar apiAvatar = c.Model as ApiAvatar;
+						if (apiAvatar.authorId == user.id)
 						{
 							owned = Ownership.Owned;
 						}

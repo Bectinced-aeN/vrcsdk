@@ -16,7 +16,7 @@ namespace VRC
 
         public static bool FutureProofPublishEnabled { get { return UnityEditor.EditorPrefs.GetBool("futureProofPublish", DefaultFutureProofPublishEnabled); } }
         public static bool DefaultFutureProofPublishEnabled { get { return !SDKClientUtilities.IsInternalSDK();  } }
-        
+
         void Update()
         {
             SignIn(false);
@@ -109,7 +109,7 @@ namespace VRC
             {
                 UnityEditor.EditorPrefs.SetString("VRC_ApiServerEnvironment", value.ToString());
 
-                ApiModel.SetApiUrlFromEnvironment(value);
+                API.SetApiUrlFromEnvironment(value);
             }
         }
 
@@ -124,6 +124,13 @@ namespace VRC
         [MenuItem("VRChat SDK/Settings")]
         public static void CreateWindow()
         {
+            if (!RemoteConfig.IsInitialized())
+            {
+                VRC.Core.API.SetOnlineMode(true, "vrchat");
+                RemoteConfig.Init(() => CreateWindow());
+                return;
+            }
+
             Init();
             window = EditorWindow.GetWindow<AccountEditorWindow>("VRChat Settings");
             window.Show();
@@ -131,9 +138,6 @@ namespace VRC
 
         public static void Init () 
         {
-            if (!RemoteConfig.IsInitialized())
-                RemoteConfig.Init();
-
             if (isInitialized)
                 return;
 
@@ -178,6 +182,8 @@ namespace VRC
 
         public static bool OnShowStatus()
         {
+            API.SetOnlineMode(true);
+
             SignIn(false);
 
             EditorGUILayout.BeginVertical();
@@ -186,8 +192,7 @@ namespace VRC
 
             if (APIUser.IsLoggedInWithCredentials)
             {
-                EditorGUILayout.PrefixLabel("Logged in as " + APIUser.CurrentUser.displayName);
-                EditorGUILayout.LabelField("Developer Status: " + APIUser.CurrentUser.developerType);
+                OnCreatorStatusGUI();
             }
 
             EditorGUILayout.EndVertical();
@@ -211,8 +216,7 @@ namespace VRC
             }
             else if (APIUser.IsLoggedInWithCredentials)
             {
-                EditorGUILayout.PrefixLabel("Logged in as " + APIUser.CurrentUser.displayName);
-                EditorGUILayout.LabelField("Developer Status: " + APIUser.CurrentUser.developerType);
+                OnCreatorStatusGUI();
 
                 if (GUILayout.Button("Logout"))
                 {
@@ -242,7 +246,7 @@ namespace VRC
             }
 
             {
-                if (APIUser.CurrentUser == null || APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
+                if (APIUser.CurrentUser == null || APIUser.CurrentUser.hasSuperPowers)
                 {
                     EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
 
@@ -294,6 +298,32 @@ namespace VRC
             return true;
         }
 
+        static void OnCreatorStatusGUI()
+        {
+            EditorGUILayout.LabelField("Logged in as:", APIUser.CurrentUser.displayName);
+
+            if (SDKClientUtilities.IsInternalSDK())
+                EditorGUILayout.LabelField("Developer Status: ", APIUser.CurrentUser.developerType.ToString());
+
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField("World Creator Status: ", APIUser.CurrentUser.canPublishWorlds ? "Allowed to publish worlds" : "Not yet allowed to publish worlds");
+            EditorGUILayout.LabelField("Avatar Creator Status: ", APIUser.CurrentUser.canPublishAvatars ? "Allowed to publish avatars" : "Not yet allowed to publish avatars");
+            EditorGUILayout.EndVertical();
+
+            if (!APIUser.CurrentUser.canPublishAllContent)
+            {
+                if (GUILayout.Button("More Info..."))
+                {
+                    VRC_SdkControlPanel.ShowContentPublishPermissionsDialog(); 
+                }
+            }
+            
+
+            EditorGUILayout.EndHorizontal();
+        }
+
         void OnGUI ()
         {
             if (VRC.Core.RemoteConfig.IsInitialized())
@@ -310,9 +340,10 @@ namespace VRC
                         EditorGUILayout.LabelField("You are using the correct Unity version: " + sdkUnityVersion);
                 }
             }
-            else if (VRC.Core.RemoteConfig.HasCachedConfig())
+            else
             {
-                VRC.Core.RemoteConfig.Init(false);
+                VRC.Core.API.SetOnlineMode(true, "vrchat");
+                VRC.Core.RemoteConfig.Init();
             }
 
             OnAccountGUI();
@@ -357,6 +388,15 @@ namespace VRC
                     storedUsername = username;
                     storedPassword = password;
                     AnalyticsSDK.LoggedInUserChanged(user);
+
+                    if (!APIUser.CurrentUser.canPublishAllContent)
+                    {
+                        if (UnityEditor.SessionState.GetString("HasShownContentPublishPermissionsDialogForUser", "") != user.id)
+                        {
+                            UnityEditor.SessionState.SetString("HasShownContentPublishPermissionsDialogForUser", user.id);
+                            VRC_SdkControlPanel.ShowContentPublishPermissionsDialog();
+                        } 
+                    }
                 },
                 delegate (string message)
                 {

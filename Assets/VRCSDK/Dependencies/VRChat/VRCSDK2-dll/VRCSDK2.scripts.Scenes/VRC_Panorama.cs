@@ -40,6 +40,7 @@ namespace VRCSDK2.scripts.Scenes
 
 		private void Start()
 		{
+			renderer = this.GetComponent<Renderer>();
 			data = this.GetComponent<VRC_DataStorage>();
 			for (int i = 0; i < data.data.Length; i++)
 			{

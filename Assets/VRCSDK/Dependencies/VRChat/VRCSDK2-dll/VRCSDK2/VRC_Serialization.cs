@@ -464,6 +464,22 @@ namespace VRCSDK2
 			return new object[0];
 		}
 
+		private static string GetGameObjectPathFallback(GameObject go)
+		{
+			string text = string.Empty;
+			while (go != null)
+			{
+				text = ((!(text == string.Empty)) ? (go.get_name() + "/" + text) : go.get_name());
+				if (go.get_transform().get_parent() == null)
+				{
+					text = "/" + text;
+					break;
+				}
+				go = go.get_transform().get_parent().get_gameObject();
+			}
+			return text;
+		}
+
 		private static string GetGameObjectPath(GameObject go)
 		{
 			VRC_EventDispatcher dispatcher = Dispatcher;
@@ -471,7 +487,7 @@ namespace VRCSDK2
 			{
 				return dispatcher.GetGameObjectPath(go);
 			}
-			return VRC_EventDispatcherLocal.GetGameObjectPathFallback(go);
+			return GetGameObjectPathFallback(go);
 		}
 
 		private static GameObject FindGameObject(string path)
@@ -481,7 +497,7 @@ namespace VRCSDK2
 			{
 				return dispatcher.FindGameObject(path, suppressErrors: true);
 			}
-			return VRC_EventDispatcherLocal.FindGameObjectFallback(path);
+			return GameObject.Find(path);
 		}
 	}
 }

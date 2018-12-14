@@ -30,6 +30,10 @@ namespace VRCSDK2
 
 		public static Action<VRC_ObjectSync, bool> SetIsKinematic;
 
+		public bool PlaymakerSyncState;
+
+		public bool PlaymakerSyncVariables = true;
+
 		public int NetworkID
 		{
 			get;

@@ -65,11 +65,11 @@ namespace VRCSDK2
             APIUser.Login(
                 delegate (APIUser user)
                 {
-                    pipelineManager.user = user;
                     UserLoggedInCallback(user);
                 },
                 delegate (string err)
                 {
+                    VRC.Core.Logger.LogError("Could not log in - " + err, DebugLevel.Always);
                     blueprintPanel.SetActive(false);
                     errorPanel.SetActive(true);
                 }
@@ -80,15 +80,17 @@ namespace VRCSDK2
         {
             pipelineManager.user = user;
 
-            ApiWorld.Fetch(pipelineManager.blueprintId, false,
-                delegate (ApiWorld world)
+            API.Fetch<ApiWorld>(pipelineManager.blueprintId, 
+                (c) =>
                 {
-                    worldRecord = world;
+                    Debug.Log("<color=magenta>Updating an existing world.</color>");
+                    worldRecord = c.Model as ApiWorld;
                     pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(worldRecord.authorId);
                     SetupUI();
                 },
-                delegate (string message)
+                (c) =>
                 {
+                    Debug.Log("<color=magenta>World record not found, creating a new world.</color>");
                     worldRecord = new ApiWorld { capacity = 8 };
                     pipelineManager.completedSDKPipeline = false;
                     worldRecord.id = pipelineManager.blueprintId;
@@ -98,16 +100,16 @@ namespace VRCSDK2
 
         void SetupUI()
         {
-			if(APIUser.CurrentUser.developerType < APIUser.DeveloperType.Trusted)
-			{
-				contentFeatured.gameObject.SetActive(false);
-				contentSDKExample.gameObject.SetActive(false);
-			}
-			else
-			{
-				contentFeatured.gameObject.SetActive(true);
-				contentSDKExample.gameObject.SetActive(true);
-			}
+            if (!ValidateAssetBundleBlueprintID(worldRecord.id))
+            {
+                blueprintPanel.SetActive(false);
+                errorPanel.SetActive(true);
+                OnSDKPipelineError("The asset bundle is out of date.  Please rebuild the scene using 'New Build'.", "The blueprint ID in the scene does not match the id in the asset bundle.");
+                return;
+            }
+
+			contentFeatured.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
+			contentSDKExample.gameObject.SetActive(APIUser.CurrentUser.hasSuperPowers);
 
             if(APIUser.Exists(pipelineManager.user))
             {
@@ -129,7 +131,7 @@ namespace VRCSDK2
                     liveBpImage.enabled = !isUpdate;
                     bpImage.enabled = isUpdate;
 
-                    if (APIUser.CurrentUser.developerType < APIUser.DeveloperType.Trusted)
+                    if (!APIUser.CurrentUser.hasSuperPowers)
                     {
                         releasePublic.gameObject.SetActive(false);
                         releasePublic.isOn = false;
@@ -146,7 +148,7 @@ namespace VRCSDK2
                     }
 
                     // "show in worlds menu"
-                    if (APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
+                    if (APIUser.CurrentUser.hasSuperPowers)
                     {
                         showInWorldsMenuGroup.gameObject.SetActive(true);
                         showInActiveWorlds.isOn = !worldRecord.tags.Contains("admin_hide_active");
@@ -177,7 +179,7 @@ namespace VRCSDK2
                 blueprintPanel.SetActive(false);
                 errorPanel.SetActive(false);
 
-				if (APIUser.CurrentUser.developerType < APIUser.DeveloperType.Trusted)
+				if (!APIUser.CurrentUser.hasSuperPowers)
                 {
                     releasePublic.gameObject.SetActive(false);
                     releasePublic.isOn = false;
@@ -199,7 +201,7 @@ namespace VRCSDK2
             string abPath = UnityEditor.EditorPrefs.GetString("currentBuildingAssetBundlePath");
 
             string pluginPath = "";
-            if(APIUser.CurrentUser.developerType >= APIUser.DeveloperType.Trusted)
+            if(APIUser.CurrentUser.hasScriptingAccess)
                 pluginPath = UnityEditor.EditorPrefs.GetString("externalPluginPath");
 
 
@@ -216,9 +218,13 @@ namespace VRCSDK2
             UnityEditor.EditorPrefs.SetBool("VRCSDK2_content_sdk_example", contentSDKExample.isOn);
 
             if (string.IsNullOrEmpty(worldRecord.id))
-                Debug.LogError("world export is happening without an ID.");
+            {
+                pipelineManager.AssignId();
+                worldRecord.id = pipelineManager.blueprintId;
+            }
+
             string blueprintId = worldRecord.id;
-            int version = isUpdate ? worldRecord.version+1 : 1;
+            int version = Mathf.Max(1, worldRecord.version + 1);
             PrepareVRCPathForS3(abPath, blueprintId, version, ApiWorld.VERSION);
 
 			if(!string.IsNullOrEmpty(pluginPath) && System.IO.File.Exists(pluginPath))
@@ -293,7 +299,7 @@ namespace VRCSDK2
         private string GetFriendlyWorldFileName(string type)
         {
             return "World - " + blueprintName.text + " - " + type + " - " + Application.unityVersion + "_" + ApiWorld.VERSION.ApiVersion +
-                   "_" + ApiModel.GetAssetPlatformString() + "_" + ApiModel.GetServerEnvironmentForApiUrl();
+                   "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl();
         }
 
         List<string> BuildTags()
@@ -308,7 +314,7 @@ namespace VRCSDK2
             if (contentOther.isOn)
                 tags.Add("content_other");
 
-            if(APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
+            if(APIUser.CurrentUser.hasSuperPowers)
             {
                 if(contentFeatured.isOn)
                     tags.Add("content_featured");
@@ -317,7 +323,7 @@ namespace VRCSDK2
             }
 
             // "show in worlds menu"
-            if (APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
+            if (APIUser.CurrentUser.hasSuperPowers)
             {
                 if (!showInActiveWorlds.isOn)
                     tags.Add("admin_hide_active");
@@ -335,43 +341,43 @@ namespace VRCSDK2
             yield return StartCoroutine(UpdateImage(isUpdate ? worldRecord.imageUrl : "", GetFriendlyWorldFileName("Image")));
 
             SetUploadProgress("Saving Blueprint to user", "Almost finished!!", 0.0f);
-            ApiWorld world = new ApiWorld();
-            world.Init(
-                pipelineManager.user,
-                blueprintName.text,
-                cloudFrontImageUrl,
-                cloudFrontAssetUrl,
-                blueprintDescription.text,
-                (releasePublic.isOn) ? ("public") : ("private"),
-                System.Convert.ToInt16( worldCapacity.text ),
-                BuildTags(), 
-                0, 
-                cloudFrontPluginUrl,
-				cloudFrontUnityPackageUrl
-                );
-            world.id = pipelineManager.blueprintId;
+            ApiWorld world = new ApiWorld
+            {
+                id = worldRecord.id,
+                authorName = pipelineManager.user.displayName,
+                authorId = pipelineManager.user.id,
+                name = blueprintName.text,
+                imageUrl = cloudFrontImageUrl,
+                assetUrl = cloudFrontAssetUrl,
+                unityPackageUrl = cloudFrontUnityPackageUrl,
+                pluginUrl = cloudFrontPluginUrl,
+                description = blueprintDescription.text,
+                tags = BuildTags(),
+                releaseStatus = (releasePublic.isOn) ? ("public") : ("private"),
+                capacity = System.Convert.ToInt16(worldCapacity.text),
+                occupants = 0,
+                shouldAddToAuthor = true
+            };
 
-            if(APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
+            if (APIUser.CurrentUser.hasScriptingAccess && UnityEditor.EditorPrefs.HasKey("pluginNamespace"))
+                world.scriptNamespace = UnityEditor.EditorPrefs.GetString("pluginNamespace");
+
+            if (APIUser.CurrentUser.hasSuperPowers)
                 world.isCurated = contentFeatured.isOn || contentSDKExample.isOn;
             else
                 world.isCurated = false;
 
             bool doneUploading = false;
-            world.SaveAndAddToUser( false, 
-                delegate(ApiModel model)
+            world.Post(
+                (c) =>
                 {
-                    ApiWorld savedBP = (ApiWorld)model;
-                    // pipelineManager.blueprintId = savedBP.id;
+                    ApiWorld savedBP = (ApiWorld)c.Model;
+                    pipelineManager.blueprintId = savedBP.id;
                     UnityEditor.EditorPrefs.SetString("blueprintID-" + pipelineManager.GetInstanceID().ToString(), savedBP.id);
                     Debug.Log("Setting blueprintID on pipeline manager and editor prefs");
-                    AnalyticsSDK.WorldUploaded(model, false);
                     doneUploading = true;
                 },
-                delegate(string error)
-                {
-                    Debug.LogError(error);
-                    doneUploading = true;
-                });
+                (c) => { doneUploading = true; Debug.LogError(c.Error); });
 
             while(!doneUploading)
                 yield return null;
@@ -389,8 +395,9 @@ namespace VRCSDK2
             worldRecord.tags = BuildTags();
             worldRecord.releaseStatus = (releasePublic.isOn) ? ("public") : ("private");
 			worldRecord.unityPackageUrl = cloudFrontUnityPackageUrl;
-			worldRecord.UpdateVersionAndPlatform();
             worldRecord.isCurated = contentFeatured.isOn || contentSDKExample.isOn;
+            if (UnityEditor.EditorPrefs.HasKey("pluginNamespace"))
+                worldRecord.scriptNamespace = UnityEditor.EditorPrefs.GetString("pluginNamespace");
 
             if (shouldUpdateImageToggle.isOn)
             {
@@ -398,20 +405,12 @@ namespace VRCSDK2
 
                 worldRecord.imageUrl = cloudFrontImageUrl;
                 SetUploadProgress("Saving Blueprint", "Almost finished!!", 0.0f);
-                worldRecord.Save(true, delegate (ApiModel model)
-                {
-                    AnalyticsSDK.WorldUploaded(model, true);
-                    doneUploading = true;
-                });
+                worldRecord.Save((c) => doneUploading = true, (c) => { doneUploading = true; Debug.LogError(c.Error); });
             }
             else
             {
                 SetUploadProgress("Saving Blueprint", "Almost finished!!", 0.0f);
-                worldRecord.Save(true, delegate (ApiModel model)
-                {
-                    AnalyticsSDK.WorldUploaded(model, true);
-                    doneUploading = true;
-                });
+                worldRecord.Save((c) => doneUploading = true, (c) => { doneUploading = true; Debug.LogError(c.Error); });
             }
 
             while (!doneUploading)

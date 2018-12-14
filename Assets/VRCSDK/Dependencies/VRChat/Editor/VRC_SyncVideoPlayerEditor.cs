@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 
 [CustomPropertyDrawer(typeof(VRCSDK2.VRC_SyncVideoPlayer.VideoEntry))]
 public class CustomVideoEntryDrawer : PropertyDrawer
@@ -66,21 +67,33 @@ public class CustomVideoEntryDrawer : PropertyDrawer
 [CustomEditor(typeof(VRCSDK2.VRC_SyncVideoPlayer))]
 public class SyncVideoPlayerEditor : Editor
 {
+    ReorderableList sourceList;
+
     public override void OnInspectorGUI()
     {
-        SerializedProperty videos = serializedObject.FindProperty("Videos");
+        SerializedProperty searchRoot = serializedObject.FindProperty("VideoSearchRoot");
+        EditorGUILayout.PropertyField(searchRoot);
 
-        videos.arraySize = EditorGUILayout.DelayedIntField("Playlist Count", videos.arraySize);
+        EditorGUILayout.Space();
 
-        if (videos.arraySize <= 0)
-            return;
-
-        for (int idx = 0; idx < videos.arraySize; ++idx)
-        {
-            EditorGUILayout.PropertyField(videos.GetArrayElementAtIndex(idx));
-            EditorGUILayout.Space();
-        }
+        sourceList.DoLayoutList();
 
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private void OnEnable()
+    {
+        SerializedProperty videos = serializedObject.FindProperty("Videos");
+        sourceList = new ReorderableList(serializedObject, videos);
+        sourceList.drawElementCallback += (Rect rect, int index, bool active, bool focused) =>
+        {
+            EditorGUI.PropertyField(rect, serializedObject.FindProperty("Videos").GetArrayElementAtIndex(index));
+        };
+        sourceList.elementHeightCallback += (int index) =>
+        {
+            SerializedProperty element = serializedObject.FindProperty("Videos").GetArrayElementAtIndex(index);
+            return EditorGUI.GetPropertyHeight(element);
+        };
+        sourceList.drawHeaderCallback = (Rect rect) => EditorGUI.LabelField(rect, "Videos");
     }
 }

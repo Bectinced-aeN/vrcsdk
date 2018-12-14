@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using VRC.Core.BestHTTP;
 
 namespace VRC.Core
 {
@@ -16,133 +15,176 @@ namespace VRC.Core
 			Unmute
 		}
 
-		public ModerationType moderationType;
+		public const float ListCacheTime = 120f;
 
-		public string moderatorUserId;
-
-		public string moderatorDisplayName;
-
-		public string targetUserId;
-
-		public string targetDisplayName;
-
-		public void Init(Dictionary<string, object> jsonObject)
+		[ApiField(Required = false, Name = "type")]
+		public ModerationType moderationType
 		{
-			mId = (jsonObject["id"] as string);
-			if (jsonObject.ContainsKey("type"))
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string moderatorUserId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string moderatorDisplayName
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string targetUserId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string targetDisplayName
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string sourceUserId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string sourceDisplayName
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime created
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string moderated
+		{
+			get;
+			set;
+		}
+
+		public ApiPlayerModeration()
+			: base("auth/user/playermoderations")
+		{
+		}
+
+		public override bool ShouldCache()
+		{
+			return false;
+		}
+
+		protected override bool ReadField(string fieldName, ref object data)
+		{
+			switch (fieldName)
 			{
-				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((jsonObject["type"] as string).ToLower());
-				moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value);
-			}
-			if (jsonObject.ContainsKey("sourceUserId"))
-			{
-				moderatorUserId = (jsonObject["sourceUserId"] as string);
-			}
-			if (jsonObject.ContainsKey("sourceDisplayName"))
-			{
-				moderatorDisplayName = (jsonObject["sourceDisplayName"] as string);
-			}
-			if (jsonObject.ContainsKey("moderatorUserId"))
-			{
-				moderatorUserId = (jsonObject["moderatorUserId"] as string);
-			}
-			if (jsonObject.ContainsKey("moderatorDisplayName"))
-			{
-				moderatorDisplayName = (jsonObject["moderatorDisplayName"] as string);
-			}
-			if (jsonObject.ContainsKey("targetUserId"))
-			{
-				targetUserId = (jsonObject["targetUserId"] as string);
-			}
-			if (jsonObject.ContainsKey("targetDisplayName"))
-			{
-				targetDisplayName = (jsonObject["targetDisplayName"] as string);
+			case "type":
+				data = moderationType.ToString().ToLower();
+				return true;
+			default:
+				return base.ReadField(fieldName, ref data);
 			}
 		}
 
-		public void Init(ApiPlayerModeration from)
+		protected override bool WriteField(string fieldName, object data)
 		{
-			mId = from.mId;
-			moderationType = from.moderationType;
-			moderatorUserId = from.moderatorUserId;
-			moderatorDisplayName = from.moderatorDisplayName;
-			targetUserId = from.targetUserId;
-			targetDisplayName = from.targetDisplayName;
+			switch (fieldName)
+			{
+			case "type":
+			{
+				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((data as string).ToLower());
+				moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value);
+				return true;
+			}
+			default:
+				return base.WriteField(fieldName, data);
+			}
 		}
 
 		public static void SendModeration(string targetUserId, ModerationType mType, Action<ApiPlayerModeration> successCallback = null, Action<string> errorCallback = null)
 		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["type"] = mType.ToString().ToLower();
-			dictionary["moderated"] = targetUserId.ToString();
-			ApiModel.SendPostRequest("auth/user/playermoderations", dictionary, delegate(Dictionary<string, object> obj)
+			ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
+			apiPlayerModeration.targetUserId = targetUserId;
+			apiPlayerModeration.moderationType = mType;
+			ApiPlayerModeration apiPlayerModeration2 = apiPlayerModeration;
+			apiPlayerModeration2.Save(delegate(ApiContainer c)
 			{
-				ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
-				apiPlayerModeration.Init(obj);
 				if (successCallback != null)
 				{
-					successCallback(apiPlayerModeration);
+					successCallback(c.Model as ApiPlayerModeration);
 				}
-			}, delegate(string obj)
+			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(obj);
+					errorCallback(c.Error);
 				}
 			});
 		}
 
 		public static void DeleteModeration(string moderationId, Action successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendRequest("auth/user/playermoderations/" + moderationId, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
+			API.Delete<ApiPlayerModeration>(moderationId, delegate
 			{
 				if (successCallback != null)
 				{
 					successCallback();
 				}
-			}, (Action<string>)delegate(string obj)
+			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(obj);
+					errorCallback(c.Error);
 				}
-			}, needsAPIKey: true, authenticationRequired: true, -1f);
+			});
 		}
 
-		public static void FetchAllAgainstMe(Action<List<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
+		public static void FetchAllAgainstMe(Action<List<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
 		{
 			FetchList("auth/user/playermoderated", successCallback, errorCallback);
 		}
 
-		public static void FetchAllMine(Action<List<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
+		public static void FetchAllMine(Action<List<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
 		{
 			FetchList("auth/user/playermoderations", successCallback, errorCallback);
 		}
 
 		private static void FetchList(string endpoint, Action<List<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
 		{
-			ApiModel.SendGetRequest(endpoint, delegate(List<object> objects)
+			ApiModelListContainer<ApiPlayerModeration> apiModelListContainer = new ApiModelListContainer<ApiPlayerModeration>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
-				List<ApiPlayerModeration> list = new List<ApiPlayerModeration>();
-				if (objects != null)
-				{
-					foreach (object @object in objects)
-					{
-						Dictionary<string, object> jsonObject = @object as Dictionary<string, object>;
-						ApiPlayerModeration apiPlayerModeration = new ApiPlayerModeration();
-						apiPlayerModeration.Init(jsonObject);
-						list.Add(apiPlayerModeration);
-					}
-				}
 				if (successCallback != null)
 				{
-					successCallback(list);
+					successCallback((c as ApiModelListContainer<ApiPlayerModeration>).ResponseModels);
 				}
-			}, delegate(string message)
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
 			{
-				Debug.LogError((object)("Could not fetch moderations with error - " + message));
-				errorCallback(message);
-			});
+				Debug.LogError((object)("Could not fetch moderations with error - " + c.Error));
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<ApiPlayerModeration> responseContainer = apiModelListContainer;
+			API.SendGetRequest(endpoint, responseContainer, null, disableCache: false, 120f);
 		}
 	}
 }

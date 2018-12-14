@@ -41,7 +41,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 	{
 		if (!RemoteConfig.IsInitialized())
 		{
-			RemoteConfig.Init(true, (Action)null, (Action)null);
+			RemoteConfig.Init((Action)null, (Action)null);
 		}
 		if (!APIUser.get_IsLoggedInWithCredentials() && ApiCredentials.Load())
 		{
@@ -85,18 +85,18 @@ public class VRC_SdkBuilder : MonoBehaviour
 	private static void ExportCurrentAvatarResource(GameObject avatarResource = null)
 	{
 		//IL_009b: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00dd: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00ee: Unknown result type (might be due to invalid IL or missing references)
-		//IL_015b: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01ae: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01b3: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01b5: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01ba: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01ce: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01d0: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01d6: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0215: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0217: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00ed: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00fe: Unknown result type (might be due to invalid IL or missing references)
+		//IL_016b: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01be: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01c3: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01c5: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01ca: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01de: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01e0: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01e6: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0225: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0227: Unknown result type (might be due to invalid IL or missing references)
 		if (avatarResource != null)
 		{
 			Selection.set_activeObject(avatarResource);
@@ -125,6 +125,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 					{
 						component2.AssignId();
 					}
+					EditorPrefs.SetString("lastBuiltAssetBundleBlueprintID", component2.blueprintId);
 					EditorUtility.SetDirty(component2);
 					EditorSceneManager.MarkSceneDirty(component2.get_gameObject().get_scene());
 					EditorSceneManager.SaveScene(component2.get_gameObject().get_scene());
@@ -197,7 +198,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 				}
 				else
 				{
-					EditorPrefs.DeleteKey("externalPluginPath");
+					CustomDLLMaker.ClearSavedPluginPrefs();
 				}
 				if (shouldBuildUnityPackage)
 				{
@@ -315,14 +316,14 @@ public class VRC_SdkBuilder : MonoBehaviour
 			{
 				if (!APIUser.get_CurrentUser().get_hasScriptingAccess() && CustomDLLMaker.CustomScriptsAvailable())
 				{
-					EditorPrefs.DeleteKey("externalPluginPath");
+					CustomDLLMaker.ClearSavedPluginPrefs();
 				}
 				EditorAssemblies.AddOnAssemblyReloadCallback("CustomDLLMaker", "Cleanup");
 				EditorAssemblies.AddOnAssemblyReloadCallback("VRC.AssetExporter", "LaunchSceneBlueprintUploader");
 			}
 			else
 			{
-				EditorPrefs.DeleteKey("externalPluginPath");
+				CustomDLLMaker.ClearSavedPluginPrefs();
 				AssetExporter.LaunchSceneBlueprintUploader();
 			}
 		}
@@ -331,7 +332,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 			AssetExporter.CleanupTmpFiles();
 			EditorAssemblies.ClearAssemblyReloadCallbacks();
 			throw ex;
-			IL_008c:;
+			IL_0082:;
 		}
 	}
 
@@ -362,8 +363,8 @@ public class VRC_SdkBuilder : MonoBehaviour
 	public static bool ExportSceneResource()
 	{
 		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-		//IL_003e: Unknown result type (might be due to invalid IL or missing references)
-		//IL_004f: Unknown result type (might be due to invalid IL or missing references)
+		//IL_004e: Unknown result type (might be due to invalid IL or missing references)
+		//IL_005f: Unknown result type (might be due to invalid IL or missing references)
 		PipelineManager[] array = Object.FindObjectsOfType<PipelineManager>();
 		if (array.Length > 0)
 		{
@@ -373,6 +374,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 			{
 				val.AssignId();
 			}
+			EditorPrefs.SetString("lastBuiltAssetBundleBlueprintID", val.blueprintId);
 			EditorUtility.SetDirty(array[0]);
 			EditorSceneManager.MarkSceneDirty(val.get_gameObject().get_scene());
 			EditorSceneManager.SaveScene(val.get_gameObject().get_scene());
@@ -382,6 +384,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 			ExportCurrentSceneResourceWithPlugin();
 			return true;
 		}
+		CustomDLLMaker.ClearSavedPluginPrefs();
 		AssetExporter.ExportCurrentSceneResource();
 		return false;
 	}

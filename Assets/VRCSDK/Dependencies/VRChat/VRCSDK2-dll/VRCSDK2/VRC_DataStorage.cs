@@ -8,7 +8,6 @@ namespace VRCSDK2
 		public enum VrcDataMirror
 		{
 			None,
-			Rain,
 			Animator,
 			SerializeComponent
 		}

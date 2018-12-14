@@ -30,6 +30,7 @@ public class CustomDLLMaker
 
 	public static void PrepareSceneForExport()
 	{
+		EditorPrefs.DeleteKey("pluginNamespace");
 		if (CustomScriptsAvailable())
 		{
 			CopyAndOpenCurrentScene();
@@ -41,6 +42,7 @@ public class CustomDLLMaker
 
 	public static void CopyAvatarSceneAndBuildPlugin()
 	{
+		EditorPrefs.DeleteKey("pluginNamespace");
 		if (CustomScriptsAvailable())
 		{
 			EditorAssemblies.AddOnAssemblyReloadCallback("CustomDLLMaker", "SwapScripts");
@@ -360,6 +362,12 @@ public class CustomDLLMaker
 		{
 			Debug.LogError((object)("Error Migrating Monobehaviours - " + ex.Message + "\n" + ex.StackTrace));
 		}
+	}
+
+	public static void ClearSavedPluginPrefs()
+	{
+		EditorPrefs.DeleteKey("externalPluginPath");
+		EditorPrefs.DeleteKey("lastExternalPluginPath");
 	}
 
 	private static void MigrateObjectToNamespacedObject(object o, object nO, string namespaceName, Dictionary<GameObject, GameObject> prefabMap, Dictionary<Component, Component> componentMap)
@@ -762,9 +770,7 @@ public class CustomDLLMaker
 
 	public static void CreateDirectories()
 	{
-		//IL_0038: Unknown result type (might be due to invalid IL or missing references)
-		//IL_003e: Invalid comparison between Unknown and I4
-		if (!DoesScriptDirExist() && APIUser.get_CurrentUser() != null && APIUser.get_CurrentUser().get_developerType().HasValue && (int)APIUser.get_CurrentUser().get_developerType().Value >= 1)
+		if (!DoesScriptDirExist() && APIUser.get_CurrentUser() != null && !APIUser.get_CurrentUser().get_hasNoPowers())
 		{
 			Directory.CreateDirectory(SOURCE_FULL_PATH);
 			AssetDatabase.Refresh();

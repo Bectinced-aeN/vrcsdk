@@ -23,7 +23,8 @@ namespace VRCSDK2
 		public enum VRChatWorld
 		{
 			None,
-			Hub
+			Hub,
+			Home
 		}
 
 		public delegate void InitializationDelegate(VRC_PortalMarker obj);

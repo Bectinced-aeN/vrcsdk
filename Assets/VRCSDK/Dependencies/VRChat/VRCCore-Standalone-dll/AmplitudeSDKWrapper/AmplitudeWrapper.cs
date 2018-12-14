@@ -35,7 +35,7 @@ namespace AmplitudeSDKWrapper
 
 		private const int EVENT_UPLOAD_PERIOD_MILLISECONDS = 30000;
 
-		private const long MIN_TIME_BETWEEN_SESSIONS_MILLIS = 120000L;
+		private const long MIN_TIME_BETWEEN_SESSIONS_MILLIS = 1800000L;
 
 		private const long SESSION_TIMEOUT_MILLIS = 1800000L;
 
@@ -139,7 +139,6 @@ namespace AmplitudeSDKWrapper
 			{
 				throw new ArgumentException("apiKey must not be null or empty");
 			}
-			ThreadDispatcher.Initialize();
 			httpQueue = new LimitedConcurrencyLevelTaskScheduler(1);
 			logQueue = new LimitedConcurrencyLevelTaskScheduler(1);
 			dbHelper = new DatabaseHelper();
@@ -431,7 +430,7 @@ namespace AmplitudeSDKWrapper
 				}
 				else
 				{
-					ThreadDispatcher.DispatchToMain(delegate
+					UpdateDelegator.Dispatch(delegate
 					{
 						HTTPRequest hTTPRequest = new HTTPRequest(new Uri("https://api.amplitude.com/httpapi"), HTTPMethods.Post, delegate(HTTPRequest req, HTTPResponse resp)
 						{
@@ -516,7 +515,7 @@ namespace AmplitudeSDKWrapper
 				if (!sessionOpen)
 				{
 					long num = settings.Get<long>("lastEventTime");
-					if (timestamp - num < 120000)
+					if (timestamp - num < 1800000)
 					{
 						long num2 = settings.Get<long>("previousSessionId");
 						if (num2 <= 0)

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{E6E5F984-3D17-4372-A511-5B1BFE9E6E8A}</ProjectGuid>
+    <ProjectGuid>{7B1BB969-BD0E-4C46-9E8D-4C344CFF1ACA}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -64,6 +64,7 @@
     <Compile Include="VRCSDK2\VRC_AudioBank.cs" />
     <Compile Include="VRCSDK2\VRC_AvatarDescriptor.cs" />
     <Compile Include="VRCSDK2\VRC_AvatarPedestal.cs" />
+    <Compile Include="VRCSDK2\VRC_AvatarVariations.cs" />
     <Compile Include="VRCSDK2\VRC_Behaviour.cs" />
     <Compile Include="VRCSDK2\VRC_CombatSystem.cs" />
     <Compile Include="VRCSDK2\VRC_CustomRendererBehaviour.cs" />
@@ -74,9 +75,11 @@
     <Compile Include="VRCSDK2\VRC_EventDispatcherLocal.cs" />
     <Compile Include="VRCSDK2\VRC_EventHandler.cs" />
     <Compile Include="VRCSDK2\VRC_GunStats.cs" />
+    <Compile Include="VRCSDK2\VRC_IKFollower.cs" />
     <Compile Include="VRCSDK2\VRC_Interactable.cs" />
     <Compile Include="VRCSDK2\VRC_JukeBox.cs" />
     <Compile Include="VRCSDK2\VRC_KeyEvents.cs" />
+    <Compile Include="VRCSDK2\VRC_Label.cs" />
     <Compile Include="VRCSDK2\VRC_MetadataListener.cs" />
     <Compile Include="VRCSDK2\VRC_MirrorCamera.cs" />
     <Compile Include="VRCSDK2\VRC_MirrorReflection.cs" />
@@ -92,7 +95,6 @@
     <Compile Include="VRCSDK2\VRC_PortalMarker.cs" />
     <Compile Include="VRCSDK2\VRC_PropApi.cs" />
     <Compile Include="VRCSDK2\VRC_PropController.cs" />
-    <Compile Include="VRCSDK2\VRC_RainObject.cs" />
     <Compile Include="VRCSDK2\VRC_SceneDescriptor.cs" />
     <Compile Include="VRCSDK2\VRC_SceneResetPosition.cs" />
     <Compile Include="VRCSDK2\VRC_SceneSmoothShift.cs" />

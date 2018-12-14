@@ -6,7 +6,7 @@ using UnityEngine.Video;
 namespace VRCSDK2
 {
 	[RequireComponent(typeof(VideoPlayer))]
-	public class VRC_SyncVideoPlayer : MonoBehaviour, IVRCEventProvider
+	public class VRC_SyncVideoPlayer : MonoBehaviour, INetworkID, IVRCEventProvider
 	{
 		[Serializable]
 		public class VideoEntry
@@ -34,6 +34,10 @@ namespace VRCSDK2
 			}
 		}
 
+		public bool AllowNonOwnerControl = true;
+
+		public string VideoSearchRoot = "youtube.com";
+
 		public VideoEntry[] Videos = new VideoEntry[1];
 
 		public static Action<VRC_SyncVideoPlayer> _Play;
@@ -59,6 +63,13 @@ namespace VRCSDK2
 		public static Action<VRC_SyncVideoPlayer> _SpeedDown;
 
 		public static Action<VRC_SyncVideoPlayer> Initialize;
+
+		[HideInInspector]
+		public int NetworkID
+		{
+			get;
+			set;
+		}
 
 		public VRC_SyncVideoPlayer()
 			: this()

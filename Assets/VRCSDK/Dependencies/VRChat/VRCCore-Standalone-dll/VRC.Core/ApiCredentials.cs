@@ -28,15 +28,18 @@ namespace VRC.Core
 			return true;
 		}
 
-		public static void SetUser(string user, string pass)
+		public static void SetUser(string user, string pass, bool save = true)
 		{
 			username = user;
 			password = pass;
 			webCredentials = new Credentials(AuthenticationTypes.Basic, username, password);
 			authToken = null;
-			SecurePlayerPrefs.SetString("username", username, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("password", password, "vl9u1grTnvXA");
-			PlayerPrefs.Save();
+			if (save)
+			{
+				SecurePlayerPrefs.SetString("username", username, "vl9u1grTnvXA");
+				SecurePlayerPrefs.SetString("password", password, "vl9u1grTnvXA");
+				PlayerPrefs.Save();
+			}
 		}
 
 		public static void Clear()
@@ -59,6 +62,7 @@ namespace VRC.Core
 			webCredentials = null;
 			authToken = token;
 			SecurePlayerPrefs.SetString("authTokenProvider", provider, "vl9u1grTnvXA");
+			SecurePlayerPrefs.DeleteKey("password");
 			PlayerPrefs.Save();
 		}
 
@@ -70,6 +74,7 @@ namespace VRC.Core
 			authToken = token;
 			SecurePlayerPrefs.SetString("authTokenProvider", provider, "vl9u1grTnvXA");
 			SecurePlayerPrefs.SetString("authTokenProviderUserId", providerUserId, "vl9u1grTnvXA");
+			SecurePlayerPrefs.DeleteKey("password");
 			PlayerPrefs.Save();
 		}
 

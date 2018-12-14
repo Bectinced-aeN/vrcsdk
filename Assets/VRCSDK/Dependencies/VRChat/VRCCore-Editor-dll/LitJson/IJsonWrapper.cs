@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace LitJson
 {
-	internal interface IJsonWrapper : IEnumerable, IDictionary, IList, ICollection, IOrderedDictionary
+	internal interface IJsonWrapper : IEnumerable, IList, ICollection, IDictionary, IOrderedDictionary
 	{
 		bool IsArray
 		{

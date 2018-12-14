@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
 using VRC.Core.BestHTTP;
@@ -39,298 +40,30 @@ namespace VRC.Core
 			Hidden
 		}
 
-		public class WorldInstance
-		{
-			public enum AccessType
-			{
-				Public,
-				FriendsOfGuests,
-				FriendsOnly,
-				InviteOnly,
-				InvitePlus,
-				Counter
-			}
-
-			public struct InstanceTag
-			{
-				public string name;
-
-				public string data;
-
-				public InstanceTag(string n = "", string d = null)
-				{
-					name = n;
-					data = d;
-				}
-			}
-
-			public class AccessDetail
-			{
-				public string[] tags
-				{
-					get;
-					private set;
-				}
-
-				public string shortName
-				{
-					get;
-					private set;
-				}
-
-				public string fullName
-				{
-					get;
-					private set;
-				}
-
-				public AccessDetail(string[] inTags, string sName, string fName)
-				{
-					tags = inTags;
-					shortName = sName;
-					fullName = fName;
-				}
-			}
-
-			private static Dictionary<AccessType, AccessDetail> accessDetails;
-
-			public string idWithTags;
-
-			public int count;
-
-			public string idOnly => ParseIDFromIDWithTags(idWithTags);
-
-			public string tagsOnly => ParseTagsFromIDWithTags(idWithTags);
-
-			public bool isPublic => GetAccessType() == AccessType.Public;
-
-			public WorldInstance(string _idWithTags, int _count)
-			{
-				idWithTags = _idWithTags;
-				count = _count;
-			}
-
-			static WorldInstance()
-			{
-				accessDetails = new Dictionary<AccessType, AccessDetail>();
-				accessDetails[AccessType.Public] = new AccessDetail(null, "public", "Public");
-				accessDetails[AccessType.FriendsOfGuests] = new AccessDetail(new string[1]
-				{
-					"hidden"
-				}, "friends+", "Friends of Guests");
-				accessDetails[AccessType.FriendsOnly] = new AccessDetail(new string[1]
-				{
-					"friends"
-				}, "friends", "Friends Only");
-				accessDetails[AccessType.InviteOnly] = new AccessDetail(new string[1]
-				{
-					"private"
-				}, "invite", "Invite Only");
-				accessDetails[AccessType.InvitePlus] = new AccessDetail(new string[2]
-				{
-					"private",
-					"canRequestInvite"
-				}, "invite+", "Invite Plus");
-				accessDetails[AccessType.Counter] = new AccessDetail(new string[1]
-				{
-					"pop"
-				}, "popcount", "[Internal Use Only] Population Counter");
-			}
-
-			public static string ParseIDFromIDWithTags(string idWithTagsStr)
-			{
-				if (string.IsNullOrEmpty(idWithTagsStr))
-				{
-					return null;
-				}
-				string[] array = idWithTagsStr.Split('~');
-				if (array == null || array.Length == 0)
-				{
-					return idWithTagsStr;
-				}
-				return array[0];
-			}
-
-			public static string ParseTagsFromIDWithTags(string idWithTagsStr)
-			{
-				if (string.IsNullOrEmpty(idWithTagsStr))
-				{
-					return null;
-				}
-				string[] array = idWithTagsStr.Split('~');
-				if (array.Length > 1)
-				{
-					return "~" + array[1].Trim();
-				}
-				return null;
-			}
-
-			private List<InstanceTag> ParseTags(string idWithTags)
-			{
-				if (string.IsNullOrEmpty(idWithTags))
-				{
-					return null;
-				}
-				List<InstanceTag> list = new List<InstanceTag>();
-				string[] array = idWithTags.Split('~');
-				if (array == null || array.Length > 1)
-				{
-					for (int i = 1; i < array.Length; i++)
-					{
-						InstanceTag item;
-						if (array[i].Contains('('))
-						{
-							string[] array2 = array[i].Split('(');
-							string n = array2[0];
-							string d = array2[1].TrimEnd(')');
-							item = new InstanceTag(n, d);
-						}
-						else
-						{
-							item = new InstanceTag(array[i]);
-						}
-						list.Add(item);
-					}
-				}
-				return list;
-			}
-
-			public AccessType GetAccessType()
-			{
-				List<InstanceTag> list = ParseTags(idWithTags);
-				if (list != null)
-				{
-					if (list.Exists((InstanceTag t) => t.name == accessDetails[AccessType.InvitePlus].tags[0]) && list.Exists((InstanceTag t) => t.name == accessDetails[AccessType.InvitePlus].tags[1]))
-					{
-						return AccessType.InvitePlus;
-					}
-					if (list.Exists((InstanceTag t) => t.name == accessDetails[AccessType.InviteOnly].tags[0]))
-					{
-						return AccessType.InviteOnly;
-					}
-					if (list.Exists((InstanceTag t) => t.name == accessDetails[AccessType.FriendsOnly].tags[0]))
-					{
-						return AccessType.FriendsOnly;
-					}
-					if (list.Exists((InstanceTag t) => t.name == accessDetails[AccessType.FriendsOfGuests].tags[0]))
-					{
-						return AccessType.FriendsOfGuests;
-					}
-				}
-				return AccessType.Public;
-			}
-
-			public static AccessDetail GetAccessDetail(AccessType access)
-			{
-				return accessDetails[access];
-			}
-
-			public static string BuildAccessTags(AccessType access, string userId)
-			{
-				string result = string.Empty;
-				if (access == AccessType.Public)
-				{
-					return result;
-				}
-				AccessDetail accessDetail = GetAccessDetail(access);
-				switch (access)
-				{
-				case AccessType.Counter:
-					result = "~" + accessDetail.tags[0];
-					break;
-				case AccessType.FriendsOfGuests:
-				case AccessType.FriendsOnly:
-				case AccessType.InviteOnly:
-					result = string.Format("~{0}({1})~nonce({2})", accessDetail.tags[0], userId, new string((from s in Enumerable.Repeat("ABCDEF0123456789", 64)
-					select s[Random.Range(0, s.Length)]).ToArray()));
-					break;
-				case AccessType.InvitePlus:
-					result = string.Format("~{0}({1})~{2}~nonce({3})", accessDetail.tags[0], userId, accessDetail.tags[1], new string((from s in Enumerable.Repeat("ABCDEF0123456789", 64)
-					select s[Random.Range(0, s.Length)]).ToArray()));
-					break;
-				}
-				return result;
-			}
-
-			public string GetInstanceCreator()
-			{
-				List<InstanceTag> list = ParseTags(idWithTags);
-				if (list != null)
-				{
-					foreach (InstanceTag item in list)
-					{
-						InstanceTag current = item;
-						if (current.name == accessDetails[AccessType.InviteOnly].tags[0] || current.name == accessDetails[AccessType.InvitePlus].tags[0] || current.name == accessDetails[AccessType.FriendsOnly].tags[0] || current.name == accessDetails[AccessType.FriendsOfGuests].tags[0])
-						{
-							return current.data;
-						}
-					}
-				}
-				return null;
-			}
-
-			public override string ToString()
-			{
-				return "[" + idWithTags + ", " + count + "]";
-			}
-		}
-
 		public enum WorldData
 		{
 			Metadata
 		}
 
+		public const float ListCacheTime = 180f;
+
+		public const float SingleRecordCacheTime = 15f;
+
 		private static AssetVersion _VERSION = null;
 
 		public static AssetVersion MIN_LOADABLE_VERSION = new AssetVersion("5.5.0f1", 0);
 
-		private static AssetVersion DefaultAssetVersion = new AssetVersion("5.6.3p1", 0);
+		private static Dictionary<string, ApiWorld> localWorlds = new Dictionary<string, ApiWorld>();
 
-		protected string mName;
-
-		protected string mImageUrl;
-
-		protected string mAuthorName;
-
-		protected string mAuthorId;
-
-		protected string mAssetUrl;
-
-		protected string mDescription;
-
-		protected List<string> mTags = new List<string>();
-
-		protected int mVersion;
-
-		protected string mPluginUrl;
-
-		protected string mUnityPackageUrl;
-
-		private string mReleaseStatus;
-
-		private int mCapacity;
-
-		private int mOccupants;
-
-		private AssetVersion mAssetVersion;
-
-		private string mPlatform;
-
-		private Dictionary<string, int> mInstances;
-
-		private List<WorldInstance> mWorldInstances;
-
-		private string mThumbnailImageUrl;
+		private List<ApiWorldInstance> mWorldInstances = new List<ApiWorldInstance>();
 
 		public string currentInstanceIdWithTags;
 
 		public string currentInstanceIdOnly;
 
-		public WorldInstance.AccessType currentInstanceAccess;
+		public string currentInstanceType;
 
-		public bool isCurated;
-
-		private static Dictionary<string, ApiWorld> localWorlds = new Dictionary<string, ApiWorld>();
+		public ApiWorldInstance.AccessType currentInstanceAccess;
 
 		public static AssetVersion VERSION
 		{
@@ -338,512 +71,422 @@ namespace VRC.Core
 			{
 				if (_VERSION == null)
 				{
-					_VERSION = new AssetVersion(Application.get_unityVersion(), 2);
+					_VERSION = new AssetVersion(Application.get_unityVersion(), 3);
 				}
 				return _VERSION;
 			}
 		}
 
-		public new string id
-		{
-			get
-			{
-				return mId;
-			}
-			set
-			{
-				mId = value;
-			}
-		}
-
+		[ApiField]
 		public string name
 		{
-			get
-			{
-				return mName;
-			}
-			set
-			{
-				mName = value;
-			}
+			get;
+			set;
 		}
 
+		[ApiField]
 		public string imageUrl
 		{
-			get
-			{
-				return mImageUrl;
-			}
-			set
-			{
-				mImageUrl = value;
-			}
+			get;
+			set;
 		}
 
-		public string authorName => mAuthorName;
-
-		public string authorId => mAuthorId;
-
-		public string assetUrl
+		[ApiField]
+		public string thumbnailImageUrl
 		{
-			get
-			{
-				return mAssetUrl;
-			}
-			set
-			{
-				mAssetUrl = value;
-			}
+			get;
+			set;
 		}
 
-		public string description
+		[ApiField]
+		public string authorName
 		{
-			get
-			{
-				return mDescription;
-			}
-			set
-			{
-				mDescription = value;
-			}
+			get;
+			set;
 		}
 
-		public List<string> tags
-		{
-			get
-			{
-				return mTags;
-			}
-			set
-			{
-				mTags = value;
-			}
-		}
-
-		public int version
-		{
-			get
-			{
-				return mVersion;
-			}
-			set
-			{
-				mVersion = value;
-			}
-		}
-
-		public string pluginUrl
-		{
-			get
-			{
-				return mPluginUrl;
-			}
-			set
-			{
-				mPluginUrl = value;
-			}
-		}
-
-		public string unityPackageUrl
-		{
-			get
-			{
-				return mUnityPackageUrl;
-			}
-			set
-			{
-				mUnityPackageUrl = value;
-			}
-		}
-
+		[ApiField]
 		public string releaseStatus
 		{
-			get
-			{
-				return mReleaseStatus;
-			}
-			set
-			{
-				mReleaseStatus = value;
-			}
+			get;
+			set;
 		}
 
+		[ApiField]
 		public int capacity
 		{
-			get
-			{
-				return mCapacity;
-			}
-			set
-			{
-				mCapacity = value;
-			}
+			get;
+			set;
 		}
 
+		[ApiField(Required = false)]
 		public int occupants
 		{
-			get
-			{
-				return mOccupants;
-			}
-			set
-			{
-				mOccupants = value;
-			}
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string authorId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime createdAt
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string assetUrl
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string description
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public List<string> tags
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string pluginUrl
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string unityPackageUrl
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int version
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string unityVersion
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false, Name = "assetVersion")]
+		public int apiVersion
+		{
+			get;
+			set;
+		}
+
+		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
+		public string platform
+		{
+			get;
+			set;
+		}
+
+		public List<ApiWorldInstance> worldInstances => mWorldInstances;
+
+		[ApiField(Required = false)]
+		public Dictionary<string, int> instances
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false, Name = "namespace", IsAdminWritableOnly = true)]
+		public string scriptNamespace
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public List<string> unityPackages
+		{
+			get;
+			set;
+		}
+
+		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("admin_approved"));
+
+		[ApiField(Required = false)]
+		public bool unityPackageUpdated
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int totalLikes
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int totalVisits
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public bool isSecure
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public bool isLockdown
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string organization
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public List<APIUser> users
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public bool shouldAddToAuthor
+		{
+			get;
+			set;
 		}
 
 		public AssetVersion assetVersion
 		{
 			get
 			{
-				return mAssetVersion;
+				return new AssetVersion(unityVersion, apiVersion);
 			}
 			set
 			{
-				mAssetVersion = value;
+				unityVersion = value.UnityVersion;
+				apiVersion = value.ApiVersion;
 			}
 		}
 
-		public string platform
+		[ApiField(Required = false, Name = "featured", IsAdminWritableOnly = true)]
+		public bool isCurated
 		{
-			get
-			{
-				return mPlatform;
-			}
-			set
-			{
-				mPlatform = value;
-			}
+			get;
+			set;
 		}
 
-		public Dictionary<string, int> instances => mInstances;
-
-		public List<WorldInstance> worldInstances => mWorldInstances;
-
-		public string thumbnailImageUrl
+		public ApiWorld()
+			: base("worlds")
 		{
-			get
-			{
-				return mThumbnailImageUrl;
-			}
-			set
-			{
-				mThumbnailImageUrl = value;
-			}
-		}
-
-		public bool isAdminApproved => isCurated || (mTags != null && mTags.Contains("admin_approved"));
-
-		public void Init(APIUser author, string name, string imageUrl, string assetUrl, string description, string releaseStatus, int capacity, List<string> tags, int occupants, string pluginUrl = "", string unityPackageUrl = "")
-		{
-			mName = name;
-			mImageUrl = imageUrl;
-			mAssetUrl = assetUrl;
-			mDescription = description;
-			mReleaseStatus = releaseStatus;
-			mCapacity = capacity;
-			mTags = tags;
-			mAuthorName = author.displayName;
-			mAuthorId = author.id;
-			mPluginUrl = pluginUrl;
-			mUnityPackageUrl = unityPackageUrl;
-			mOccupants = occupants;
-			mWorldInstances = new List<WorldInstance>();
+			users = new List<APIUser>();
+			tags = new List<string>();
+			unityPackages = new List<string>();
+			shouldAddToAuthor = false;
 			UpdateVersionAndPlatform();
 		}
 
-		public void Init()
+		public override bool ShouldCache()
 		{
-			mId = string.Empty;
-			mName = string.Empty;
-			mImageUrl = string.Empty;
-			mAssetUrl = string.Empty;
-			mDescription = string.Empty;
-			mTags = new List<string>();
-			mAuthorName = string.Empty;
-			mAuthorId = string.Empty;
-			mPluginUrl = string.Empty;
-			mVersion = -1;
-			mReleaseStatus = "private";
-			mCapacity = 32;
-			mOccupants = 0;
-			mWorldInstances = new List<WorldInstance>();
-			UpdateVersionAndPlatform();
+			return base.ShouldCache() && !string.IsNullOrEmpty(assetUrl);
 		}
 
-		private void InitBrief(Dictionary<string, object> jsonObject)
+		public override float GetLifeSpan()
 		{
-			Init();
-			mId = (jsonObject["id"] as string);
-			mName = (jsonObject["name"] as string);
-			mImageUrl = (jsonObject["imageUrl"] as string);
-			mThumbnailImageUrl = (jsonObject["thumbnailImageUrl"] as string);
-			mReleaseStatus = (jsonObject["releaseStatus"] as string);
-			mAuthorName = (jsonObject["authorName"] as string);
-			mCapacity = Convert.ToInt16(jsonObject["capacity"]);
-			mOccupants = Convert.ToInt16(jsonObject["occupants"]);
-			if (string.IsNullOrEmpty(mId))
+			return 15f;
+		}
+
+		protected override bool ReadField(string fieldName, ref object data)
+		{
+			switch (fieldName)
 			{
-				Debug.LogError((object)("ApiWorld " + mName + " has an invalid ID"));
+			case "shouldAddToAuthor":
+				return false;
+			case "instances":
+				return false;
+			default:
+				return base.ReadField(fieldName, ref data);
 			}
 		}
 
-		public void Init(Dictionary<string, object> jsonObject)
+		protected override bool WriteField(string fieldName, object data)
 		{
-			if (jsonObject == null)
+			switch (fieldName)
 			{
-				Init();
+			case "instances":
+			{
+				List<object> source = data as List<object>;
+				instances = (from kvp in source
+				select new KeyValuePair<string, int>((kvp as List<object>)[0].ToString(), Convert.ToInt32((kvp as List<object>)[1].ToString()))).ToDictionary((KeyValuePair<string, int> pair) => pair.Key, (KeyValuePair<string, int> pair) => pair.Value);
+				mWorldInstances = (from kvp in instances
+				select new ApiWorldInstance(this, kvp.Key, kvp.Value)).ToList();
+				return true;
 			}
-			else
-			{
-				List<string> list = new List<string>();
-				list.Add("id");
-				list.Add("name");
-				list.Add("imageUrl");
-				list.Add("authorName");
-				list.Add("authorId");
-				list.Add("assetUrl");
-				list.Add("description");
-				list.Add("releaseStatus");
-				list.Add("capacity");
-				list.Add("tags");
-				list.Add("pluginUrl");
-				List<string> source = list;
-				if (source.Any((string s) => !jsonObject.ContainsKey(s)))
-				{
-					Debug.LogError((object)("Could not initialize blueprint due to insufficient json parameters, missing: " + string.Join(",", (from s in source
-					where !jsonObject.ContainsKey(s)
-					select s).ToArray())));
-					Init();
-				}
-				else
-				{
-					mId = (jsonObject["id"] as string);
-					mName = (jsonObject["name"] as string);
-					mImageUrl = (jsonObject["imageUrl"] as string);
-					if (jsonObject.ContainsKey("thumbnailImageUrl"))
-					{
-						mThumbnailImageUrl = (jsonObject["thumbnailImageUrl"] as string);
-					}
-					mAuthorName = (jsonObject["authorName"] as string);
-					mAuthorId = (jsonObject["authorId"] as string);
-					mAssetUrl = (jsonObject["assetUrl"] as string);
-					mDescription = (jsonObject["description"] as string);
-					mTags = Tools.ObjListToStringList((List<object>)jsonObject["tags"]);
-					mVersion = (int)(double)jsonObject["version"];
-					mPluginUrl = (jsonObject["pluginUrl"] as string);
-					if (jsonObject.ContainsKey("unityPackageUrl"))
-					{
-						mUnityPackageUrl = (jsonObject["unityPackageUrl"] as string);
-					}
-					mWorldInstances = new List<WorldInstance>();
-					mInstances = new Dictionary<string, int>();
-					if (jsonObject.ContainsKey("instances"))
-					{
-						List<object> list2 = jsonObject["instances"] as List<object>;
-						foreach (object item in list2)
-						{
-							List<object> list3 = item as List<object>;
-							string text = list3[0].ToString();
-							int num = Convert.ToInt32(list3[1].ToString());
-							mInstances.Add(text, num);
-							mWorldInstances.Add(new WorldInstance(text, num));
-						}
-					}
-					mReleaseStatus = (jsonObject["releaseStatus"] as string);
-					mCapacity = Convert.ToInt16(jsonObject["capacity"]);
-					if (jsonObject.ContainsKey("occupants"))
-					{
-						mOccupants = Convert.ToInt16(jsonObject["occupants"]);
-					}
-					string unityVersion = DefaultAssetVersion.UnityVersion;
-					if (jsonObject.ContainsKey("unityVersion"))
-					{
-						unityVersion = (jsonObject["unityVersion"] as string);
-					}
-					int result = DefaultAssetVersion.ApiVersion;
-					if (jsonObject.ContainsKey("assetVersion"))
-					{
-						string text2 = jsonObject["assetVersion"] as string;
-						if (string.IsNullOrEmpty(text2) || !int.TryParse(text2, out result))
-						{
-							Debug.LogError((object)("Invalid assetVersion string: " + text2));
-						}
-					}
-					mAssetVersion = new AssetVersion(unityVersion, result);
-					mPlatform = "standalonewindows";
-					if (jsonObject.ContainsKey("platform"))
-					{
-						mPlatform = (jsonObject["platform"] as string);
-					}
-					if (string.IsNullOrEmpty(mId))
-					{
-						Debug.LogError((object)("ApiWorld " + mName + " has an invalid ID"));
-					}
-				}
+			default:
+				return base.WriteField(fieldName, data);
 			}
 		}
 
-		public void UpdateVersionAndPlatform(string platform = null)
+		public void FetchData(WorldData data, Action<Dictionary<string, object>> successCallback, Action<string> errorCallback)
 		{
-			mAssetVersion = VERSION;
-			mPlatform = ((platform != null) ? platform : ApiModel.GetAssetPlatformString());
-		}
-
-		protected override Dictionary<string, string> BuildWebParameters()
-		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["userId"] = APIUser.CurrentUser.id;
-			dictionary["name"] = name;
-			dictionary["imageUrl"] = imageUrl;
-			dictionary["authorName"] = authorName;
-			dictionary["authorId"] = authorId;
-			dictionary["assetUrl"] = assetUrl;
-			dictionary["description"] = description;
-			dictionary["tags"] = string.Join(", ", tags.ToArray());
-			dictionary["pluginUrl"] = pluginUrl;
-			if (!string.IsNullOrEmpty(unityPackageUrl))
-			{
-				dictionary["unityPackageUrl"] = unityPackageUrl;
-			}
-			dictionary["releaseStatus"] = releaseStatus;
-			dictionary["capacity"] = capacity.ToString();
-			dictionary["unityVersion"] = mAssetVersion.UnityVersion.ToString();
-			dictionary["assetVersion"] = mAssetVersion.ApiVersion.ToString();
-			dictionary["platform"] = mPlatform;
-			if (APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal)
-			{
-				dictionary["featured"] = isCurated.ToString().ToLower();
-			}
-			return dictionary;
-		}
-
-		public override string ToString()
-		{
-			return $"[id: {id}; name: {name}; imageUrl: {imageUrl}; authorName: {authorName}; authorId: {authorId}; assetUrl: {assetUrl};description: {description}; releaseStatus: {releaseStatus}; capacity: {capacity}; tags: {Tools.ListToString(tags)}; version {version}; occupants {occupants}; pluginUrl {pluginUrl}]";
-		}
-
-		public void Save(bool overwrite, Action<ApiModel> onSuccess = null, Action<string> onError = null)
-		{
-			if (!APIUser.IsLoggedInWithCredentials)
-			{
-				Logger.Log("Must be logged in with account to create or edit a blueprint.");
-			}
-			else if (APIUser.CurrentUser.id != authorId)
-			{
-				Logger.LogError("Only the blueprint's author can update this blueprint.");
-			}
-			else
-			{
-				Dictionary<string, string> dictionary = BuildWebParameters();
-				dictionary["id"] = id;
-				if (overwrite)
-				{
-					ApiModel.SendPutRequest("worlds/" + id, dictionary, delegate
-					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
-					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
-				}
-				else
-				{
-					ApiModel.SendPostRequest("worlds", dictionary, delegate
-					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
-					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
-				}
-			}
-		}
-
-		public static void FetchData(string id, WorldData data, Action<Dictionary<string, object>> successCallback, Action<string> errorCallback)
-		{
-			if (id == null)
+			if (base.id == null)
 			{
 				errorCallback("APIWorld.FetchData called with null id.");
 			}
 			else
 			{
-				string str = null;
-				if (data == WorldData.Metadata)
+				string text = null;
+				if (data != 0)
 				{
-					str = "/metadata";
 				}
-				Dictionary<string, string> requestParams = new Dictionary<string, string>();
-				ApiModel.SendRequest("worlds/" + id + str, HTTPMethods.Get, requestParams, delegate(Dictionary<string, object> obj)
+				text = "/metadata";
+				ApiDictContainer apiDictContainer = new ApiDictContainer();
+				apiDictContainer.OnSuccess = delegate(ApiContainer c)
 				{
 					if (successCallback != null)
 					{
-						successCallback(obj);
+						successCallback((c as ApiDictContainer).ResponseDictionary);
 					}
-				}, delegate(string message)
+				};
+				apiDictContainer.OnError = delegate(ApiContainer c)
 				{
-					errorCallback(message);
+					if (errorCallback != null)
+					{
+						errorCallback(c.Error);
+					}
+				};
+				ApiDictContainer responseContainer = apiDictContainer;
+				API.SendGetRequest("worlds/" + base.id + text, responseContainer, null, disableCache: true);
+			}
+		}
+
+		public override void Save(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			if (base.id != null && APIUser.CurrentUser.id != authorId)
+			{
+				onFailure(new ApiContainer
+				{
+					Error = "Only the blueprint's author can update this blueprint."
 				});
-			}
-		}
-
-		public static void Fetch(string id, Action<ApiWorld> successCallback, Action<string> errorCallback)
-		{
-			Fetch(id, compatibleVersionsOnly: true, successCallback, errorCallback);
-		}
-
-		public static void Fetch(string id, bool compatibleVersionsOnly, Action<ApiWorld> successCallback, Action<string> errorCallback)
-		{
-			if (id == null)
-			{
-				errorCallback("APIWorld.Fetch called with null id.");
-			}
-			else if (localWorlds.ContainsKey(id))
-			{
-				successCallback(localWorlds[id]);
 			}
 			else
 			{
-				Dictionary<string, string> dictionary = new Dictionary<string, string>();
-				if (compatibleVersionsOnly)
-				{
-					dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
-					dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
-					dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
-					dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
-				}
-				dictionary.Add("platform", ApiModel.GetAssetPlatformString());
-				ApiModel.SendRequest("worlds/" + id, HTTPMethods.Get, dictionary, delegate(Dictionary<string, object> obj)
-				{
-					ApiWorld apiWorld = new ApiWorld();
-					apiWorld.Init(obj);
-					if (successCallback != null)
-					{
-						successCallback(apiWorld);
-					}
-				}, delegate(string message)
-				{
-					errorCallback(message);
-				}, needsAPIKey: true, Application.get_isEditor());
+				UpdateVersionAndPlatform();
+				base.Save(onSuccess, onFailure);
 			}
 		}
 
-		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true, bool bypassCache = false)
+		public override void Get(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
+		{
+			Fetch(string.Empty, compatibleVersionsOnly: true, onSuccess, onFailure, parameters);
+		}
+
+		public void Fetch(string instanceID = null, bool compatibleVersionsOnly = true, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
+		{
+			if (string.IsNullOrEmpty(base.id))
+			{
+				onFailure(new ApiContainer
+				{
+					Error = "APIWorld.Fetch called with null id."
+				});
+			}
+			else if (localWorlds.ContainsKey(base.id))
+			{
+				ApiModelContainer<ApiWorld> obj = new ApiModelContainer<ApiWorld>(localWorlds[base.id]);
+				onSuccess(obj);
+			}
+			else
+			{
+				if (parameters == null)
+				{
+					parameters = new Dictionary<string, object>();
+				}
+				if (compatibleVersionsOnly)
+				{
+					parameters["maxUnityVersion"] = VERSION.UnityVersion;
+					parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
+					parameters["maxAssetVersion"] = VERSION.ApiVersion;
+					parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
+				}
+				parameters["platform"] = API.GetAssetPlatformString();
+				if (!string.IsNullOrEmpty(instanceID))
+				{
+					ApiDictContainer apiDictContainer = new ApiDictContainer("users");
+					apiDictContainer.OnSuccess = delegate(ApiContainer c)
+					{
+						string error = null;
+						List<object> json = (c as ApiDictContainer).ResponseDictionary["users"] as List<object>;
+						List<APIUser> list = API.ConvertJsonListToModelList<APIUser>(json, ref error, c.DataTimestamp);
+						if (list == null)
+						{
+							c.Error = error;
+							onFailure(c);
+						}
+						else
+						{
+							if (instances == null)
+							{
+								instances = new Dictionary<string, int>();
+							}
+							if (!mWorldInstances.Any((ApiWorldInstance w) => w.idWithTags == instanceID))
+							{
+								mWorldInstances.Add(new ApiWorldInstance(this, instanceID, list.Count));
+								instances.Add(instanceID, list.Count);
+							}
+							ApiWorldInstance apiWorldInstance = worldInstances.First((ApiWorldInstance w) => w.idWithTags == instanceID);
+							apiWorldInstance.count = list.Count;
+							apiWorldInstance.users = list;
+							onSuccess(c);
+						}
+					};
+					apiDictContainer.OnError = onFailure;
+					ApiDictContainer responseContainer = apiDictContainer;
+					API.SendRequest("worlds/" + base.id + "/" + instanceID, HTTPMethods.Get, responseContainer, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: true);
+				}
+				else
+				{
+					ApiModelContainer<ApiWorld> apiModelContainer = new ApiModelContainer<ApiWorld>(this);
+					apiModelContainer.OnSuccess = onSuccess;
+					apiModelContainer.OnError = onFailure;
+					ApiModelContainer<ApiWorld> responseContainer2 = apiModelContainer;
+					API.SendRequest("worlds/" + base.id, HTTPMethods.Get, responseContainer2, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: true);
+				}
+			}
+		}
+
+		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true, bool disableCache = false)
 		{
 			string endpoint = "worlds";
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			switch (heading)
 			{
 			case SortHeading.Featured:
@@ -873,7 +516,7 @@ namespace VRC.Core
 				dictionary.Add("userId", userId);
 				break;
 			}
-			dictionary.Add("n", count.ToString());
+			dictionary.Add("n", count);
 			switch (order)
 			{
 			case SortOrder.Ascending:
@@ -883,7 +526,7 @@ namespace VRC.Core
 				dictionary.Add("order", "descending");
 				break;
 			}
-			dictionary.Add("offset", offset.ToString());
+			dictionary.Add("offset", offset);
 			if (!string.IsNullOrEmpty(search))
 			{
 				dictionary.Add("search", search);
@@ -899,53 +542,30 @@ namespace VRC.Core
 			dictionary.Add("releaseStatus", releaseStatus.ToString().ToLower());
 			if (compatibleVersionsOnly)
 			{
-				dictionary.Add("maxUnityVersion", VERSION.UnityVersion.ToString());
-				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion.ToString());
-				dictionary.Add("maxAssetVersion", VERSION.ApiVersion.ToString());
-				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion.ToString());
+				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
+				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
+				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
+				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
 			}
-			dictionary.Add("platform", ApiModel.GetAssetPlatformString());
-			float cacheLifetime = (heading != SortHeading.Active && heading != SortHeading.Trending) ? 180f : 60f;
-			if (bypassCache)
-			{
-				cacheLifetime = 0f;
-			}
-			ApiModel.SendRequest(endpoint, HTTPMethods.Get, dictionary, delegate(List<object> objs)
-			{
-				List<ApiWorld> list = new List<ApiWorld>();
-				if (objs != null)
-				{
-					foreach (object obj in objs)
-					{
-						Dictionary<string, object> jsonObject = obj as Dictionary<string, object>;
-						ApiWorld apiWorld = new ApiWorld();
-						apiWorld.InitBrief(jsonObject);
-						list.Add(apiWorld);
-					}
-				}
-				if (successCallback != null)
-				{
-					successCallback(list);
-				}
-			}, delegate(string message)
-			{
-				Logger.Log("Could not fetch worlds with error - " + message);
-				errorCallback(message);
-			}, needsAPIKey: true, releaseStatus != ReleaseStatus.Public, cacheLifetime);
-		}
-
-		public static void Delete(string id, Action successCallback, Action<string> errorCallback)
-		{
-			ApiModel.SendRequest("worlds/" + id, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
+			dictionary.Add("platform", API.GetAssetPlatformString());
+			ApiModelListContainer<ApiWorld> apiModelListContainer = new ApiModelListContainer<ApiWorld>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
 				if (successCallback != null)
 				{
-					successCallback();
+					successCallback((c as ApiModelListContainer<ApiWorld>).ResponseModels);
 				}
-			}, (Action<string>)delegate(string message)
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
 			{
-				errorCallback(message);
-			}, needsAPIKey: true, authenticationRequired: true, -1f);
+				Debug.LogError((object)("Could not fetch worlds, with error - " + c.Error));
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<ApiWorld> responseContainer = apiModelListContainer;
+			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, releaseStatus != ReleaseStatus.Public, disableCache, 180f);
 		}
 
 		public static void AddLocal(ApiWorld world)
@@ -953,66 +573,69 @@ namespace VRC.Core
 			localWorlds.Add(world.id, world);
 		}
 
-		private IEnumerable<WorldInstance> GetViableInstances(string forUserId, List<string> instanceIdsToIgnore = null, bool excludePublicInstances = false, bool includePublicInstancesOnly = false)
+		private IEnumerable<ApiWorldInstance> GetViableInstances(string forUserId, List<string> instanceIdsToIgnore = null, bool excludePublicInstances = false, bool includePublicInstancesOnly = false)
 		{
 			if (instanceIdsToIgnore == null)
 			{
 				instanceIdsToIgnore = new List<string>();
 			}
-			if (mWorldInstances != null)
+			if (worldInstances != null)
 			{
-				List<WorldInstance> list = new List<WorldInstance>();
-				for (int i = 0; i < mWorldInstances.Count; i++)
+				List<ApiWorldInstance> list = new List<ApiWorldInstance>();
+				for (int i = 0; i < worldInstances.Count; i++)
 				{
-					WorldInstance worldInstance = mWorldInstances[i];
+					ApiWorldInstance apiWorldInstance = worldInstances[i];
 					int num = Mathf.Min(capacity, Mathf.Max(6, Mathf.FloorToInt((float)capacity * 0.66f)));
-					if (worldInstance.count != 0 && worldInstance.count < num && !instanceIdsToIgnore.Contains(worldInstance.idWithTags) && !instanceIdsToIgnore.Contains(worldInstance.idOnly) && worldInstance.GetAccessType() != WorldInstance.AccessType.InviteOnly && !includePublicInstancesOnly && (worldInstance.GetAccessType() != WorldInstance.AccessType.FriendsOnly || APIUser.IsFriendsWith(worldInstance.GetInstanceCreator())) && !includePublicInstancesOnly && (worldInstance.GetAccessType() != WorldInstance.AccessType.FriendsOfGuests || (worldInstance.GetInstanceCreator() != null && !(worldInstance.GetInstanceCreator() != forUserId))) && (!excludePublicInstances || (worldInstance.GetAccessType() != 0 && worldInstance.GetAccessType() != WorldInstance.AccessType.FriendsOfGuests)))
+					ApiWorldInstance.AccessType accessType = apiWorldInstance.GetAccessType();
+					string instanceCreator = apiWorldInstance.GetInstanceCreator();
+					bool flag = accessType == ApiWorldInstance.AccessType.Public || accessType == ApiWorldInstance.AccessType.FriendsOfGuests;
+					if (apiWorldInstance.count < capacity && apiWorldInstance.count < num && !instanceIdsToIgnore.Contains(apiWorldInstance.idWithTags) && !instanceIdsToIgnore.Contains(apiWorldInstance.idOnly) && accessType != ApiWorldInstance.AccessType.InviteOnly && accessType != ApiWorldInstance.AccessType.InvitePlus && (flag || !includePublicInstancesOnly) && (!excludePublicInstances || !flag) && (accessType != ApiWorldInstance.AccessType.FriendsOnly || APIUser.IsFriendsWith(instanceCreator)) && (accessType != ApiWorldInstance.AccessType.FriendsOfGuests || (instanceCreator != null && !(instanceCreator != forUserId))))
 					{
-						list.Add(worldInstance);
+						list.Add(apiWorldInstance);
 					}
 				}
 				return from instance in list
 				orderby instance.count descending
 				select instance;
 			}
-			return new WorldInstance[0];
+			return new ApiWorldInstance[0];
 		}
 
-		private WorldInstance GetBestInstance(WorldInstance[] viableInstances)
+		private ApiWorldInstance GetBestInstance(ApiWorldInstance[] viableInstances)
 		{
-			WorldInstance worldInstance = null;
-			worldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
-			where inst.GetAccessType() == WorldInstance.AccessType.Public && inst.count >= 3
+			ApiWorldInstance apiWorldInstance = null;
+			apiWorldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
+			where inst.GetAccessType() == ApiWorldInstance.AccessType.Public && inst.count >= 3
 			select inst).ToArray());
-			if (worldInstance != null)
+			if (apiWorldInstance != null)
 			{
-				return worldInstance;
+				return apiWorldInstance;
 			}
-			worldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
-			where inst.GetAccessType() == WorldInstance.AccessType.Public
+			apiWorldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
+			where inst.GetAccessType() == ApiWorldInstance.AccessType.Public
 			select inst).ToArray());
-			if (worldInstance != null)
+			if (apiWorldInstance != null)
 			{
-				return worldInstance;
+				return apiWorldInstance;
 			}
-			worldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
+			apiWorldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
 			where inst.GetAccessType() != 0 && inst.count >= 3
 			select inst).ToArray());
-			if (worldInstance != null)
+			if (apiWorldInstance != null)
 			{
-				return worldInstance;
+				return apiWorldInstance;
 			}
-			worldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
-			where inst.GetAccessType() != WorldInstance.AccessType.Public
+			apiWorldInstance = SelectRandomWorldInstanceWeighted((from inst in viableInstances
+			where inst.GetAccessType() != ApiWorldInstance.AccessType.Public
 			select inst).ToArray());
-			if (worldInstance != null)
+			if (apiWorldInstance != null)
 			{
-				return worldInstance;
+				return apiWorldInstance;
 			}
 			return null;
 		}
 
-		private WorldInstance SelectRandomWorldInstanceWeighted(WorldInstance[] instanceList)
+		private ApiWorldInstance SelectRandomWorldInstanceWeighted(ApiWorldInstance[] instanceList)
 		{
 			if (instanceList.Length > 0)
 			{
@@ -1044,100 +667,171 @@ namespace VRC.Core
 			return null;
 		}
 
-		public WorldInstance GetBestInstance(string forUserId, List<string> instanceIdsToIgnore = null, bool excludePublicInstances = false, bool includePublicInstancesOnly = false)
+		public ApiWorldInstance GetBestInstance(string forUserId, List<string> instanceIdsToIgnore = null, bool excludePublicInstances = false, bool includePublicInstancesOnly = false)
 		{
 			if (string.IsNullOrEmpty(forUserId))
 			{
 				forUserId = APIUser.CurrentUser.id;
 			}
-			WorldInstance[] viableInstances = GetViableInstances(forUserId, instanceIdsToIgnore, excludePublicInstances, includePublicInstancesOnly).ToArray();
-			WorldInstance bestInstance = GetBestInstance(viableInstances);
+			ApiWorldInstance[] viableInstances = GetViableInstances(forUserId, instanceIdsToIgnore, excludePublicInstances, includePublicInstancesOnly).ToArray();
+			ApiWorldInstance bestInstance = GetBestInstance(viableInstances);
 			return (bestInstance != null) ? bestInstance : GetNewInstance(forUserId, excludePublicInstances, includePublicInstancesOnly);
 		}
 
-		public WorldInstance GetNewInstance(string forUserId, bool excludePublicInstances, bool includePublicInstancesOnly = false)
+		public ApiWorldInstance GetNewInstance(string forUserId, bool excludePublicInstances, bool includePublicInstancesOnly = false)
 		{
 			if (string.IsNullOrEmpty(forUserId))
 			{
 				forUserId = APIUser.CurrentUser.id;
 			}
 			string tags = string.Empty;
-			if (mReleaseStatus == "private")
+			if (releaseStatus == "private")
 			{
-				tags = WorldInstance.BuildAccessTags(WorldInstance.AccessType.InviteOnly, forUserId);
+				tags = ApiWorldInstance.BuildAccessTags(ApiWorldInstance.AccessType.InviteOnly, forUserId);
 			}
-			else if (excludePublicInstances || !isAdminApproved)
+			else if (excludePublicInstances)
 			{
-				tags = WorldInstance.BuildAccessTags((!includePublicInstancesOnly) ? WorldInstance.AccessType.FriendsOnly : WorldInstance.AccessType.InviteOnly, forUserId);
+				tags = ApiWorldInstance.BuildAccessTags((!includePublicInstancesOnly) ? ApiWorldInstance.AccessType.FriendsOnly : ApiWorldInstance.AccessType.InviteOnly, forUserId);
 			}
 			return GetNewInstance(tags);
 		}
 
-		public WorldInstance GetNewInstance(string tags = "")
+		public ApiWorldInstance GetNewInstance(string tags = "")
 		{
 			IL_0000:
 			int instanceIndex;
 			while (true)
 			{
 				instanceIndex = Random.Range(1, 99999);
-				if (mWorldInstances == null || !mWorldInstances.Any((WorldInstance wi) => wi.idOnly == instanceIndex.ToString()))
+				if (worldInstances == null || !worldInstances.Any((ApiWorldInstance wi) => wi.idOnly == instanceIndex.ToString()))
 				{
 					break;
 				}
 			}
-			return new WorldInstance(instanceIndex.ToString() + tags, 0);
-			IL_005b:
+			ApiWorldInstance apiWorldInstance = new ApiWorldInstance(this, instanceIndex.ToString() + tags, 0);
+			worldInstances.Add(apiWorldInstance);
+			return apiWorldInstance;
+			IL_006a:
 			goto IL_0000;
 		}
 
-		public void SaveAndAddToUser(bool overwrite, Action<ApiModel> onSuccess = null, Action<string> onError = null)
+		public void FetchInstance(string instanceId, Action<ApiWorldInstance> success, Action<string> error = null)
 		{
-			if (!APIUser.IsLoggedInWithCredentials)
+			for (int i = 0; i < mWorldInstances.Count; i++)
 			{
-				Logger.Log("Must be logged in with account to create or edit a blueprint.");
+				if (mWorldInstances[i].idWithTags == instanceId)
+				{
+					FetchInstance(i, success, error);
+					return;
+				}
 			}
-			else if (APIUser.CurrentUser.id != authorId)
+			mWorldInstances.Add(new ApiWorldInstance(this, instanceId, 0));
+			FetchInstance(mWorldInstances.Count - 1, success, error);
+		}
+
+		public void FetchInstance(int index, Action<ApiWorldInstance> success, Action<string> error = null)
+		{
+			if (index < 0 || index >= mWorldInstances.Count)
 			{
-				Logger.LogError("Only the blueprint's author can update this blueprint.");
+				if (error != null)
+				{
+					error("Instance index out of range.");
+				}
 			}
 			else
 			{
-				Dictionary<string, string> dictionary = BuildWebParameters();
-				dictionary["shouldAddToAuthor"] = "true";
-				dictionary["id"] = id;
-				if (overwrite)
+				string idWithTags = mWorldInstances[index].idWithTags;
+				ApiDictContainer apiDictContainer = new ApiDictContainer();
+				apiDictContainer.OnSuccess = delegate(ApiContainer c)
 				{
-					ApiModel.SendPutRequest("worlds/" + id, dictionary, delegate
+					Dictionary<string, object> responseDictionary = (c as ApiDictContainer).ResponseDictionary;
+					mWorldInstances[index] = new ApiWorldInstance(this, responseDictionary, c.DataTimestamp);
+					if (success != null)
 					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
+						success(mWorldInstances[index]);
+					}
+				};
+				apiDictContainer.OnError = delegate(ApiContainer c)
+				{
+					if (error != null)
 					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
+						error(c.Error);
+					}
+				};
+				ApiDictContainer responseContainer = apiDictContainer;
+				API.SendGetRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, null, disableCache: true);
+			}
+		}
+
+		public void PutInstance(ApiWorldInstance inst, Action success, Action<string> error = null)
+		{
+			string idWithTags = inst.idWithTags;
+			int num = -1;
+			for (int i = 0; i < mWorldInstances.Count; i++)
+			{
+				if (mWorldInstances[i].idWithTags == idWithTags)
+				{
+					mWorldInstances[i] = inst;
+				}
+			}
+			bool newInstance = num == -1;
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			if (newInstance)
+			{
+				dictionary["id"] = inst.idWithTags;
+				ApiWorldInstance.AccessType accessType = inst.GetAccessType();
+				if (accessType == ApiWorldInstance.AccessType.InviteOnly)
+				{
+					dictionary["private"] = inst.instanceCreator;
 				}
 				else
 				{
-					ApiModel.SendPostRequest("worlds", dictionary, delegate
-					{
-						if (onSuccess != null)
-						{
-							onSuccess(this);
-						}
-					}, delegate(string error)
-					{
-						if (onError != null)
-						{
-							onError(error);
-						}
-					});
+					dictionary["private"] = "false";
+				}
+				if (accessType == ApiWorldInstance.AccessType.FriendsOnly)
+				{
+					dictionary["friends"] = inst.instanceCreator;
+				}
+				else
+				{
+					dictionary["friends"] = "false";
 				}
 			}
+			dictionary["name"] = inst.instanceName;
+			string tagString = inst.GetTagString();
+			if (tagString != null)
+			{
+				dictionary["tags"] = tagString;
+			}
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				Dictionary<string, object> responseDictionary = (c as ApiDictContainer).ResponseDictionary;
+				if (newInstance && responseDictionary != null)
+				{
+					mWorldInstances.Add(new ApiWorldInstance(this, responseDictionary, c.DataTimestamp));
+				}
+				if (success != null)
+				{
+					success();
+				}
+			};
+			apiDictContainer.OnError = delegate(ApiContainer c)
+			{
+				if (error != null)
+				{
+					error(c.Error);
+				}
+			};
+			ApiDictContainer responseContainer = apiDictContainer;
+			API.SendPutRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, dictionary);
+		}
+
+		private void UpdateVersionAndPlatform()
+		{
+			apiVersion = VERSION.ApiVersion;
+			unityVersion = VERSION.UnityVersion;
+			platform = API.GetAssetPlatformString();
 		}
 	}
 }

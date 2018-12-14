@@ -146,6 +146,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public List<DataStorageShadow> DataStorageShadowValues = new List<DataStorageShadow>();
 
+			public float AfterSeconds;
+
 			[SerializeField]
 			public bool[] ProbabilityLock = new bool[0];
 
@@ -162,10 +164,6 @@ namespace VRCSDK2
 
 		public bool isHidden;
 
-		private VRC_DataStorage dataStorage;
-
-		private Collider collider;
-
 		public bool UsesAdvancedOptions;
 
 		public bool ShowHelp = true;
@@ -173,11 +171,15 @@ namespace VRCSDK2
 		[SerializeField]
 		public List<TriggerEvent> Triggers = new List<TriggerEvent>();
 
+		private VRC_EventHandler _handler;
+
+		private VRC_DataStorage dataStorage;
+
+		private Collider collider;
+
 		private HashSet<OccupantInfo> occupants = new HashSet<OccupantInfo>();
 
 		private HashSet<Collider> stayOccupants = new HashSet<Collider>();
-
-		private VRC_EventHandler _handler;
 
 		private GameObject _localUser;
 
@@ -186,6 +188,16 @@ namespace VRCSDK2
 			get;
 			set;
 		}
+
+		public bool HasKeyTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.KeyTypes.Contains(t.TriggerType));
+
+		public bool HasTimerTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.TimerTypes.Contains(t.TriggerType));
+
+		public bool HasColliderTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.ColliderTypes.Contains(t.TriggerType));
+
+		public bool HasInteractiveTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
+
+		public bool HasPickupTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
 
 		public VRC_EventHandler Handler
 		{
@@ -214,16 +226,6 @@ namespace VRCSDK2
 				return _localUser;
 			}
 		}
-
-		public bool HasKeyTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.KeyTypes.Contains(t.TriggerType));
-
-		public bool HasTimerTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.TimerTypes.Contains(t.TriggerType));
-
-		public bool HasColliderTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.ColliderTypes.Contains(t.TriggerType));
-
-		public bool HasInteractiveTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
-
-		public bool HasPickupTriggers => Triggers.Any((TriggerEvent t) => TypeCollections.InteractiveTypes.Contains(t.TriggerType));
 
 		private event Action deferredForReady;
 
@@ -718,13 +720,13 @@ namespace VRCSDK2
 
 		private void ExecuteTrigger(TriggerEvent trigger)
 		{
-			if (trigger != null)
+			if (trigger != null && !(this == null))
 			{
 				if ((trigger.TriggerType == TriggerType.OnKeyDown || trigger.TriggerType == TriggerType.OnKeyUp) && (this.GetComponentInParent<VRC_PlayerApi>() != null || this.GetComponent<VRC_PlayerApi>() != null))
 				{
 					Debug.LogError((object)"Cannot execute key triggers on non-player objects.");
 				}
-				else if (!Networking.IsObjectReady(this.get_gameObject()))
+				else if (!Networking.IsObjectReady(this.get_gameObject()) || Networking.SceneEventHandler == null)
 				{
 					this.deferredForReady = (Action)Delegate.Combine(this.deferredForReady, (Action)delegate
 					{
@@ -733,73 +735,82 @@ namespace VRCSDK2
 				}
 				else
 				{
-					float[] probabilities = trigger.Probabilities;
-					float num = Random.Range(0f, 0.99f);
-					float num2 = 0f;
-					for (int i = 0; i < trigger.Events.Count; i++)
+					Networking.SceneEventHandler.StartCoroutine(ExecutionIterator(trigger));
+				}
+			}
+		}
+
+		private IEnumerator ExecutionIterator(TriggerEvent trigger)
+		{
+			if (trigger.AfterSeconds > 0f)
+			{
+				yield return (object)new WaitForSeconds(trigger.AfterSeconds);
+			}
+			float[] probabilities = trigger.Probabilities;
+			float randomVal = Random.Range(0f, 0.99f);
+			float randomAccum = 0f;
+			for (int idx = 0; idx < trigger.Events.Count; idx++)
+			{
+				if (probabilities != null && probabilities.Length == trigger.Events.Count && probabilities[idx] + randomAccum < randomVal)
+				{
+					randomAccum += probabilities[idx];
+				}
+				else
+				{
+					VRC_EventHandler.VrcEvent evt = trigger.Events[idx];
+					if (dataStorage != null && trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count)
 					{
-						if (probabilities != null && probabilities.Length == trigger.Events.Count && probabilities[i] + num2 < num)
+						DataStorageShadow shadow = trigger.DataStorageShadowValues[idx];
+						if (shadow.ParameterBoolOp != null)
 						{
-							num2 += probabilities[i];
+							VRC_DataStorage.VrcDataElement el4 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == ((_003CExecutionIterator_003Ec__Iterator4)/*Error near IL_019f: stateMachine*/)._003Cshadow_003E__5.ParameterBoolOp);
+							if (el4 != null)
+							{
+								evt.ParameterBoolOp = (el4.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
+							}
 						}
-						else
+						if (shadow.ParameterFloat != null)
 						{
-							VRC_EventHandler.VrcEvent vrcEvent = trigger.Events[i];
-							if (dataStorage != null && trigger.DataStorageShadowValues != null && trigger.DataStorageShadowValues.Count == trigger.Events.Count)
+							VRC_DataStorage.VrcDataElement el3 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == ((_003CExecutionIterator_003Ec__Iterator4)/*Error near IL_0203: stateMachine*/)._003Cshadow_003E__5.ParameterFloat);
+							if (el3 != null)
 							{
-								DataStorageShadow shadow = trigger.DataStorageShadowValues[i];
-								if (shadow.ParameterBoolOp != null)
-								{
-									VRC_DataStorage.VrcDataElement vrcDataElement = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterBoolOp);
-									if (vrcDataElement != null)
-									{
-										vrcEvent.ParameterBoolOp = (vrcDataElement.valueBool ? VRC_EventHandler.VrcBooleanOp.True : VRC_EventHandler.VrcBooleanOp.False);
-									}
-								}
-								if (shadow.ParameterFloat != null)
-								{
-									VRC_DataStorage.VrcDataElement vrcDataElement2 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterFloat);
-									if (vrcDataElement2 != null)
-									{
-										vrcEvent.ParameterFloat = vrcDataElement2.valueFloat;
-									}
-								}
-								if (shadow.ParameterInt != null)
-								{
-									VRC_DataStorage.VrcDataElement vrcDataElement3 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterInt);
-									if (vrcDataElement3 != null)
-									{
-										vrcEvent.ParameterInt = vrcDataElement3.valueInt;
-									}
-								}
-								if (shadow.ParameterString != null)
-								{
-									VRC_DataStorage.VrcDataElement vrcDataElement4 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == shadow.ParameterString);
-									if (vrcDataElement4 != null)
-									{
-										vrcEvent.ParameterString = vrcDataElement4.valueString;
-									}
-								}
+								evt.ParameterFloat = el3.valueFloat;
 							}
-							if (vrcEvent.ParameterObject == null && (vrcEvent.ParameterObjects == null || vrcEvent.ParameterObjects.Length == 0))
+						}
+						if (shadow.ParameterInt != null)
+						{
+							VRC_DataStorage.VrcDataElement el2 = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == ((_003CExecutionIterator_003Ec__Iterator4)/*Error near IL_025b: stateMachine*/)._003Cshadow_003E__5.ParameterInt);
+							if (el2 != null)
 							{
-								vrcEvent.ParameterObject = this.get_gameObject();
+								evt.ParameterInt = el2.valueInt;
 							}
-							Debug.LogFormat("{0} triggered {1}", new object[2]
+						}
+						if (shadow.ParameterString != null)
+						{
+							VRC_DataStorage.VrcDataElement el = dataStorage.data.FirstOrDefault((VRC_DataStorage.VrcDataElement e) => e.name == ((_003CExecutionIterator_003Ec__Iterator4)/*Error near IL_02b3: stateMachine*/)._003Cshadow_003E__5.ParameterString);
+							if (el != null)
 							{
-								this.get_gameObject().get_name(),
-								vrcEvent.EventType
-							});
-							Handler.TriggerEvent(vrcEvent, trigger.BroadcastType, LocalUser);
-							if (probabilities != null && probabilities.Length == trigger.Events.Count)
-							{
-								break;
+								evt.ParameterString = el.valueString;
 							}
 						}
 					}
-					RelayTrigger(trigger);
+					if (evt.ParameterObject == null && (evt.ParameterObjects == null || evt.ParameterObjects.Length == 0))
+					{
+						evt.ParameterObject = this.get_gameObject();
+					}
+					Debug.LogFormat("{0} triggered {1}", new object[2]
+					{
+						this.get_gameObject().get_name(),
+						evt.EventType
+					});
+					Handler.TriggerEvent(evt, trigger.BroadcastType, LocalUser);
+					if (probabilities != null && probabilities.Length == trigger.Events.Count)
+					{
+						break;
+					}
 				}
 			}
+			RelayTrigger(trigger);
 		}
 
 		private void RelayTrigger(TriggerEvent trigger)

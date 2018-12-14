@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace LitJson
 {
-	internal interface IOrderedDictionary : IEnumerable, IDictionary, ICollection
+	internal interface IOrderedDictionary : IEnumerable, ICollection, IDictionary
 	{
 		object this[int index]
 		{

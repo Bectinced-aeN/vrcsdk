@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace LitJson
 {
-	internal class JsonMockWrapper : IEnumerable, IDictionary, IList, ICollection, IOrderedDictionary, IJsonWrapper
+	internal class JsonMockWrapper : IEnumerable, IList, ICollection, IDictionary, IOrderedDictionary, IJsonWrapper
 	{
 		bool IList.IsFixedSize
 		{

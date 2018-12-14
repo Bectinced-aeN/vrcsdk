@@ -51,6 +51,8 @@ namespace VRCSDK2
 
 		public bool cookiesEnabled;
 
+		public bool autoFormSubmit = true;
+
 		[HideInInspector]
 		public List<WebFile> webData;
 

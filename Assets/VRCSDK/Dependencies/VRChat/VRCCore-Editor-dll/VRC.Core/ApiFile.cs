@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,21 +13,21 @@ namespace VRC.Core
 	{
 		public enum Status
 		{
-			none,
-			waiting,
-			queued,
-			complete,
-			error
+			None,
+			Waiting,
+			Queued,
+			Complete,
+			Error
 		}
 
 		public enum Category
 		{
-			simple,
-			multipart,
-			queued
+			Simple,
+			Multipart,
+			Queued
 		}
 
-		public class Version
+		public class Version : ApiModel
 		{
 			public enum FileType
 			{
@@ -34,7 +35,7 @@ namespace VRC.Core
 				Delta
 			}
 
-			public class FileDescriptor
+			public class FileDescriptor : ApiModel
 			{
 				public enum Type
 				{
@@ -43,122 +44,150 @@ namespace VRC.Core
 					signature
 				}
 
-				private Status mStatus;
+				[ApiField(Required = false)]
+				public Status status
+				{
+					get;
+					private set;
+				}
 
-				protected string mUrl;
+				[ApiField(Required = false)]
+				public string url
+				{
+					get;
+					private set;
+				}
 
-				protected string mMD5;
+				[ApiField(Required = false)]
+				public string md5
+				{
+					get;
+					private set;
+				}
 
-				private Category mCategory;
+				[ApiField(Required = false)]
+				public Category category
+				{
+					get;
+					private set;
+				}
 
-				private int mSizeInBytes;
+				[ApiField(Required = false)]
+				public int sizeInBytes
+				{
+					get;
+					private set;
+				}
 
-				public Status status => mStatus;
+				[ApiField(Required = false)]
+				public string fileName
+				{
+					get;
+					private set;
+				}
 
-				public string url => mUrl;
+				[ApiField(Required = false)]
+				public string uploadId
+				{
+					get;
+					private set;
+				}
 
-				public string md5 => mMD5;
-
-				public Category category => mCategory;
-
-				public int sizeInBytes => mSizeInBytes;
+				[ApiField(Required = false)]
+				public List<string> cdns
+				{
+					get;
+					private set;
+				}
 
 				public FileDescriptor()
 				{
-					mStatus = Status.none;
-					mUrl = string.Empty;
-					mMD5 = string.Empty;
-					mCategory = Category.simple;
-					mSizeInBytes = 0;
+					status = Status.None;
+					url = string.Empty;
+					md5 = string.Empty;
+					category = Category.Simple;
+					sizeInBytes = 0;
 				}
 
 				public void Init(FileDescriptor desc)
 				{
-					mStatus = desc.mStatus;
-					mUrl = desc.mUrl;
-					mMD5 = desc.mMD5;
-					mCategory = desc.mCategory;
-					mSizeInBytes = desc.mSizeInBytes;
-				}
-
-				public void Init(Dictionary<string, object> jsonObject)
-				{
-					mStatus = (Status)(int)Enum.Parse(typeof(Status), jsonObject["status"] as string);
-					mUrl = (jsonObject["url"] as string);
-					mMD5 = (jsonObject["md5"] as string);
-					mCategory = (Category)(int)Enum.Parse(typeof(Category), jsonObject["category"] as string);
-					mSizeInBytes = Convert.ToInt32(jsonObject["sizeInBytes"]);
+					status = desc.status;
+					url = desc.url;
+					md5 = desc.md5;
+					category = desc.category;
+					sizeInBytes = desc.sizeInBytes;
 				}
 			}
 
-			private int mVersion;
+			[ApiField]
+			public int version
+			{
+				get;
+				private set;
+			}
 
-			private Status mStatus;
+			[ApiField]
+			public Status status
+			{
+				get;
+				private set;
+			}
 
-			protected DateTime mCreatedAt;
+			[ApiField]
+			public DateTime created_at
+			{
+				get;
+				private set;
+			}
 
-			private FileDescriptor mFile;
+			[ApiField]
+			public FileDescriptor file
+			{
+				get;
+				private set;
+			}
 
-			private FileDescriptor mSignature;
+			[ApiField]
+			public FileDescriptor signature
+			{
+				get;
+				private set;
+			}
 
-			private FileDescriptor mDelta;
+			[ApiField]
+			public FileDescriptor delta
+			{
+				get;
+				private set;
+			}
 
-			private bool mDeleted;
-
-			public int version => mVersion;
-
-			public Status status => mStatus;
-
-			public DateTime created_at => mCreatedAt;
-
-			public FileDescriptor file => mFile;
-
-			public FileDescriptor signature => mSignature;
-
-			public FileDescriptor delta => mDelta;
-
-			public bool deleted => mDeleted;
+			[ApiField]
+			public bool deleted
+			{
+				get;
+				private set;
+			}
 
 			public Version()
 			{
-				mVersion = 0;
-				mStatus = Status.none;
-				mCreatedAt = default(DateTime);
-				mFile = new FileDescriptor();
-				mSignature = new FileDescriptor();
-				mDelta = new FileDescriptor();
-				mDeleted = false;
+				version = 0;
+				status = Status.None;
+				created_at = default(DateTime);
+				file = new FileDescriptor();
+				signature = new FileDescriptor();
+				delta = new FileDescriptor();
+				deleted = false;
 			}
 
 			public void Init(Version v)
 			{
-				mVersion = v.mVersion;
-				mStatus = v.mStatus;
-				mCreatedAt = v.mCreatedAt;
-				mFile.Init(v.mFile);
-				mSignature.Init(v.mSignature);
-				mDelta.Init(v.mDelta);
-				mDeleted = v.mDeleted;
-			}
-
-			public void Init(Dictionary<string, object> jsonObject)
-			{
-				mVersion = Convert.ToInt32(jsonObject["version"]);
-				mStatus = (Status)(int)Enum.Parse(typeof(Status), jsonObject["status"] as string);
-				mCreatedAt = DateTime.Parse(jsonObject["created_at"] as string);
-				if (jsonObject.ContainsKey("file") && jsonObject["file"] != null)
-				{
-					mFile.Init(jsonObject["file"] as Dictionary<string, object>);
-				}
-				if (jsonObject.ContainsKey("signature") && jsonObject["signature"] != null)
-				{
-					mSignature.Init(jsonObject["signature"] as Dictionary<string, object>);
-				}
-				if (jsonObject.ContainsKey("delta") && jsonObject["delta"] != null)
-				{
-					mDelta.Init(jsonObject["delta"] as Dictionary<string, object>);
-				}
-				mDeleted = (jsonObject.ContainsKey("deleted") && Convert.ToBoolean(jsonObject["deleted"]));
+				version = v.version;
+				status = v.status;
+				created_at = v.created_at;
+				file.Init(v.file);
+				signature.Init(v.signature);
+				delta.Init(v.delta);
+				deleted = v.deleted;
 			}
 
 			public FileDescriptor GetFileDescriptor(FileDescriptor.Type fileDescriptorType)
@@ -191,118 +220,164 @@ namespace VRC.Core
 			}
 		}
 
-		public class UploadStatus
+		public class UploadStatus : ApiModel
 		{
-			public List<string> etags = new List<string>();
-
-			public int nextPartNumber;
-
-			public void Init(UploadStatus u)
+			[ApiField]
+			public List<string> etags
 			{
-				etags = u.etags.ToList();
-				nextPartNumber = u.nextPartNumber;
+				get;
+				set;
 			}
 
-			public void Init(Dictionary<string, object> jsonObject)
+			[ApiField]
+			public double nextPartNumber
 			{
-				etags = Tools.ObjListToStringList((List<object>)jsonObject["etags"]);
-				nextPartNumber = Convert.ToInt32(jsonObject["nextPartNumber"]);
+				get;
+				set;
+			}
+
+			[ApiField]
+			public double maxParts
+			{
+				get;
+				set;
+			}
+
+			[ApiField]
+			public List<double> parts
+			{
+				get;
+				set;
+			}
+
+			[ApiField]
+			public string uploadId
+			{
+				get;
+				set;
+			}
+
+			[ApiField]
+			public string fileName
+			{
+				get;
+				set;
+			}
+
+			public UploadStatus()
+			{
+			}
+
+			public UploadStatus(string id, int version, Version.FileDescriptor.Type descriptor, string action)
+				: base("file/" + id + "/" + version.ToString() + "/" + descriptor.ToString() + "/" + action)
+			{
+				base.id = null;
 			}
 		}
 
 		public const bool kDefaultUseFileAPI = false;
 
-		private string mName;
-
-		private string mOwnerId;
-
-		private string mMimeType;
-
-		private string mExtension;
-
-		public List<Version> versions;
-
-		private bool mIsInitialized;
-
-		private bool mIsPendingInit;
-
-		public string name => mName;
-
-		public string ownerId => mOwnerId;
-
-		public string mimeType => mMimeType;
-
-		public string extension => mExtension;
-
-		public static void Create(string name, string mimeType, string extension, Action<ApiFile> successCallback, Action<string> errorCallback)
+		[ApiField]
+		public string name
 		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["name"] = name;
-			dictionary["mimeType"] = mimeType;
-			dictionary["extension"] = extension;
-			ApiModel.SendPostRequest("file", dictionary, delegate(Dictionary<string, object> obj)
-			{
-				ApiFile apiFile = new ApiFile();
-				apiFile.Init(obj);
-				if (successCallback != null)
-				{
-					successCallback(apiFile);
-				}
-			}, delegate(string obj)
-			{
-				if (errorCallback != null)
-				{
-					errorCallback(obj);
-				}
-			});
+			get;
+			private set;
 		}
 
-		public static void Get(string fileId, Action<ApiFile> successCallback, Action<string> errorCallback)
+		[ApiField]
+		public string ownerId
 		{
-			ApiModel.SendGetRequest("file/" + fileId, delegate(Dictionary<string, object> obj)
-			{
-				ApiFile apiFile = new ApiFile();
-				apiFile.Init(obj);
-				if (successCallback != null)
-				{
-					successCallback(apiFile);
-				}
-			}, delegate(string obj)
-			{
-				if (errorCallback != null)
-				{
-					errorCallback(obj);
-				}
-			});
+			get;
+			private set;
 		}
 
-		public void Refresh(Action<ApiFile> successCallback, Action<string> errorCallback)
+		[ApiField]
+		public string mimeType
 		{
-			Get(base.id, delegate(ApiFile file)
-			{
-				Init(file);
-				if (successCallback != null)
-				{
-					successCallback(file);
-				}
-			}, errorCallback);
+			get;
+			private set;
 		}
 
-		public static void Delete(string fileId, Action successCallback, Action<string> errorCallback)
+		[ApiField]
+		public string extension
 		{
-			ApiModel.SendRequest("file/" + fileId, HTTPMethods.Delete, (Dictionary<string, string>)null, (Action<Dictionary<string, object>>)delegate
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public List<Version> versions
+		{
+			get;
+			private set;
+		}
+
+		[DefaultValue(false)]
+		public bool IsInitialized
+		{
+			get;
+			private set;
+		}
+
+		[DefaultValue(false)]
+		public bool IsPendingInit
+		{
+			get;
+			private set;
+		}
+
+		public ApiFile()
+			: base("file")
+		{
+			versions = new List<Version>();
+		}
+
+		public ApiFile(ApiFile file)
+			: this()
+		{
+			if (file != null)
 			{
-				if (successCallback != null)
+				base.id = file.id;
+				name = file.name;
+				ownerId = file.ownerId;
+				mimeType = file.mimeType;
+				extension = file.extension;
+				versions = file.versions.Select(delegate(Version v)
 				{
-					successCallback();
-				}
-			}, (Action<string>)delegate(string obj)
+					Version version = new Version();
+					version.Init(v);
+					return version;
+				}).ToList();
+				IsInitialized = file.IsInitialized;
+			}
+		}
+
+		public ApiFile(string fileId)
+			: this()
+		{
+			if (!string.IsNullOrEmpty(fileId))
 			{
-				if (errorCallback != null)
+				base.id = fileId;
+				Fetch(null, delegate(ApiContainer c)
 				{
-					errorCallback(obj);
-				}
-			}, needsAPIKey: true, authenticationRequired: true, -1f);
+					Debug.LogError((object)("Could not fetch ApiFile with ID: " + fileId + " because " + c.Error));
+				});
+			}
+		}
+
+		public static void Create(string name, string mimeType, string extension, Action<ApiContainer> successCallback, Action<ApiContainer> errorCallback)
+		{
+			ApiFile apiFile = new ApiFile();
+			apiFile.name = name;
+			apiFile.mimeType = mimeType;
+			apiFile.extension = extension;
+			ApiFile apiFile2 = apiFile;
+			apiFile2.Save(successCallback, errorCallback);
+		}
+
+		public void Refresh(Action<ApiContainer> onSuccess, Action<ApiContainer> onError)
+		{
+			Fetch(onSuccess, onError, null, disableCache: true);
 		}
 
 		public static void DownloadFile(string url, Action<byte[]> onSuccess, Action<string> onError, Action<int, int> onProgress)
@@ -400,95 +475,19 @@ namespace VRC.Core
 			}
 		}
 
-		public void Init()
+		public override bool ShouldCache()
 		{
-			mId = string.Empty;
-			mName = string.Empty;
-			mOwnerId = string.Empty;
-			mMimeType = string.Empty;
-			mExtension = string.Empty;
-			versions = new List<Version>();
-			mIsInitialized = false;
+			return false;
 		}
 
-		public void Init(Dictionary<string, object> jsonObject)
+		public override bool SetApiFieldsFromJson(Dictionary<string, object> fields, ref string Error)
 		{
-			Init();
-			Fill(jsonObject);
-			mIsInitialized = true;
-		}
-
-		public void Init(ApiFile file)
-		{
-			if (file == null)
+			if (base.SetApiFieldsFromJson(fields, ref Error))
 			{
-				Init();
+				IsInitialized = true;
+				return true;
 			}
-			else
-			{
-				mId = file.mId;
-				mName = file.mName;
-				mOwnerId = file.mOwnerId;
-				mMimeType = file.mMimeType;
-				mExtension = file.mExtension;
-				versions.Clear();
-				foreach (Version version2 in file.versions)
-				{
-					Version version = new Version();
-					version.Init(version2);
-					versions.Add(version2);
-				}
-				mIsInitialized = file.mIsInitialized;
-			}
-		}
-
-		public void Init(string fileId)
-		{
-			if (string.IsNullOrEmpty(fileId))
-			{
-				Init();
-			}
-			else
-			{
-				mId = fileId;
-				mIsPendingInit = true;
-				Get(fileId, delegate(ApiFile file)
-				{
-					Init(file);
-					mIsPendingInit = false;
-				}, delegate
-				{
-					mIsPendingInit = false;
-					Debug.LogError((object)("Could not fetch ApiFile with ID: " + fileId));
-				});
-			}
-		}
-
-		public void Fill(Dictionary<string, object> jsonObject)
-		{
-			mId = (jsonObject["id"] as string);
-			mName = (jsonObject["name"] as string);
-			mOwnerId = (jsonObject["ownerId"] as string);
-			mMimeType = (jsonObject["mimeType"] as string);
-			mExtension = (jsonObject["extension"] as string);
-			versions.Clear();
-			List<object> list = jsonObject["versions"] as List<object>;
-			foreach (object item in list)
-			{
-				Version version = new Version();
-				version.Init(item as Dictionary<string, object>);
-				versions.Add(version);
-			}
-		}
-
-		public bool IsInitialized()
-		{
-			return mIsInitialized;
-		}
-
-		public bool IsPendingInit()
-		{
-			return mIsPendingInit;
+			return false;
 		}
 
 		public override string ToString()
@@ -501,39 +500,31 @@ namespace VRC.Core
 			return base.id;
 		}
 
-		public void CreateNewVersion(Version.FileType fileType, string fileOrDeltaMd5Base64, long fileOrDeltaSizeInBytes, string signatureMd5Base64, long signatureSizeInBytes, Action<ApiFile> successCallback, Action<string> errorCallback)
+		public void CreateNewVersion(Version.FileType fileType, string fileOrDeltaMd5Base64, long fileOrDeltaSizeInBytes, string signatureMd5Base64, long signatureSizeInBytes, Action<ApiContainer> successCallback, Action<ApiContainer> errorCallback)
 		{
-			if (CheckInitialized(errorCallback))
+			if (!IsInitialized)
 			{
-				Dictionary<string, string> dictionary = new Dictionary<string, string>();
+				Debug.LogError((object)"Unable to create new file version: file not initialized.");
+			}
+			else
+			{
+				Dictionary<string, object> dictionary = new Dictionary<string, object>();
 				dictionary["signatureMd5"] = signatureMd5Base64;
-				dictionary["signatureSizeInBytes"] = signatureSizeInBytes.ToString();
+				dictionary["signatureSizeInBytes"] = signatureSizeInBytes;
 				dictionary[(fileType != 0) ? "deltaMd5" : "fileMd5"] = fileOrDeltaMd5Base64;
-				dictionary[(fileType != 0) ? "deltaSizeInBytes" : "fileSizeInBytes"] = fileOrDeltaSizeInBytes.ToString();
-				ApiModel.SendPostRequest("file/" + base.id, dictionary, delegate(Dictionary<string, object> obj)
-				{
-					if (ValidateResponse(obj, errorCallback))
-					{
-						Fill(obj);
-						if (successCallback != null)
-						{
-							successCallback(this);
-						}
-					}
-				}, delegate(string obj)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(obj);
-					}
-				});
+				dictionary[(fileType != 0) ? "deltaSizeInBytes" : "fileSizeInBytes"] = fileOrDeltaSizeInBytes;
+				ApiModelContainer<ApiFile> apiModelContainer = new ApiModelContainer<ApiFile>(this);
+				apiModelContainer.OnSuccess = successCallback;
+				apiModelContainer.OnError = errorCallback;
+				ApiModelContainer<ApiFile> responseContainer = apiModelContainer;
+				API.SendRequest(MakeRequestEndpoint(), HTTPMethods.Post, responseContainer, dictionary, needsAPIKey: true, Application.get_isEditor());
 			}
 		}
 
 		public bool HasExistingVersion()
 		{
 			int num = versions.Count - 1;
-			while (num > 0 && (versions[num].deleted || versions[num].status != Status.complete))
+			while (num > 0 && (versions[num].deleted || versions[num].status != Status.Complete))
 			{
 				num--;
 			}
@@ -543,7 +534,7 @@ namespace VRC.Core
 		public bool HasExistingOrPendingVersion()
 		{
 			int num = GetLatestVersionNumber();
-			while (num > 0 && versions[num].deleted)
+			while (num > 0 && (versions[num] == null || versions[num].deleted))
 			{
 				num--;
 			}
@@ -552,7 +543,7 @@ namespace VRC.Core
 
 		public int GetLatestVersionNumber()
 		{
-			return Mathf.Max(versions.Count - 1, 0);
+			return (versions != null) ? Mathf.Max(versions.Count - 1, 0) : (-1);
 		}
 
 		public int GetLatestCompleteVersionNumber()
@@ -562,7 +553,7 @@ namespace VRC.Core
 				return 0;
 			}
 			int num = versions.Count - 1;
-			while (num > 0 && versions[num].status != Status.complete)
+			while (num > 0 && versions[num].status != Status.Complete)
 			{
 				num--;
 			}
@@ -571,9 +562,8 @@ namespace VRC.Core
 
 		public Version GetVersion(int v)
 		{
-			if (v <= 0 || v >= versions.Count)
+			if (versions == null || v <= 0 || v >= versions.Count)
 			{
-				Debug.LogError((object)("ApiFile(" + base.id + "): version " + v + " does not exist"));
 				return null;
 			}
 			return versions[v];
@@ -589,58 +579,45 @@ namespace VRC.Core
 			return GetVersion(GetLatestVersionNumber());
 		}
 
-		public void DeleteVersion(int versionNumber, Action<ApiFile> successCallback, Action<string> errorCallback)
+		public void DeleteVersion(int versionNumber, Action<ApiContainer> successCallback = null, Action<ApiContainer> errorCallback = null)
 		{
-			if (CheckInitialized(errorCallback))
+			if (!IsInitialized)
 			{
-				if (versionNumber <= 0 || versionNumber >= versions.Count)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback("ApiFile(" + base.id + "): version to delete is invalid: " + versionNumber);
-					}
-				}
-				else
-				{
-					ApiModel.SendRequest("file/" + base.id + "/" + versionNumber, HTTPMethods.Delete, null, delegate(Dictionary<string, object> obj)
-					{
-						if (ValidateResponse(obj, errorCallback))
-						{
-							Fill(obj);
-							if (successCallback != null)
-							{
-								successCallback(this);
-							}
-						}
-					}, delegate(string obj)
-					{
-						if (errorCallback != null)
-						{
-							errorCallback(obj);
-						}
-					});
-				}
+				Debug.LogError((object)"Unable to delete file: file not initialized.");
+			}
+			else if (versionNumber <= 0 || versionNumber >= versions.Count)
+			{
+				Debug.LogError((object)("ApiFile(" + base.id + "): version to delete is invalid: " + versionNumber));
+			}
+			else
+			{
+				ApiModelContainer<ApiFile> apiModelContainer = new ApiModelContainer<ApiFile>(this);
+				apiModelContainer.OnSuccess = successCallback;
+				apiModelContainer.OnError = errorCallback;
+				ApiModelContainer<ApiFile> responseContainer = apiModelContainer;
+				API.SendRequest("file/" + base.id + "/" + versionNumber, HTTPMethods.Delete, responseContainer);
 			}
 		}
 
-		public void DeleteLatestVersion(Action<ApiFile> successCallback, Action<string> errorCallback)
+		public void DeleteLatestVersion(Action<ApiContainer> successCallback = null, Action<ApiContainer> errorCallback = null)
 		{
-			if (CheckInitialized(errorCallback))
+			if (!IsInitialized)
+			{
+				Debug.LogError((object)"Unable to delete file: file not initialized.");
+			}
+			else
 			{
 				int latestVersionNumber = GetLatestVersionNumber();
 				if (latestVersionNumber <= 0 || latestVersionNumber >= versions.Count)
 				{
-					if (errorCallback != null)
-					{
-						errorCallback("ApiFile(" + base.id + "): version to delete is invalid: " + latestVersionNumber);
-					}
+					Debug.LogError((object)("ApiFile(" + base.id + "): version to delete is invalid: " + latestVersionNumber));
 				}
 				else if (latestVersionNumber == 1)
 				{
 					string nameTemp = name;
 					string mimeTypeTemp = mimeType;
 					string extTemp = extension;
-					Delete(base.id, delegate
+					API.Delete<ApiFile>(base.id, delegate
 					{
 						Create(nameTemp, mimeTypeTemp, extTemp, successCallback, errorCallback);
 					}, errorCallback);
@@ -727,7 +704,7 @@ namespace VRC.Core
 			{
 				return string.Empty;
 			}
-			return ApiModel.GetApiUrl() + "file/" + base.id + "/" + versionNumber + "/" + type.ToString();
+			return API.GetApiUrl() + "file/" + base.id + "/" + versionNumber + "/" + type.ToString();
 		}
 
 		public string GetFileMD5()
@@ -746,7 +723,25 @@ namespace VRC.Core
 			return GetVersion(versionNumber)?.GetFileDescriptor(fileDescriptorType);
 		}
 
-		public bool HasQueuedOperation()
+		public bool IsLatestVersionQueued(bool checkDelta = true)
+		{
+			Version version = GetVersion(GetLatestVersionNumber());
+			if (version == null)
+			{
+				return false;
+			}
+			if (version.status == Status.Queued)
+			{
+				return true;
+			}
+			if ((!checkDelta && version.file != null && version.file.status == Status.Queued) || (checkDelta && version.delta != null && version.delta.status == Status.Queued) || (version.signature != null && version.signature.status == Status.Queued))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public bool HasQueuedOperation(bool checkDelta = true)
 		{
 			if (IsWaitingForUpload())
 			{
@@ -754,15 +749,7 @@ namespace VRC.Core
 			}
 			if (HasExistingOrPendingVersion())
 			{
-				Version version = GetVersion(GetLatestVersionNumber());
-				if (version.status == Status.queued)
-				{
-					return true;
-				}
-				if ((version.file != null && version.file.status == Status.queued) || (version.delta != null && version.delta.status == Status.queued) || (version.signature != null && version.signature.status == Status.queued))
-				{
-					return true;
-				}
+				return IsLatestVersionQueued(checkDelta);
 			}
 			return false;
 		}
@@ -772,11 +759,11 @@ namespace VRC.Core
 			if (HasExistingOrPendingVersion())
 			{
 				Version version = GetVersion(GetLatestVersionNumber());
-				if (version.status == Status.waiting)
+				if (version.status == Status.Waiting)
 				{
 					return true;
 				}
-				if ((version.file != null && version.file.status == Status.waiting) || (version.delta != null && version.delta.status == Status.waiting) || (version.signature != null && version.signature.status == Status.waiting))
+				if ((version.file != null && version.file.status == Status.Waiting) || (version.delta != null && version.delta.status == Status.Waiting) || (version.signature != null && version.signature.status == Status.Waiting))
 				{
 					return true;
 				}
@@ -789,11 +776,11 @@ namespace VRC.Core
 			if (HasExistingOrPendingVersion())
 			{
 				Version version = GetVersion(GetLatestVersionNumber());
-				if (version.status == Status.error)
+				if (version.status == Status.Error)
 				{
 					return true;
 				}
-				if ((version.file != null && version.file.status == Status.error) || (version.delta != null && version.delta.status == Status.error) || (version.signature != null && version.signature.status == Status.error))
+				if ((version.file != null && version.file.status == Status.Error) || (version.delta != null && version.delta.status == Status.Error) || (version.signature != null && version.signature.status == Status.Error))
 				{
 					return true;
 				}
@@ -801,161 +788,123 @@ namespace VRC.Core
 			return false;
 		}
 
-		private bool CheckInitialized(Action<string> errorCallback)
+		public void StartSimpleUpload(Version.FileDescriptor.Type fileDescriptorType, Action<ApiContainer> onSuccess, Action<ApiContainer> onError)
 		{
-			if (!IsInitialized())
+			if (!IsInitialized)
 			{
-				errorCallback?.Invoke("ApiFile is not initialized: " + base.id);
-				return false;
+				onError?.Invoke(new ApiContainer
+				{
+					Error = "Unable to upload file: file not initialized."
+				});
 			}
-			return true;
-		}
-
-		private bool ValidateResponse(Dictionary<string, object> response, Action<string> errorCallback)
-		{
-			bool flag = true && response.ContainsKey("name") && string.Compare(name, response["name"] as string) == 0 && response.ContainsKey("ownerId") && response.ContainsKey("mimeType") && string.Compare(mimeType, response["mimeType"] as string) == 0 && response.ContainsKey("extension") && string.Compare(extension, response["extension"] as string) == 0;
-			if (!flag)
+			else
 			{
-				errorCallback?.Invoke("APIFile query response was invalid, fields do not match");
-			}
-			return flag;
-		}
-
-		public void StartSimpleUpload(Version.FileDescriptor.Type fileDescriptorType, Action<string> onSuccess, Action<string> onError)
-		{
-			if (CheckInitialized(onError))
-			{
-				Version.FileDescriptor fileDescriptor = GetFileDescriptor(GetLatestVersionNumber(), fileDescriptorType);
+				int latestVersionNumber = GetLatestVersionNumber();
+				Version.FileDescriptor fileDescriptor = GetFileDescriptor(latestVersionNumber, fileDescriptorType);
 				if (fileDescriptor == null)
 				{
-					if (onError != null)
+					onError?.Invoke(new ApiContainer
 					{
-						onError("Version record doesn't exist");
-					}
+						Error = "Version record doesn't exist"
+					});
 				}
 				else
 				{
-					int latestVersionNumber = GetLatestVersionNumber();
-					ApiModel.SendPutRequest("file/" + base.id + "/" + latestVersionNumber + "/" + fileDescriptorType.ToString() + "/start", delegate(Dictionary<string, object> obj)
-					{
-						string obj2 = obj["url"] as string;
-						if (onSuccess != null)
-						{
-							onSuccess(obj2);
-						}
-					}, delegate(string obj)
-					{
-						if (onError != null)
-						{
-							onError(obj);
-						}
-					});
+					UploadStatus uploadStatus = new UploadStatus(base.id, latestVersionNumber, fileDescriptorType, "start");
+					ApiDictContainer apiDictContainer = new ApiDictContainer("url");
+					apiDictContainer.OnSuccess = onSuccess;
+					apiDictContainer.OnError = onError;
+					ApiDictContainer responseContainer = apiDictContainer;
+					API.SendPutRequest(uploadStatus.Endpoint, responseContainer);
 				}
 			}
 		}
 
-		public void StartMultipartUpload(Version.FileDescriptor.Type fileDescriptorType, int partNumber, Action<string> onSuccess, Action<string> onError)
+		public void StartMultipartUpload(Version.FileDescriptor.Type fileDescriptorType, int partNumber, Action<ApiContainer> onSuccess, Action<ApiContainer> onError)
 		{
-			if (CheckInitialized(onError))
+			if (!IsInitialized)
 			{
-				Version.FileDescriptor fileDescriptor = GetFileDescriptor(GetLatestVersionNumber(), fileDescriptorType);
+				onError?.Invoke(new ApiContainer
+				{
+					Error = "Unable to upload file: file not initialized."
+				});
+			}
+			else
+			{
+				int latestVersionNumber = GetLatestVersionNumber();
+				Version.FileDescriptor fileDescriptor = GetFileDescriptor(latestVersionNumber, fileDescriptorType);
 				if (fileDescriptor == null)
 				{
-					if (onError != null)
+					onError?.Invoke(new ApiContainer
 					{
-						onError("Version record doesn't exist");
-					}
+						Error = "Version record doesn't exist"
+					});
 				}
 				else
 				{
-					int latestVersionNumber = GetLatestVersionNumber();
-					ApiModel.SendPutRequest("file/" + base.id + "/" + latestVersionNumber + "/" + fileDescriptorType.ToString() + "/start?partNumber=" + partNumber, delegate(Dictionary<string, object> obj)
-					{
-						string obj2 = obj["url"] as string;
-						if (onSuccess != null)
-						{
-							onSuccess(obj2);
-						}
-					}, delegate(string obj)
-					{
-						if (onError != null)
-						{
-							onError(obj);
-						}
-					});
+					UploadStatus uploadStatus = new UploadStatus(base.id, latestVersionNumber, fileDescriptorType, "start");
+					ApiDictContainer apiDictContainer = new ApiDictContainer("url");
+					apiDictContainer.OnSuccess = onSuccess;
+					apiDictContainer.OnError = onError;
+					ApiDictContainer responseContainer = apiDictContainer;
+					API.SendPutRequest(uploadStatus.Endpoint + "?partNumber=" + partNumber, responseContainer);
 				}
 			}
 		}
 
-		public void FinishUpload(Version.FileDescriptor.Type fileDescriptorType, List<string> multipartEtags, Action<ApiFile> onSuccess, Action<string> onError)
+		public void FinishUpload(Version.FileDescriptor.Type fileDescriptorType, List<string> multipartEtags, Action<ApiContainer> onSuccess, Action<ApiContainer> onError)
 		{
-			if (CheckInitialized(onError))
+			if (!IsInitialized)
 			{
-				Version.FileDescriptor fileDescriptor = GetFileDescriptor(GetLatestVersionNumber(), fileDescriptorType);
+				onError?.Invoke(new ApiContainer
+				{
+					Error = "Unable to finish upload of file: file not initialized."
+				});
+			}
+			else
+			{
+				int latestVersionNumber = GetLatestVersionNumber();
+				Version.FileDescriptor fileDescriptor = GetFileDescriptor(latestVersionNumber, fileDescriptorType);
 				if (fileDescriptor == null)
 				{
-					if (onError != null)
+					onError?.Invoke(new ApiContainer
 					{
-						onError("Version record doesn't exist");
-					}
+						Error = "Version record doesn't exist"
+					});
 				}
 				else
 				{
-					Dictionary<string, object> dictionary = null;
-					if (multipartEtags != null)
-					{
-						dictionary = new Dictionary<string, object>();
-						dictionary["etags"] = multipartEtags;
-					}
-					int latestVersionNumber = GetLatestVersionNumber();
-					ApiModel.SendPutRequest("file/" + base.id + "/" + latestVersionNumber + "/" + fileDescriptorType.ToString() + "/finish", dictionary, delegate(Dictionary<string, object> obj)
-					{
-						ApiFile apiFile = new ApiFile();
-						apiFile.Init(obj);
-						if (onSuccess != null)
-						{
-							onSuccess(apiFile);
-						}
-					}, delegate(string obj)
-					{
-						if (onError != null)
-						{
-							onError(obj);
-						}
-					});
+					UploadStatus uploadStatus = new UploadStatus(base.id, latestVersionNumber, fileDescriptorType, "finish");
+					uploadStatus.etags = multipartEtags;
+					UploadStatus uploadStatus2 = uploadStatus;
+					uploadStatus2.Put(onSuccess, onError);
 				}
 			}
 		}
 
-		public void GetUploadStatus(int versionNumber, Version.FileDescriptor.Type fileDescriptorType, Action<UploadStatus> successCallback, Action<string> errorCallback)
+		public void GetUploadStatus(int versionNumber, Version.FileDescriptor.Type fileDescriptorType, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onError = null)
 		{
-			if (CheckInitialized(errorCallback))
+			if (!IsInitialized)
+			{
+				onError?.Invoke(new ApiContainer
+				{
+					Error = "Upload status not retrieved: file not initialized."
+				});
+			}
+			else
 			{
 				Version.FileDescriptor fileDescriptor = GetFileDescriptor(versionNumber, fileDescriptorType);
 				if (fileDescriptor == null)
 				{
-					if (errorCallback != null)
+					onError?.Invoke(new ApiContainer
 					{
-						errorCallback("Version record doesn't exist");
-					}
+						Error = "Upload status not retrieved: unknown file descriptor."
+					});
 				}
 				else
 				{
-					ApiModel.SendGetRequest("file/" + base.id + "/" + versionNumber + "/" + fileDescriptorType.ToString() + "/status", delegate(Dictionary<string, object> obj)
-					{
-						UploadStatus uploadStatus = new UploadStatus();
-						uploadStatus.Init(obj);
-						if (successCallback != null)
-						{
-							successCallback(uploadStatus);
-						}
-					}, delegate(string obj)
-					{
-						if (errorCallback != null)
-						{
-							errorCallback(obj);
-						}
-					});
+					UploadStatus uploadStatus = new UploadStatus(base.id, versionNumber, fileDescriptorType, "status");
+					uploadStatus.Fetch(onSuccess, onError);
 				}
 			}
 		}

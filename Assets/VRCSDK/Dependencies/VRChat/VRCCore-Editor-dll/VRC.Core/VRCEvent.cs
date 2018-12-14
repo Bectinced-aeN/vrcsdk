@@ -4,56 +4,74 @@ namespace VRC.Core
 {
 	public class VRCEvent : ApiModel
 	{
-		private string mName;
-
-		private string mDescription;
-
-		private string mImageUrl;
-
-		private string mAuthorName;
-
-		private string mAuthorId;
-
-		private string mStartTime;
-
-		private string mVenueId;
-
-		public string name => mName;
-
-		public string description => mDescription;
-
-		public string imageUrl => mImageUrl;
-
-		public string authorName => mAuthorName;
-
-		public string authorId => mAuthorId;
-
-		public string startTime => mStartTime;
-
-		public string venueId => mVenueId;
-
-		public VRCEvent(Dictionary<string, object> jsonObject)
+		[ApiField]
+		public string name
 		{
-			mId = (jsonObject["id"] as string);
-			mName = (jsonObject["name"] as string);
-			mDescription = (jsonObject["description"] as string);
-			mImageUrl = (jsonObject["imageUrl"] as string);
-			mAuthorName = (jsonObject["authorName"] as string);
-			mAuthorId = (jsonObject["authorId"] as string);
-			mStartTime = (jsonObject["startTime"] as string);
+			get;
+			private set;
 		}
 
-		public static List<VRCEvent> VRCEvents(Dictionary<string, object> jsonObjects)
+		[ApiField]
+		public string description
+		{
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public string imageUrl
+		{
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public string authorName
+		{
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public string authorId
+		{
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public string startTime
+		{
+			get;
+			private set;
+		}
+
+		[ApiField]
+		public string venueId
+		{
+			get;
+			private set;
+		}
+
+		public VRCEvent()
+			: base(null)
+		{
+		}
+
+		public static List<VRCEvent> MakeEvents(Dictionary<string, object> jsonObjects)
 		{
 			List<VRCEvent> list = new List<VRCEvent>();
-			if (jsonObjects != null)
+			if (jsonObjects == null)
 			{
-				foreach (KeyValuePair<string, object> jsonObject in jsonObjects)
-				{
-					VRCEvent item = new VRCEvent(jsonObject.Value as Dictionary<string, object>);
-					list.Add(item);
-				}
 				return list;
+			}
+			foreach (KeyValuePair<string, object> jsonObject in jsonObjects)
+			{
+				VRCEvent vRCEvent = API.CreateFromJson<VRCEvent>(jsonObject.Value as Dictionary<string, object>);
+				if (vRCEvent != null)
+				{
+					list.Add(vRCEvent);
+				}
 			}
 			return list;
 		}

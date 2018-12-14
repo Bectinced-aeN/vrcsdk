@@ -8,27 +8,36 @@ using VRC.Core;
 public class VRC_SdkControlPanel : EditorWindow
 {
     static VRC_SdkControlPanel window;
-    static bool forceNewFileCreation = false;
 
     public static System.Action _EnableSpatialization = null;   // assigned in AutoAddONSPAudioSourceComponents
+
+    const string kCantPublishContent = "Before you can upload avatars or worlds, you will need to spend some time in VRChat.";
+    const string kCantPublishAvatars = "Before you can upload avatars, you will need to spend some time in VRChat.";
+    const string kCantPublishWorlds = "Before you can upload worlds, you will need to spend some time in VRChat.";
 
     [MenuItem("VRChat SDK/Show Build Control Panel")]
     static void Init()
     {
+        if (!RemoteConfig.IsInitialized())
+        {
+            VRC.Core.API.SetOnlineMode(true, "vrchat");
+            RemoteConfig.Init(() => Init());
+            return;
+        }
+
         window = (VRC_SdkControlPanel)EditorWindow.GetWindow(typeof(VRC_SdkControlPanel));
         window.titleContent.text = "VRChat";
 
         window.ResetIssues();
 
         window.Show();
-        //forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false);
     }
 
     bool UseDevApi
     {
         get
         {
-            return VRC.Core.ApiModel.GetApiUrl() == ApiModel.devApiUrl;
+            return VRC.Core.API.GetApiUrl() == API.devApiUrl;
         }
     }
 
@@ -116,29 +125,6 @@ public class VRC_SdkControlPanel : EditorWindow
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
-
-        //if (EditorGUILayout.ToggleLeft("Force Complete File Upload", forceNewFileCreation))
-        //{
-        //    if (!forceNewFileCreation)
-        //    {
-        //        bool yep = UnityEditor.EditorUtility.DisplayDialog("Are you sure?", "This will disable compression and cause your full file data to be uploaded during next publish, resulting in longer upload times.", "OK", "Cancel");
-        //        if (yep)
-        //        {
-        //            forceNewFileCreation = true;
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    forceNewFileCreation = false;
-        //}
-
-        //if (UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", false) != forceNewFileCreation)
-        //{
-        //    UnityEditor.EditorPrefs.SetBool("forceNewFileCreation", forceNewFileCreation);
-        //}
-
-        UnityEditor.EditorPrefs.SetBool("forceNewFileCreation", true);
 
         EditorGUILayout.Space();
 
@@ -353,6 +339,11 @@ public class VRC_SdkControlPanel : EditorWindow
         if (g.y == 0)
             OnGUIWarning(scene, "Zero gravity will make walking extremely difficult, though we support different gravity, player orientation is always 'upwards' so this may not have the effect you're looking for.");
 
+        #if PLAYMAKER
+            if (VRCSDK2.VRC_PlaymakerHelper.ValidatePlaymaker() == false)
+                OnGUIError(scene, VRCSDK2.VRC_PlaymakerHelper.GetErrors());
+        #endif
+
         scene.useAssignedLayers = true;
         if (scene.useAssignedLayers)
         {
@@ -381,6 +372,9 @@ public class VRC_SdkControlPanel : EditorWindow
         {
             CustomDLLMaker.CreateDirectories();
         }
+        
+        if (scene.UpdateTimeInMS < (int)(1000f / 90f * 3f))
+            OnGUIWarning(scene, "Room has a very fast update rate; experience may suffer with many users.");
     }
 
     void OnGUIScene(VRCSDK2.VRC_SceneDescriptor scene)
@@ -390,15 +384,24 @@ public class VRC_SdkControlPanel : EditorWindow
 
         string worldVersion = "-1";
         PipelineManager[] pms = (PipelineManager[])VRC.Tools.FindSceneObjectsOfTypeAll<PipelineManager>();
-        if (pms.Length == 1)
+        if (pms.Length == 1 && !string.IsNullOrEmpty(pms[0].blueprintId))
         {
             if (scene.apiWorld == null)
             {
-                scene.apiWorld = new ApiWorld();
-                ApiWorld.Fetch(pms[0].blueprintId, false, delegate (ApiWorld world)
-                {
-                    scene.apiWorld = world;
-                }, delegate (string error) { });
+                ApiWorld world = API.FromCacheOrNew<ApiWorld>(pms[0].blueprintId);
+                world.Fetch(null, false, 
+                    (c) => scene.apiWorld = c.Model as ApiWorld, 
+                    (c) =>
+                    {
+                        if (c.Code == 404)
+                        {
+                            Debug.LogErrorFormat("Could not load world {0} because it didn't exist.", pms[0].blueprintId);
+                            ApiCache.Invalidate<ApiWorld>(pms[0].blueprintId);
+                        }
+                        else
+                            Debug.LogErrorFormat("Could not load world {0} because {1}", pms[0].blueprintId, c.Error);
+                    });
+                scene.apiWorld = world;
             }
             worldVersion = (scene.apiWorld as ApiWorld).version.ToString();
         }
@@ -453,7 +456,7 @@ public class VRC_SdkControlPanel : EditorWindow
             VRC_SdkBuilder.numClientsToLaunch = numClients;
             VRC_SdkBuilder.RunLastExportedSceneResource();
         }
-        if (APIUser.CurrentUser.developerType.HasValue && APIUser.CurrentUser.developerType.Value == APIUser.DeveloperType.Internal)
+        if (APIUser.CurrentUser.hasSuperPowers)
         {
             if (GUILayout.Button("Copy Test URL"))
             {
@@ -482,17 +485,31 @@ public class VRC_SdkControlPanel : EditorWindow
             GUI.enabled = false;
         if (GUILayout.Button("Last Build"))
         {
-            VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
-            VRC_SdkBuilder.UploadLastExportedSceneBlueprint();
+            if (APIUser.CurrentUser.canPublishWorlds)
+            {
+                VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
+                VRC_SdkBuilder.UploadLastExportedSceneBlueprint();
+            }
+            else
+            {
+                ShowContentPublishPermissionsDialog();
+            }
         }
         if (lastBuildPresent == false)
             GUI.enabled = true;
         if (GUILayout.Button("New Build"))
         {
-            EnvConfig.ConfigurePlayerSettings();
-            VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
-            VRC_SdkBuilder.PreBuildBehaviourPackaging();
-            VRC_SdkBuilder.ExportAndUploadSceneBlueprint();
+            if (APIUser.CurrentUser.canPublishWorlds)
+            {
+                EnvConfig.ConfigurePlayerSettings();
+                VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
+                VRC_SdkBuilder.PreBuildBehaviourPackaging();
+                VRC_SdkBuilder.ExportAndUploadSceneBlueprint();
+            }
+            else
+            {
+                ShowContentPublishPermissionsDialog();
+            }
         }
         EditorGUILayout.EndVertical();
         GUI.enabled = true;
@@ -939,16 +956,67 @@ public class VRC_SdkControlPanel : EditorWindow
     {
         EditorGUILayout.InspectorTitlebar(avatar.gameObject.activeInHierarchy, avatar.gameObject);
 
-        GUI.enabled = (GUIErrors.Count == 0 && checkedForIssues) || (APIUser.CurrentUser.developerType.HasValue && APIUser.CurrentUser.developerType.Value == APIUser.DeveloperType.Internal);
+        GUI.enabled = (GUIErrors.Count == 0 && checkedForIssues) || APIUser.CurrentUser.developerType == APIUser.DeveloperType.Internal;
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Build & Publish"))
         {
-            VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
-            VRC_SdkBuilder.ExportAndUploadAvatarBlueprint(avatar.gameObject);
+            if (APIUser.CurrentUser.canPublishAvatars)
+            {
+                VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
+                VRC_SdkBuilder.ExportAndUploadAvatarBlueprint(avatar.gameObject); 
+            }
+            else
+            {
+                ShowContentPublishPermissionsDialog();
+            }
         }
         EditorGUILayout.EndHorizontal();
         GUI.enabled = true;
 
         OnGUIShowIssues(avatar);
+    }
+
+    public static void ShowContentPublishPermissionsDialog()
+    {
+        if (!RemoteConfig.IsInitialized())
+        {
+            RemoteConfig.Init(() => ShowContentPublishPermissionsDialog());
+            return;
+        }
+
+        string message = RemoteConfig.GetString("sdkNotAllowedToPublishMessage");
+        int result = UnityEditor.EditorUtility.DisplayDialogComplex("VRChat SDK", message, "Developer FAQ", "VRChat Discord", "OK");
+        if (result == 0)
+        {
+            ShowDeveloperFAQ();
+        }
+        if (result == 1)
+        {
+            ShowVRChatDiscord();
+        }
+    }
+
+    [MenuItem("VRChat SDK/Help/Developer FAQ")]
+    public static void ShowDeveloperFAQ()
+    {
+        if (!RemoteConfig.IsInitialized())
+        {
+            RemoteConfig.Init(() => ShowDeveloperFAQ());
+            return;
+        }
+
+        Application.OpenURL(RemoteConfig.GetString("sdkDeveloperFaqUrl"));
+    }
+
+    [MenuItem("VRChat SDK/Help/VRChat Discord")]
+    public static void ShowVRChatDiscord()
+    {
+        if (!RemoteConfig.IsInitialized())
+        {
+            RemoteConfig.Init(() => ShowVRChatDiscord());
+            return;
+        }
+
+        Application.OpenURL(RemoteConfig.GetString("sdkDiscordUrl"));
     }
 }

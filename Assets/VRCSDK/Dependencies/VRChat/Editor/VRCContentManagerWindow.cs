@@ -78,7 +78,7 @@ public class VRCContentManagerWindow : EditorWindow
         if (!APIUser.IsLoggedInWithCredentials)
             yield break;
 
-        ApiModel.ClearReponseCache();
+        ApiCache.ClearResponseCache();
         VRCCachedWWW.ClearOld();
 
         if (fetchingAvatars == null)
@@ -282,7 +282,17 @@ public class VRCContentManagerWindow : EditorWindow
                     {
                         if (EditorUtility.DisplayDialog("Delete " + w.name + "?", "Are you sure you want to delete " + w.name + "? This cannot be undone.", "Delete", "Cancel"))
                         {
-                            ApiWorld.Delete(w.id, null, null);
+                            foreach (VRC.Core.PipelineManager pm in FindObjectsOfType<VRC.Core.PipelineManager>().Where(pm => pm.blueprintId == w.id))
+                            {
+                                pm.blueprintId = "";
+                                pm.completedSDKPipeline = false;
+
+                                UnityEditor.EditorUtility.SetDirty(pm);
+                                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(pm.gameObject.scene);
+                                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(pm.gameObject.scene);
+                            }
+
+                            API.Delete<ApiWorld>(w.id);
                             uploadedWorlds.RemoveAll(world => world.id == w.id);
                             if (ImageCache.ContainsKey(w.id))
                                 ImageCache.Remove(w.id);
@@ -355,18 +365,17 @@ public class VRCContentManagerWindow : EditorWindow
                     {
                         a.releaseStatus = oppositeReleaseStatus;
 
-                        a.Save(true, delegate (ApiModel model)
+                        a.SaveReleaseStatus((c) =>
                         {
-                            ApiAvatar savedBP = (ApiAvatar)model;
+                            ApiAvatar savedBP = (ApiAvatar)c.Model;
 
                             if (justUpdatedAvatars == null) justUpdatedAvatars = new List<ApiAvatar>();
                             justUpdatedAvatars.Add(savedBP);
-
-                            EditorUtility.DisplayDialog("Avatar Updated", "Avatar made " + savedBP.releaseStatus, "OK");
+                            
                         },
-                        delegate (string error)
+                        (c) =>
                         {
-                            Debug.LogError(error);
+                            Debug.LogError(c.Error);
                             EditorUtility.DisplayDialog("Avatar Updated", "Failed to change avatar release status", "OK");
                         });
                     }
@@ -383,7 +392,17 @@ public class VRCContentManagerWindow : EditorWindow
                     {
                         if (EditorUtility.DisplayDialog("Delete " + a.name + "?", "Are you sure you want to delete " + a.name + "? This cannot be undone.", "Delete", "Cancel"))
                         {
-                            ApiAvatar.Delete(a.id, null, null);
+                            foreach (VRC.Core.PipelineManager pm in FindObjectsOfType<VRC.Core.PipelineManager>().Where(pm => pm.blueprintId == a.id))
+                            {
+                                pm.blueprintId = "";
+                                pm.completedSDKPipeline = false;
+
+                                UnityEditor.EditorUtility.SetDirty(pm);
+                                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(pm.gameObject.scene);
+                                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(pm.gameObject.scene);
+                            }
+
+                            API.Delete<ApiAvatar>(a.id);
                             uploadedAvatars.RemoveAll(avatar => avatar.id == a.id);
                             if (ImageCache.ContainsKey(a.id))
                                 ImageCache.Remove(a.id);

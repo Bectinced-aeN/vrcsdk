@@ -1,396 +1,722 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using VRC.Core.BestHTTP;
-using VRC.Core.BestHTTP.Authentication;
-using VRC.Core.BestHTTP.Cookies;
 using VRC.Core.BestHTTP.JSON;
 
 namespace VRC.Core
 {
-	public class ApiModel
+	public class ApiModel : ApiCacheObject
 	{
-		protected class RequestInfo
+		protected enum PostOrPutSelect
 		{
-			public string endpoint;
-
-			public HTTPMethods method = HTTPMethods.Post;
-
-			public Dictionary<string, object> requestParams;
-
-			public Action<string> errorCallback;
-
-			public Action<string> successCallbackWithResponse;
-
-			public Action<Dictionary<string, object>> successCallbackWithDict;
-
-			public Action<List<object>> successCallbackWithList;
+			Auto,
+			Post,
+			Put
 		}
 
-		public const string devApiUrl = "https://dev-api.vrchat.cloud/api/1/";
+		private static Dictionary<string, ApiContainer> activeRequests = new Dictionary<string, ApiContainer>();
 
-		public const string betaApiUrl = "https://beta-api.vrchat.cloud/api/1/";
-
-		public const string releaseApiUrl = "https://api.vrchat.cloud/api/1/";
-
-		private const int MAX_RETRY_COUNT = 2;
-
-		public static string API_URL = "https://api.vrchat.cloud/api/1/";
-
-		public static Dictionary<int, int> retryRequests;
-
-		protected static string ApiKey;
-
-		protected string mId;
-
-		protected double mCreatedAtTimestamp;
-
-		protected DateTime mCreatedAt;
-
-		protected double mUpdatedAtTimestamp;
-
-		protected DateTime mUpdatedAt;
-
-		protected DateTime mFetchedAt;
-
-		public string id => mId;
-
-		public double createdAtTimestamp => mCreatedAtTimestamp;
-
-		public DateTime createdAt => mCreatedAt;
-
-		public double updatedAtTimestamp => mUpdatedAtTimestamp;
-
-		public DateTime updatedAt => mUpdatedAt;
-
-		public DateTime FetchedAt => mFetchedAt;
-
-		public static string DeviceID => SystemInfo.get_deviceUniqueIdentifier();
-
-		public static void FetchApiKey(Action onSuccess = null, Action<string> onError = null)
+		[ApiField(Required = false)]
+		public string id
 		{
-			Action action = delegate
+			get;
+			set;
+		}
+
+		public bool Populated
+		{
+			get;
+			private set;
+		}
+
+		public string Endpoint
+		{
+			get;
+			protected set;
+		}
+
+		public string[] RequiredProperties => (from p in TargetProperties
+		where ((ApiFieldAttribute)p.GetCustomAttributes(inherit: false).First((object a) => a is ApiFieldAttribute)).Required
+		select FindPropertyName(p)).ToArray();
+
+		private IEnumerable<PropertyInfo> TargetProperties => from p in GetType().GetProperties()
+		where p?.IsDefined(typeof(ApiFieldAttribute), inherit: true) ?? false
+		select p;
+
+		public ApiModel()
+		{
+			Endpoint = null;
+			Populated = false;
+		}
+
+		public ApiModel(string endpoint)
+		{
+			Endpoint = endpoint;
+		}
+
+		public ApiModel(string endpoint, Dictionary<string, object> fields)
+			: this(endpoint)
+		{
+			string Error = null;
+			SetApiFieldsFromJson(fields, ref Error);
+			if (Error != null)
 			{
-				if (RemoteConfig.IsInitialized())
-				{
-					ApiKey = RemoteConfig.GetString("clientApiKey");
-					if (string.IsNullOrEmpty(ApiKey))
-					{
-						Logger.LogError("Could not fetch client api key - unknown error.");
-						if (onError != null)
-						{
-							onError("Could not fetch client api key - unknown error.");
-						}
-					}
-					else if (onSuccess != null)
-					{
-						onSuccess();
-					}
-				}
-				else
-				{
-					Logger.LogWarning("Could not fetch client api key - config not initialized.");
-					if (onError != null)
-					{
-						onError("Could not fetch client api key - config not initialized.");
-					}
-				}
-			};
-			if (string.IsNullOrEmpty(ApiKey))
-			{
-				if (!RemoteConfig.IsInitialized())
-				{
-					RemoteConfig.Init(fetchFreshConfig: false, action);
-				}
-				else
-				{
-					action();
-				}
-			}
-			else if (onSuccess != null)
-			{
-				onSuccess();
+				Debug.Log((object)("Error applying fields: " + Error));
 			}
 		}
 
-		protected static void AppendQuery(ref UriBuilder baseUri, string queryToAppend)
+		public virtual bool ShouldCache()
 		{
-			if (baseUri.Query != null && baseUri.Query.Length > 1)
+			return Populated && !string.IsNullOrEmpty(id);
+		}
+
+		public virtual bool ShouldClearOnLevelLoad()
+		{
+			return false;
+		}
+
+		public virtual float GetLifeSpan()
+		{
+			return 3600f;
+		}
+
+		public ApiCacheObject Clone()
+		{
+			return Clone(id);
+		}
+
+		public ApiModel Clone(string newID = null)
+		{
+			return Clone(GetType(), newID);
+		}
+
+		public virtual ApiModel Clone(Type targetType = null, string newID = null)
+		{
+			try
 			{
-				baseUri.Query = baseUri.Query.Substring(1) + "&" + queryToAppend;
+				if (targetType == null)
+				{
+					targetType = GetType();
+				}
+				else if (!typeof(ApiModel).IsAssignableFrom(targetType))
+				{
+					Debug.LogError((object)"Expected an ApiModel type.");
+					return null;
+				}
+				ApiModel apiModel = Activator.CreateInstance(targetType) as ApiModel;
+				string Error = null;
+				Dictionary<string, object> fields = ExtractApiFields();
+				if (!apiModel.SetApiFieldsFromJson(fields, ref Error))
+				{
+					Debug.LogError((object)("Unable to clone " + targetType.Name + ": " + Error));
+				}
+				if (newID != null)
+				{
+					apiModel.id = newID;
+				}
+				apiModel.Endpoint = Endpoint;
+				return apiModel;
+				IL_0099:
+				ApiModel result;
+				return result;
+			}
+			catch (Exception ex)
+			{
+				Debug.LogException(ex);
+				return null;
+				IL_00ad:
+				ApiModel result;
+				return result;
+			}
+		}
+
+		public virtual void Save(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Auto);
+		}
+
+		public virtual void Post(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
+		{
+			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Post, parameters);
+		}
+
+		public virtual void Put(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
+		{
+			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Put, parameters);
+		}
+
+		public void Fetch(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
+		{
+			Get(onSuccess, onFailure, parameters, disableCache);
+		}
+
+		public virtual void Get(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
+		{
+			if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(Endpoint))
+			{
+				if (onFailure != null)
+				{
+					onFailure(new ApiContainer
+					{
+						Error = "Fetch called with null id."
+					});
+				}
 			}
 			else
 			{
-				baseUri.Query = queryToAppend;
-			}
-		}
-
-		protected static void SendGetRequest(string endpoint, Action<List<object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Get, null, successCallback, errorCallback);
-		}
-
-		protected static void SendGetRequest(string endpoint, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<string> errorCallback = null, bool needsAPIKey = true)
-		{
-			SendRequest(endpoint, HTTPMethods.Get, (Dictionary<string, string>)null, successCallbackWithResponse, successCallbackWithDict, (Action<List<object>>)null, errorCallback, needsAPIKey, authenticationRequired: true, -1f);
-		}
-
-		protected static void SendGetRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Get, null, successCallback, errorCallback);
-		}
-
-		protected static void SendPostRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Post, null, successCallback, errorCallback);
-		}
-
-		protected static void SendPostRequest(string endpoint, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Post, requestParams, successCallback, errorCallback);
-		}
-
-		protected static void SendPostRequest(string endpoint, Dictionary<string, object> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Post, requestParams, null, successCallback, null, errorCallback);
-		}
-
-		protected static void SendPutRequest(string endpoint, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Put, null, successCallback, errorCallback);
-		}
-
-		protected static void SendPutRequest(string endpoint, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Put, requestParams, successCallback, errorCallback);
-		}
-
-		protected static void SendPutRequest(string endpoint, Dictionary<string, object> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null)
-		{
-			SendRequest(endpoint, HTTPMethods.Put, requestParams, null, successCallback, null, errorCallback);
-		}
-
-		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<Dictionary<string, object>> successCallback = null, Action<string> errorCallback = null, bool needsAPIKey = true, bool authenticationRequired = true, float cacheLifetime = -1f)
-		{
-			SendRequest(endpoint, method, requestParams, null, successCallback, null, errorCallback, needsAPIKey, authenticationRequired, cacheLifetime);
-		}
-
-		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<List<object>> successCallback = null, Action<string> errorCallback = null, bool needsAPIKey = true, bool authenticationRequired = true, float cacheLifetime = -1f)
-		{
-			SendRequest(endpoint, method, requestParams, null, null, successCallback, errorCallback, needsAPIKey, authenticationRequired, cacheLifetime);
-		}
-
-		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, string> requestParams = null, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, bool needsAPIKey = true, bool authenticationRequired = true, float cacheLifetime = -1f)
-		{
-			Dictionary<string, object> dictionary = null;
-			if (requestParams != null)
-			{
-				dictionary = new Dictionary<string, object>();
-				foreach (KeyValuePair<string, string> requestParam in requestParams)
+				string key = MakeRequestEndpoint() + Json.Encode(parameters);
+				if (activeRequests.ContainsKey(key))
 				{
-					dictionary[requestParam.Key] = requestParam.Value;
-				}
-			}
-			SendRequest(endpoint, method, dictionary, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, needsAPIKey, authenticationRequired, cacheLifetime);
-		}
-
-		protected static void SendRequest(string endpoint, HTTPMethods method = HTTPMethods.Get, Dictionary<string, object> requestParams = null, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, bool needsAPIKey = true, bool authenticationRequired = true, float cacheLifetime = -1f)
-		{
-			string apiUrl = GetApiUrl();
-			int requestId = Random.Range(100, 999);
-			Action action = delegate
-			{
-				string uri = apiUrl + endpoint;
-				UriBuilder baseUri = new UriBuilder(uri);
-				if (!string.IsNullOrEmpty(ApiKey))
-				{
-					AppendQuery(ref baseUri, "apiKey=" + ApiKey);
-				}
-				string text = null;
-				if (requestParams != null)
-				{
-					if (method == HTTPMethods.Get)
+					ApiContainer apiContainer = activeRequests[key];
+					Action<ApiContainer> originalSuccess = apiContainer.OnSuccess;
+					Action<ApiContainer> onSuccess2 = delegate(ApiContainer c)
 					{
-						foreach (KeyValuePair<string, object> requestParam in requestParams)
+						if (activeRequests.ContainsKey(key))
 						{
-							AppendQuery(ref baseUri, requestParam.Key + "=" + requestParam.Value);
+							activeRequests.Remove(key);
 						}
+						try
+						{
+							if (onSuccess != null)
+							{
+								onSuccess(c);
+							}
+						}
+						catch (Exception ex4)
+						{
+							Debug.LogException(ex4);
+						}
+						if (originalSuccess != null)
+						{
+							originalSuccess(c);
+						}
+					};
+					Action<ApiContainer> originalError = apiContainer.OnError;
+					Action<ApiContainer> onError = delegate(ApiContainer c)
+					{
+						if (activeRequests.ContainsKey(key))
+						{
+							activeRequests.Remove(key);
+						}
+						try
+						{
+							if (onFailure != null)
+							{
+								onFailure(c);
+							}
+						}
+						catch (Exception ex3)
+						{
+							Debug.LogException(ex3);
+						}
+						if (originalError != null)
+						{
+							originalError(c);
+						}
+					};
+					apiContainer.OnSuccess = onSuccess2;
+					apiContainer.OnError = onError;
+				}
+				else
+				{
+					Action<ApiContainer> onSuccess3 = delegate(ApiContainer c)
+					{
+						if (activeRequests.ContainsKey(key))
+						{
+							activeRequests.Remove(key);
+						}
+						try
+						{
+							if (onSuccess != null)
+							{
+								onSuccess(c);
+							}
+						}
+						catch (Exception ex2)
+						{
+							Debug.LogException(ex2);
+						}
+						ApiCache.Save(c.Model.id, c.Model, andClone: true);
+					};
+					Action<ApiContainer> onFailure2 = delegate(ApiContainer c)
+					{
+						if (activeRequests.ContainsKey(key))
+						{
+							activeRequests.Remove(key);
+						}
+						try
+						{
+							if (onFailure != null)
+							{
+								onFailure(c);
+							}
+						}
+						catch (Exception ex)
+						{
+							Debug.LogException(ex);
+						}
+					};
+					ApiContainer apiContainer2 = MakeModelContainer(onSuccess3, onFailure2);
+					activeRequests.Add(key, apiContainer2);
+					SendGetRequest(apiContainer2, parameters, disableCache);
+				}
+			}
+		}
+
+		protected virtual void PostOrPut(Action<ApiContainer> onSuccess, Action<ApiContainer> onFailure, PostOrPutSelect select, Dictionary<string, object> requestParams = null)
+		{
+			if (string.IsNullOrEmpty(Endpoint))
+			{
+				Debug.LogError((object)"Cannot save to null endpoint");
+			}
+			else
+			{
+				if (requestParams == null)
+				{
+					requestParams = ExtractApiFields();
+				}
+				if (APIUser.CurrentUser == null || !APIUser.CurrentUser.hasSuperPowers)
+				{
+					List<KeyValuePair<string, object>> list = (from kvp in requestParams
+					where IsAdminWritableOnly(FindProperty(kvp.Key))
+					select kvp).ToList();
+					foreach (KeyValuePair<string, object> item in list)
+					{
+						requestParams.Remove(item.Key);
+					}
+				}
+				Action<ApiContainer> onSuccess2 = delegate(ApiContainer c)
+				{
+					ApiCache.Save(c.Model.id, c.Model, andClone: true);
+					if (onSuccess != null)
+					{
+						onSuccess(c);
+					}
+				};
+				switch (select)
+				{
+				case PostOrPutSelect.Auto:
+					if (!string.IsNullOrEmpty(id))
+					{
+						SendPutRequest(new ApiContainer
+						{
+							OnSuccess = onSuccess2,
+							OnError = onFailure,
+							Model = this
+						}, requestParams);
 					}
 					else
 					{
-						text = Json.Encode(requestParams);
+						API.SendPostRequest(Endpoint, MakeModelContainer(onSuccess2, onFailure), requestParams);
 					}
-				}
-				Logger.Log("[" + requestId + "] Sending " + method + " request to " + baseUri.Uri, DebugLevel.API);
-				ApiCachedResponse apiCachedResponse = (method != 0) ? null : APIResponseHandler.GetOrClearCachedResponse(baseUri.Uri.PathAndQuery, cacheLifetime);
-				if (apiCachedResponse != null)
+					break;
+				case PostOrPutSelect.Post:
+					API.SendPostRequest(Endpoint, MakeModelContainer(onSuccess2, onFailure), requestParams);
+					break;
+				case PostOrPutSelect.Put:
 				{
-					APIResponseHandler aPIResponseHandler = new EditorAPIResponseHandler();
-					aPIResponseHandler.HandleSuccessReponse(apiCachedResponse.Data, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList);
+					ApiModel target = null;
+					if (ApiCache.Fetch(GetType(), id + "_copy", ref target, 3.40282347E+38f))
+					{
+						foreach (KeyValuePair<string, object> item2 in target.ExtractApiFields())
+						{
+							if (requestParams.ContainsKey(item2.Key))
+							{
+								if (typeof(IList).IsAssignableFrom(item2.Value.GetType()) && typeof(IList).IsAssignableFrom(requestParams[item2.Key].GetType()))
+								{
+									IList a = item2.Value as IList;
+									IList b = requestParams[item2.Key] as IList;
+									if (!b.Cast<object>().Any((object bo) => !a.Contains(bo)) && !a.Cast<object>().Any((object ao) => !b.Contains(ao)))
+									{
+										requestParams.Remove(item2.Key);
+									}
+								}
+								else if (item2.Value.Equals(requestParams[item2.Key]))
+								{
+									requestParams.Remove(item2.Key);
+								}
+							}
+						}
+					}
+					SendPutRequest(new ApiContainer
+					{
+						OnSuccess = onSuccess2,
+						OnError = onFailure,
+						Model = this
+					}, requestParams);
+					break;
+				}
+				}
+			}
+		}
+
+		public virtual void Delete(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			if (string.IsNullOrEmpty(id))
+			{
+				onFailure(new ApiContainer
+				{
+					Error = "Delete called with null id."
+				});
+			}
+			else
+			{
+				ApiCache.Invalidate(GetType(), id);
+				if (Endpoint == null)
+				{
+					Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, DELETE ignored."));
+					onFailure?.Invoke(new ApiContainer
+					{
+						Error = "NULL endpoint for " + GetType().Name + " object, DELETE ignored.",
+						Model = this
+					});
 				}
 				else
 				{
-					HTTPRequest hTTPRequest = new HTTPRequest(baseUri.Uri, delegate(HTTPRequest req, HTTPResponse resp)
+					API.SendRequest(Endpoint + "/" + id, HTTPMethods.Delete, new ApiContainer
 					{
-						APIResponseHandler aPIResponseHandler2 = new EditorAPIResponseHandler();
-						aPIResponseHandler2.HandleReponse(req, resp, requestId, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, 2, cacheLifetime);
-					});
-					hTTPRequest.AddHeader("X-Requested-With", "XMLHttpRequest");
-					hTTPRequest.AddHeader("X-MacAddress", DeviceID);
-					hTTPRequest.AddHeader("Content-Type", (method != 0) ? "application/json" : "application/x-www-form-urlencoded");
-					hTTPRequest.MethodType = method;
-					hTTPRequest.Credentials = (ApiCredentials.GetWebCredentials() as Credentials);
-					if (authenticationRequired && ApiCredentials.GetAuthToken() != null)
-					{
-						List<Cookie> cookies = hTTPRequest.Cookies;
-						cookies.Add(new Cookie("auth", ApiCredentials.GetAuthToken()));
-						hTTPRequest.Cookies = cookies;
-					}
-					hTTPRequest.ConnectTimeout = TimeSpan.FromSeconds(20.0);
-					hTTPRequest.Timeout = TimeSpan.FromSeconds(20.0);
-					if (!string.IsNullOrEmpty(text))
-					{
-						hTTPRequest.RawData = Encoding.UTF8.GetBytes(text);
-					}
-					hTTPRequest.DisableCache = true;
-					hTTPRequest.Send();
-				}
-			};
-			if (needsAPIKey)
-			{
-				FetchApiKey(action, delegate(string message)
-				{
-					Debug.LogError((object)("[" + requestId + "] Error sending request - " + message));
-				});
-			}
-			else
-			{
-				action();
-			}
-		}
-
-		protected static void SendRequestBatch(IEnumerable<RequestInfo> requests, bool needsAPIKey = true)
-		{
-			if (needsAPIKey)
-			{
-				FetchApiKey(delegate
-				{
-					SendRequestBatch(requests, needsAPIKey: false);
-				}, delegate(string message)
-				{
-					Debug.LogError((object)("Error sending request - " + message));
-				});
-			}
-			else
-			{
-				foreach (RequestInfo request in requests)
-				{
-					SendRequest(request.endpoint, request.method, request.requestParams, request.successCallbackWithResponse, request.successCallbackWithDict, request.successCallbackWithList, request.errorCallback, needsAPIKey: false);
+						OnSuccess = onSuccess,
+						OnError = onFailure
+					}, null, needsAPIKey: true, Application.get_isEditor());
 				}
 			}
 		}
 
-		public static void CleanExpiredReponseCache()
+		public bool SetApiFieldsFromJson(Dictionary<string, object> fields)
 		{
-			APIResponseHandler.CleanExpiredCache();
-		}
-
-		public static void ClearReponseCache()
-		{
-			APIResponseHandler.CleanExpiredCache();
-		}
-
-		public static List<string> GetIds(IEnumerable<ApiModel> models)
-		{
-			List<string> list = new List<string>();
-			foreach (ApiModel model in models)
+			string Error = null;
+			if (!SetApiFieldsFromJson(fields, ref Error))
 			{
-				list.Add(model.id);
+				Debug.LogError((object)("Unable to set fields from json: " + Error));
+				return false;
 			}
-			return list;
+			return true;
 		}
 
-		public static string GetAssetPlatformString()
+		public virtual bool SetApiFieldsFromJson(Dictionary<string, object> fields, ref string Error)
 		{
-			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0008: Invalid comparison between Unknown and I4
-			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_000f: Invalid comparison between Unknown and I4
-			RuntimePlatform platform = Application.get_platform();
-			if ((int)platform == 2 || (int)platform == 7)
+			List<string> missing = new List<string>();
+			foreach (KeyValuePair<string, object> field in fields)
 			{
-				return "standalonewindows";
+				if (!WriteField(field.Key, field.Value))
+				{
+					missing.Add(field.Key);
+				}
 			}
-			return "unknownplatform";
-		}
-
-		public static void SetApiUrlFromEnvironment(ApiServerEnvironment env)
-		{
-			SetApiUrl(GetApiUrlForEnvironment(env));
-		}
-
-		public static string GetApiUrlForEnvironment(ApiServerEnvironment env)
-		{
-			switch (env)
+			bool flag = true;
+			if (missing.Count > 0)
 			{
-			case ApiServerEnvironment.Dev:
-				return "https://dev-api.vrchat.cloud/api/1/";
-			case ApiServerEnvironment.Beta:
-				return "https://beta-api.vrchat.cloud/api/1/";
-			case ApiServerEnvironment.Release:
-				return "https://api.vrchat.cloud/api/1/";
-			default:
-				Debug.LogError((object)("Unknown server environment! " + env.ToString()));
-				return string.Empty;
+				Error = "Error writing the following fields: " + string.Join(", ", missing.ToArray());
+				string[] requiredProperties = RequiredProperties;
+				flag = (!requiredProperties.Any((string s) => missing.Contains(s)) && requiredProperties.All((string s) => fields.Keys.Contains(s)));
 			}
-		}
-
-		public static void SetApiUrl(string url)
-		{
-			API_URL = url;
-		}
-
-		public static string GetApiUrl()
-		{
-			return API_URL;
-		}
-
-		public static bool IsDevApi()
-		{
-			return GetApiUrl() == "https://dev-api.vrchat.cloud/api/1/";
-		}
-
-		public static ApiServerEnvironment GetServerEnvironmentForApiUrl()
-		{
-			return GetServerEnvironmentForApiUrl(API_URL);
-		}
-
-		public static ApiServerEnvironment GetServerEnvironmentForApiUrl(string url)
-		{
-			if (GetApiUrl() == "https://api.vrchat.cloud/api/1/")
+			Populated = flag;
+			if (flag && fields.Count != TargetProperties.Count() && API.IsDevApi())
 			{
-				return ApiServerEnvironment.Release;
+				Debug.LogFormat("<color=yellow>{0}: missing fields: {1}</color>\n{2}", new object[3]
+				{
+					GetType().Name,
+					string.Join(", ", (from p in TargetProperties
+					where !fields.Keys.Contains(FindPropertyName(p))
+					select FindPropertyName(p)).ToArray()),
+					Json.Encode(fields)
+				});
 			}
-			if (GetApiUrl() == "https://beta-api.vrchat.cloud/api/1/")
-			{
-				return ApiServerEnvironment.Beta;
-			}
-			if (GetApiUrl() == "https://dev-api.vrchat.cloud/api/1/")
-			{
-				return ApiServerEnvironment.Dev;
-			}
-			Debug.LogError((object)("GetServerEnvironmentForApiUrl: unknown api url: " + url));
-			return ApiServerEnvironment.Release;
+			return flag;
 		}
 
-		protected virtual Dictionary<string, string> BuildWebParameters()
+		public virtual Dictionary<string, object> ExtractApiFields()
 		{
-			Dictionary<string, string> dictionary = new Dictionary<string, string>();
-			dictionary["id"] = mId;
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			foreach (PropertyInfo targetProperty in TargetProperties)
+			{
+				string text = FindPropertyName(targetProperty);
+				object data = null;
+				if (ReadField(text, ref data) && data != null)
+				{
+					if (dictionary.ContainsKey(text))
+					{
+						dictionary[text] = data;
+					}
+					else
+					{
+						dictionary.Add(text, data);
+					}
+				}
+			}
 			return dictionary;
+		}
+
+		protected virtual ApiContainer MakeModelContainer(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			Type type = GetType();
+			Type type2 = typeof(ApiModelContainer<>).MakeGenericType(type);
+			ApiContainer apiContainer = Activator.CreateInstance(type2, this) as ApiContainer;
+			apiContainer.OnSuccess = onSuccess;
+			apiContainer.OnError = onFailure;
+			apiContainer.Model = this;
+			return apiContainer;
+		}
+
+		protected virtual bool ReadField(string fieldName, ref object data)
+		{
+			PropertyInfo propertyInfo = FindProperty(fieldName);
+			if (propertyInfo == null)
+			{
+				Debug.LogError((object)(GetType().Name + ": Could not read property " + fieldName));
+				return false;
+			}
+			MethodInfo getMethod = propertyInfo.GetGetMethod();
+			data = getMethod.Invoke(this, new object[0]);
+			if (data == null)
+			{
+				return false;
+			}
+			if (!TryReadConvert(ref data))
+			{
+				Debug.LogError((object)(GetType().Name + ": Could not read property due to encoding failure, " + fieldName + " is a " + propertyInfo.PropertyType.FullName));
+				return false;
+			}
+			return true;
+		}
+
+		private static bool TryReadConvert(ref object obj)
+		{
+			Type type = obj.GetType();
+			if (typeof(ApiModel).IsAssignableFrom(type))
+			{
+				obj = (obj as ApiModel).ExtractApiFields();
+			}
+			else if (!type.IsGenericType || !typeof(IList).IsAssignableFrom(type.GetGenericTypeDefinition()))
+			{
+				try
+				{
+					obj = Convert.ChangeType(obj, typeof(string));
+				}
+				catch (InvalidCastException)
+				{
+				}
+			}
+			else if (typeof(ApiModel).IsAssignableFrom(type.GetGenericArguments()[0]))
+			{
+				List<object> list = new List<object>((obj as IList).Count);
+				foreach (object item in obj as IList)
+				{
+					list.Add((item as ApiModel).ExtractApiFields());
+				}
+				obj = list;
+			}
+			else
+			{
+				List<object> list2 = new List<object>((obj as IList).Count);
+				foreach (object item2 in obj as IList)
+				{
+					list2.Add(item2.ToString());
+				}
+				obj = list2;
+			}
+			return true;
+		}
+
+		protected virtual bool WriteField(string fieldName, object data)
+		{
+			PropertyInfo propertyInfo = FindProperty(fieldName);
+			if (propertyInfo == null)
+			{
+				Debug.LogError((object)(GetType().Name + ": Could not locate property to write to: " + fieldName + " with type " + data.GetType().FullName));
+				return false;
+			}
+			try
+			{
+				if (!TryWriteConvert(propertyInfo.PropertyType, ref data))
+				{
+					bool success = false;
+					if (data is string)
+					{
+						data = Json.Decode(data as string, ref success);
+					}
+					if (!success || !TryWriteConvert(propertyInfo.PropertyType, ref data))
+					{
+						Debug.LogError((object)(GetType().Name + ": Could not write property due to decoding failure, wanted " + propertyInfo.PropertyType.FullName + " for " + fieldName + "\n" + ((data != null) ? data.ToString() : "null")));
+						return false;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.LogError((object)(GetType().Name + ": could not write " + fieldName + " of type " + propertyInfo.PropertyType.Name + "\n" + ex.Message + "\n" + ex.StackTrace));
+				return false;
+				IL_0170:;
+			}
+			try
+			{
+				MethodInfo setMethod = propertyInfo.GetSetMethod(nonPublic: true);
+				if (setMethod == null)
+				{
+					return false;
+				}
+				setMethod.Invoke(this, new object[1]
+				{
+					data
+				});
+			}
+			catch (Exception ex2)
+			{
+				Debug.LogError((object)(GetType().Name + ": failed to set " + fieldName + "\n" + ex2.Message + "\n" + ex2.StackTrace));
+				return false;
+				IL_01ff:;
+			}
+			return true;
+		}
+
+		private static bool TryWriteConvert(Type targetType, ref object data)
+		{
+			if (data == null)
+			{
+				return false;
+			}
+			if (targetType == data.GetType())
+			{
+				return true;
+			}
+			try
+			{
+				data = Convert.ChangeType(data, targetType);
+				return true;
+				IL_002a:;
+			}
+			catch (InvalidCastException)
+			{
+			}
+			if (targetType.IsEnum && data is string)
+			{
+				string value = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase((data as string).ToLower());
+				data = Enum.Parse(targetType, value, ignoreCase: true);
+			}
+			else if (data is List<object> && targetType == typeof(List<string>))
+			{
+				data = Tools.ObjListToStringList(data as List<object>);
+			}
+			else if (data is Dictionary<string, object> && typeof(ApiModel).IsAssignableFrom(targetType))
+			{
+				MethodInfo methodInfo = typeof(API).GetMethod("CreateFromJson").MakeGenericMethod(targetType);
+				data = Convert.ChangeType(methodInfo.Invoke(null, new object[1]
+				{
+					data as Dictionary<string, object>
+				}), targetType);
+			}
+			else
+			{
+				if (!(data is List<object>) || !targetType.IsGenericType || targetType.GetGenericTypeDefinition() != typeof(List<>))
+				{
+					return false;
+				}
+				if (!typeof(ApiModel).IsAssignableFrom(targetType.GetGenericArguments()[0]))
+				{
+					try
+					{
+						Type conversionType = targetType.GetGenericArguments()[0];
+						IList list = (IList)Activator.CreateInstance(targetType);
+						foreach (object item in data as List<object>)
+						{
+							list.Add(Convert.ChangeType(item, conversionType));
+						}
+						data = list;
+					}
+					catch (InvalidCastException)
+					{
+						return false;
+						IL_0272:;
+					}
+				}
+				else
+				{
+					Type type = targetType.GetGenericArguments()[0];
+					MethodInfo methodInfo2 = typeof(API).GetMethod("CreateFromJson").MakeGenericMethod(type);
+					IList list2 = (IList)Activator.CreateInstance(targetType);
+					foreach (object item2 in data as List<object>)
+					{
+						list2.Add(Convert.ChangeType(methodInfo2.Invoke(null, new object[1]
+						{
+							item2 as Dictionary<string, object>
+						}), type));
+					}
+					data = list2;
+				}
+			}
+			return true;
+		}
+
+		private void SendGetRequest(ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool disableCache = false)
+		{
+			if (responseContainer == null)
+			{
+				responseContainer = MakeModelContainer();
+			}
+			if (Endpoint == null)
+			{
+				Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, GET ignored."));
+				if (responseContainer.OnError != null)
+				{
+					responseContainer.Error = "NULL endpoint for " + GetType().Name + " object, GET ignored.";
+					responseContainer.OnError(responseContainer);
+				}
+			}
+			else
+			{
+				API.SendGetRequest(MakeRequestEndpoint(), responseContainer, requestParams, disableCache);
+			}
+		}
+
+		private void SendPutRequest(ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null)
+		{
+			if (responseContainer == null)
+			{
+				responseContainer = MakeModelContainer();
+			}
+			if (Endpoint == null)
+			{
+				Debug.LogError((object)("NULL endpoint for " + GetType().Name + " object, PUT ignored."));
+				if (responseContainer.OnError != null)
+				{
+					responseContainer.Error = "NULL endpoint for " + GetType().Name + " object, PUT ignored.";
+					responseContainer.OnError(responseContainer);
+				}
+			}
+			else
+			{
+				API.SendPutRequest(MakeRequestEndpoint(), responseContainer, requestParams);
+			}
+		}
+
+		protected virtual string MakeRequestEndpoint()
+		{
+			return Endpoint + ((!string.IsNullOrEmpty(id)) ? ("/" + id) : string.Empty);
+		}
+
+		private string FindPropertyName(PropertyInfo pi)
+		{
+			ApiFieldAttribute apiFieldAttribute = (ApiFieldAttribute)pi.GetCustomAttributes(inherit: true).FirstOrDefault((object a) => a is ApiFieldAttribute);
+			return (apiFieldAttribute != null && !string.IsNullOrEmpty(apiFieldAttribute.Name)) ? apiFieldAttribute.Name : pi.Name;
+		}
+
+		private PropertyInfo FindProperty(string fieldName)
+		{
+			return TargetProperties.FirstOrDefault((PropertyInfo p) => FindPropertyName(p).ToLower() == fieldName.ToLower());
+		}
+
+		private bool IsAdminWritableOnly(PropertyInfo pi)
+		{
+			if (pi == null)
+			{
+				return false;
+			}
+			return ((ApiFieldAttribute)pi.GetCustomAttributes(inherit: true).FirstOrDefault((object a) => a is ApiFieldAttribute))?.IsAdminWritableOnly ?? false;
 		}
 	}
 }

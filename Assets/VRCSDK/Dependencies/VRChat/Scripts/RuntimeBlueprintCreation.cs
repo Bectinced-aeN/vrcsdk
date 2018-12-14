@@ -47,12 +47,13 @@ namespace VRCSDK2
             shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
                 
             Login();
-            SetupUI();
         }
         
         void LoginErrorCallback(string obj)
         {
-            VRC.Core.Logger.LogError("Could not fetch fresh user - " + obj, DebugLevel.Always);    
+            VRC.Core.Logger.LogError("Could not log in - " + obj, DebugLevel.Always);    
+            blueprintPanel.SetActive(false);
+            errorPanel.SetActive(true);
         }
 
         void Login()
@@ -63,27 +64,36 @@ namespace VRCSDK2
                 {
                     pipelineManager.user = user;
 
-                    ApiAvatar.Fetch(pipelineManager.blueprintId, false,
-                        delegate (ApiAvatar avatar)
+                    API.Fetch<ApiAvatar>(pipelineManager.blueprintId, 
+                        (c) =>
                         {
-                            apiAvatar = avatar;
+                            Debug.Log("<color=magenta>Updating an existing avatar.</color>");
+                            apiAvatar = c.Model as ApiAvatar;
                             pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
                             SetupUI();
                         },
-                        delegate (string message)
+                        (c) =>
                         {
+                            Debug.Log("<color=magenta>Creating a new avatar.</color>");
                             apiAvatar = new ApiAvatar();
                             apiAvatar.id = pipelineManager.blueprintId;
-                            pipelineManager.completedSDKPipeline = false;
+                            pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
                             SetupUI();
-                        }
-                    );
+                        });
                 }, LoginErrorCallback);
         }
         
         void SetupUI()
         {
-            if( APIUser.Exists(pipelineManager.user) )
+            if (!ValidateAssetBundleBlueprintID(apiAvatar.id))
+            {
+                blueprintPanel.SetActive(false);
+                errorPanel.SetActive(true);
+                OnSDKPipelineError("The asset bundle is out of date.  Please rebuild the scene using 'New Build'.", "The blueprint ID in the scene does not match the id in the asset bundle.");
+                return;
+            }
+
+            if ( APIUser.Exists(pipelineManager.user) )
             {
                 waitingPanel.SetActive(false);
                 blueprintPanel.SetActive(true);
@@ -137,7 +147,7 @@ namespace VRCSDK2
                 errorPanel.SetActive(false);
             }
 
-			if(APIUser.CurrentUser != null && APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
+			if(APIUser.CurrentUser != null && APIUser.CurrentUser.hasSuperPowers)
 				developerAvatar.gameObject.SetActive(true);
 			else
 				developerAvatar.gameObject.SetActive(false);
@@ -160,7 +170,10 @@ namespace VRCSDK2
 
 
             if (string.IsNullOrEmpty(apiAvatar.id))
-                Debug.LogError("avatar export is happening without an ID.");
+            {
+                pipelineManager.AssignId();
+                apiAvatar.id = pipelineManager.blueprintId;
+            }
 
             string avatarId = apiAvatar.id;
             int version = isUpdate ? apiAvatar.version+1 : 1;
@@ -217,7 +230,7 @@ namespace VRCSDK2
         private string GetFriendlyAvatarFileName(string type)
         {
             return "Avatar - " + blueprintName.text + " - " + type + " - " + Application.unityVersion + "_" + ApiWorld.VERSION.ApiVersion +
-                   "_" + ApiModel.GetAssetPlatformString() + "_" + ApiModel.GetServerEnvironmentForApiUrl();
+                   "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl();
         }
 
         List<string> BuildTags()
@@ -232,7 +245,7 @@ namespace VRCSDK2
             if (contentOther.isOn)
                 tags.Add("content_other");
 
-            if(APIUser.CurrentUser.developerType > APIUser.DeveloperType.None)
+            if(APIUser.CurrentUser.hasSuperPowers)
             {
                 if (developerAvatar.isOn)
                     tags.Add("developer");
@@ -245,39 +258,46 @@ namespace VRCSDK2
         {
             yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
 
-            ApiAvatar avatar = new ApiAvatar();
-            avatar.Init(
-                pipelineManager.user,
-                blueprintName.text,
-                cloudFrontImageUrl,
-                cloudFrontAssetUrl,
-                blueprintDescription.text,
-                sharePublic.isOn ? "public" : "private",
-                BuildTags(),
-                cloudFrontUnityPackageUrl
-                );
-            avatar.id = pipelineManager.blueprintId;
+            ApiAvatar avatar = new ApiAvatar
+            {
+                id = pipelineManager.blueprintId,
+                authorName = pipelineManager.user.displayName,
+                authorId = pipelineManager.user.id,
+                name = blueprintName.text,
+                imageUrl = cloudFrontImageUrl,
+                assetUrl = cloudFrontAssetUrl,
+                description = blueprintDescription.text,
+                tags = BuildTags(),
+                unityPackageUrl = cloudFrontUnityPackageUrl,
+                releaseStatus = sharePublic.isOn ? "public" : "private"
+            };
 
             bool doneUploading = false;
+            bool wasError = false;
 
-            avatar.Save( false, 
-                delegate(ApiModel model)
+            avatar.Post(
+                (c) =>
                 {
-                    ApiAvatar savedBP = (ApiAvatar)model;
+                    ApiAvatar savedBP = (ApiAvatar)c.Model;
                     pipelineManager.blueprintId = savedBP.id;
                     UnityEditor.EditorPrefs.SetString("blueprintID-" + pipelineManager.GetInstanceID().ToString(), savedBP.id);
 
-                    AnalyticsSDK.AvatarUploaded(model, false);
+                    AnalyticsSDK.AvatarUploaded(savedBP, false);
                     doneUploading = true;
                 },
-                delegate( string error )
+                (c) =>
                 {
-                    Debug.LogError(error);
+                    Debug.LogError(c.Error);
+                    SetUploadProgress("Saving Avatar", "Error saving blueprint.", 0.0f);
                     doneUploading = true;
+                    wasError = true;
                 });
 
             while (!doneUploading)
                 yield return null;
+
+            if (wasError)
+                yield return new WaitUntil(() => UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Error saving blueprint.", "Okay"));
         }
 
         protected override IEnumerator UpdateBlueprint()
@@ -290,20 +310,20 @@ namespace VRCSDK2
             apiAvatar.releaseStatus = sharePublic.isOn ? "public" : "private";
             apiAvatar.tags = BuildTags();
             apiAvatar.unityPackageUrl = cloudFrontUnityPackageUrl;
-			apiAvatar.UpdateVersionAndPlatform();
 
             if (shouldUpdateImageToggle.isOn)
             {
                 yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
                 apiAvatar.imageUrl = cloudFrontImageUrl;
+                SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
+                apiAvatar.Save(
+                        (c) => { AnalyticsSDK.AvatarUploaded(apiAvatar, true); doneUploading = true; },
+                        (c) => {
+                            Debug.LogError(c.Error);
+                            SetUploadProgress("Saving Avatar", "Error saving blueprint.", 0.0f);
+                            doneUploading = true;
+                        });
             }
-
-            SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
-            apiAvatar.Save(true, delegate(ApiModel model) 
-            {
-                AnalyticsSDK.AvatarUploaded(model, true);
-                doneUploading = true;
-            });
 
             while (!doneUploading)
                 yield return null;

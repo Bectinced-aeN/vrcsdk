@@ -15,6 +15,7 @@ namespace VRCSDK2
             "VRC.Core.PipelineSaver",
 #endif
             "VRCSDK2.VRC_AvatarDescriptor",
+            "VRCSDK2.VRC_AvatarVariations",
             "NetworkMetadata",
             "RootMotion.FinalIK.IKExecutionOrder",
             "RootMotion.FinalIK.VRIK",
@@ -65,8 +66,16 @@ namespace VRCSDK2
             "UnityEngine.ParticleRenderer",
             "UnityEngine.ParticleAnimator",
             "UnityEngine.MeshParticleEmitter",
-            "UnityEngine.LineRenderer"
+            "UnityEngine.LineRenderer",
+            "VRC_StationInternal",
+            "VRCSDK2.VRC_Station",
+            "VRCSDK2.VRC_IKFollower",
+            "VRC_IKFollowerInternal"
         };
+
+        public static readonly int MAX_PARTICLES = 20000;
+        public static readonly int MAX_PARTICLE_SYSTEMS = 200;
+        public static readonly short MAX_PARTICLE_EMISSION = 5000;
 
         private static IEnumerable<System.Type> FindTypes()
         {
@@ -161,7 +170,7 @@ namespace VRCSDK2
                 {
                     AudioSource au = sources[0];
 #if VRC_CLIENT
-                    au.outputAudioMixerGroup = VRCAudioManager.GetGameGroup();
+                    au.outputAudioMixerGroup = VRCAudioManager.GetAvatarGroup();
 #endif
 
                     if (au.volume > 0.9f)
@@ -244,6 +253,142 @@ namespace VRCSDK2
             }
 
             return audioSources;
+        }
+
+        public static Dictionary<ParticleSystem, int> EnforceParticleSystemLimits(GameObject currentAvatar)
+        {
+            Dictionary<ParticleSystem, int> particleSystems = new Dictionary<ParticleSystem, int>();
+            int particleSystemCount = 0;
+            
+            foreach(var ps in currentAvatar.transform.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                if(particleSystemCount > MAX_PARTICLE_SYSTEMS)
+                {
+                    Debug.LogError("Too many particle systems, #" + particleSystemCount + " named " + ps.gameObject.name + " deleted");
+                    Object.DestroyImmediate(ps);
+                } else {
+                    var main = ps.main;
+                    var collision = ps.collision;
+                    var emission = ps.emission;
+
+                    var realtime_max = MAX_PARTICLES;
+
+                    if(ps.GetComponent<ParticleSystemRenderer>())
+                    {
+                        var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                        if(renderer.renderMode == ParticleSystemRenderMode.Mesh)
+                        {
+                            Mesh[] meshes = new Mesh[0];
+                            int heighestPoly = 0;
+                            renderer.GetMeshes(meshes);
+                            if(meshes.Length == 0 && renderer.mesh != null)
+                            {
+                                meshes = new Mesh[] { renderer.mesh };
+                            }
+                            // Debug.Log(meshes.Length + " meshes possible emmited meshes from " + ps.gameObject.name);
+                            foreach(var m in meshes)
+                            {
+                                if(m.isReadable)
+                                {
+                                    if(m.triangles.Length/3 > heighestPoly)
+                                    {
+                                        heighestPoly = m.triangles.Length/3;
+                                    }
+                                } else {
+                                    if(1000 > heighestPoly)
+                                    {
+                                        heighestPoly = 1000;
+                                    }
+                                }
+                            }
+                            if(heighestPoly > 0)
+                            {
+                                heighestPoly = Mathf.Clamp(heighestPoly / 10, 1, heighestPoly);
+                                if(heighestPoly < realtime_max)
+                                {
+                                    realtime_max = realtime_max / heighestPoly;
+                                } else {
+                                    realtime_max = 1;
+                                }
+                                if(heighestPoly > 20000)
+                                {
+                                    Debug.LogError("Particle system named " + ps.gameObject.name + " breached polygon limits, it has been deleted");
+                                    Object.DestroyImmediate(ps);
+                                    particleSystemCount--;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    
+                    
+                    var rate = emission.rateOverTime;
+
+                    if(rate.mode == ParticleSystemCurveMode.Constant)
+                    {
+                        rate.constant = Mathf.Clamp(rate.constant, 0, MAX_PARTICLE_EMISSION);
+                    } else if(rate.mode == ParticleSystemCurveMode.TwoConstants) {
+                        rate.constantMax = Mathf.Clamp(rate.constantMax, 0, MAX_PARTICLE_EMISSION);
+                    } else {
+                        rate.curveMultiplier = Mathf.Clamp(rate.curveMultiplier, 0, MAX_PARTICLE_EMISSION);
+                    }
+
+                    emission.rateOverTime = rate;
+                    rate = emission.rateOverDistance;
+
+                    if(rate.mode == ParticleSystemCurveMode.Constant)
+                    {
+                        rate.constant = Mathf.Clamp(rate.constant, 0, MAX_PARTICLE_EMISSION);
+                    } else if(rate.mode == ParticleSystemCurveMode.TwoConstants) {
+                        rate.constantMax = Mathf.Clamp(rate.constantMax, 0, MAX_PARTICLE_EMISSION);
+                    } else {
+                        rate.curveMultiplier = Mathf.Clamp(rate.curveMultiplier, 0, MAX_PARTICLE_EMISSION);
+                    }
+
+                     emission.rateOverDistance = rate;
+
+                    ParticleSystem.Burst[] bursts = new ParticleSystem.Burst[emission.burstCount];
+                    emission.GetBursts(bursts);
+
+                    for(int i=0;i<bursts.Length;i++)
+                    {
+                        if(bursts[i].maxCount > MAX_PARTICLE_EMISSION)
+                        {
+                            bursts[i].maxCount = (short)Mathf.Clamp(bursts[i].maxCount, 0, MAX_PARTICLE_EMISSION);
+                        }
+                    }
+
+                    emission.SetBursts(bursts);
+
+                    var max = realtime_max;
+
+                    if(collision.enabled)
+                    {
+                        switch(collision.quality)
+                        {
+                            case ParticleSystemCollisionQuality.High:
+                                max = max / 100;
+                                break;
+                            case ParticleSystemCollisionQuality.Medium:
+                                max = max / 50;
+                                break;
+                            case ParticleSystemCollisionQuality.Low:
+                                max = max / 10;
+                                break;
+                        }
+                    }
+
+                    if(main.maxParticles > max)
+                    {
+                        main.maxParticles = Mathf.Clamp(max, 1, MAX_PARTICLES);
+                    }
+
+                    particleSystems.Add(ps, realtime_max);
+                }
+                particleSystemCount++;
+            }
+
+            return particleSystems;
         }
     }
 }

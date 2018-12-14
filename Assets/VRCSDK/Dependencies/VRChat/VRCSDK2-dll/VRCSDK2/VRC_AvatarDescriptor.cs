@@ -7,7 +7,8 @@ namespace VRCSDK2
 		public enum AnimationSet
 		{
 			Male,
-			Female
+			Female,
+			None
 		}
 
 		public enum LipSyncStyle

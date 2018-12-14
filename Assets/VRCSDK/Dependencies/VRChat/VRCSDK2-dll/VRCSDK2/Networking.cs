@@ -35,6 +35,8 @@ namespace VRCSDK2
 
 		public static Action<GameObject> _Destroy;
 
+		public static Func<VRC_EventHandler> _SceneEventHandler;
+
 		public static Func<DateTime> _GetNetworkDateTime;
 
 		public static Func<double> _GetServerTimeInSeconds;
@@ -42,6 +44,8 @@ namespace VRCSDK2
 		public static Func<int> _GetServerTimeInMilliseconds;
 
 		public static Func<double, double, double> _CalculateServerDeltaTime;
+
+		public static VRC_EventHandler SceneEventHandler => (_SceneEventHandler != null) ? _SceneEventHandler() : null;
 
 		public static bool IsNetworkSettled => _IsNetworkSettled == null || _IsNetworkSettled();
 

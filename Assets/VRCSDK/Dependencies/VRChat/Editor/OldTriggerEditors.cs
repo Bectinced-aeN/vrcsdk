@@ -11,8 +11,7 @@ namespace VRCSDK2
     {
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.HelpBox("Please use a VRC_Trigger instead.", MessageType.Error);
-            DrawDefaultInspector();
+            EditorGUILayout.HelpBox("Obsolete. Please use a VRC_Trigger instead.", MessageType.Error);
         }
     }
 
@@ -21,8 +20,7 @@ namespace VRCSDK2
     {
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.HelpBox("Please use a VRC_Trigger instead.", MessageType.Error);
-            DrawDefaultInspector();
+            EditorGUILayout.HelpBox("Obsolete. Please use a VRC_Trigger instead.", MessageType.Error);
         }
     }
 
@@ -31,8 +29,7 @@ namespace VRCSDK2
     {
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.HelpBox("Please use a VRC_Trigger instead.", MessageType.Error);
-            DrawDefaultInspector();
+            EditorGUILayout.HelpBox("Obsolete. Please use a VRC_Trigger instead.", MessageType.Error);
         }
     }
 
@@ -41,8 +38,7 @@ namespace VRCSDK2
     {
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.HelpBox("Please use a VRC_Trigger instead.", MessageType.Error);
-            DrawDefaultInspector();
+            EditorGUILayout.HelpBox("Obsolete. Please use a VRC_Trigger instead.", MessageType.Error);
         }
     }
 }

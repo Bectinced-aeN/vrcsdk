@@ -51,8 +51,8 @@ namespace VRCSDK2
 
 		public string UseText = "Use";
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType useEventBroadcastType;
 
 		[Obsolete("Please use a VRC_Trigger", false)]
@@ -67,8 +67,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string PickupEventName;
 
 		[HideInInspector]
@@ -141,9 +141,26 @@ namespace VRCSDK2
 
 		public void Drop()
 		{
+			Drop(-1);
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+			VRC_EventHandler.VrcTargetType.Local,
+			VRC_EventHandler.VrcTargetType.Owner
+		})]
+		public void Drop(int instigator)
+		{
 			if (ForceDrop != null)
 			{
-				ForceDrop(this);
+				if (currentPlayer.playerId == instigator)
+				{
+					ForceDrop(this);
+				}
+				else
+				{
+					Debug.LogError((object)"Cannot Drop. Instigator != Owner");
+				}
 			}
 		}
 

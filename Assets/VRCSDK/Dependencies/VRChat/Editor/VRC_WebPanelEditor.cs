@@ -92,6 +92,8 @@ namespace VRCSDK2
 
             InspectorField("transparent", "Transparent Background");
 
+            InspectorField("autoFormSubmit", "Input should Submit Forms");
+
             EditorGUILayout.Space();
 
             InspectorField("station", "Interaction Station");
@@ -108,6 +110,7 @@ namespace VRCSDK2
             EditorGUILayout.Space();
 
             InspectorField("extraVideoScreens", "Duplicate Screens");
+            
             EditorGUILayout.EndVertical();
 
             if (EditorGUI.EndChangeCheck())

@@ -1,100 +1,148 @@
-using System;
-using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using VRC.Core.BestHTTP;
+using VRC.Core.BestHTTP.Caching;
 
 namespace VRC.Core
 {
-	internal abstract class APIResponseHandler
+	internal static class APIResponseHandler
 	{
-		private static Dictionary<int, ApiCachedResponse> apiResponseCache = new Dictionary<int, ApiCachedResponse>();
-
-		public virtual void HandleReponse(HTTPRequest req, HTTPResponse resp, int requestId, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null, Action<string> errorCallback = null, int retryCount = 0, float cacheLifetime = -1f)
+		public static void HandleReponse(int requestId, HTTPRequest req, HTTPResponse resp, ApiContainer responseContainer, int retryCount = 0, bool useCache = false)
 		{
+			string text = (resp != null) ? resp.StatusCode.ToString() : "null";
+			string text2 = (req != null) ? req.MethodType.ToString() : "null";
+			string text3 = (req != null) ? req.Uri.ToString() : "null";
+			string text4 = (resp != null) ? resp.DataAsText : "null";
+			string text5 = (req.RawData != null) ? Encoding.UTF8.GetString(req.RawData) : string.Empty;
+			if (req.State == HTTPRequestStates.Finished && (resp.StatusCode < 200 || resp.StatusCode >= 400))
+			{
+				req.State = HTTPRequestStates.Error;
+			}
+			switch (req.State)
+			{
+			case HTTPRequestStates.Finished:
+				responseContainer.OnComplete(resp.IsSuccess, req.Uri.PathAndQuery, resp.StatusCode, resp.Message, () => resp.Data, () => resp.DataAsText);
+				if (!responseContainer.IsValid)
+				{
+					RetryRequest(requestId, req, resp, responseContainer, --retryCount, useCache, string.Empty);
+				}
+				else
+				{
+					if (useCache && req.MethodType == HTTPMethods.Get)
+					{
+						ApiCache.CacheResponse(req.Uri.PathAndQuery, resp.Data);
+					}
+					if (responseContainer.OnSuccess != null)
+					{
+						responseContainer.OnSuccess(responseContainer);
+					}
+				}
+				break;
+			default:
+			{
+				string text6 = (req.Exception == null) ? "No Exception" : req.Exception.Message;
+				Debug.LogErrorFormat("[{0}, {1}, {2}, {3}] Request Finished with Error!\n{4}\n{5}\n{6}\n{7}", new object[8]
+				{
+					requestId,
+					text,
+					text2,
+					retryCount,
+					text3,
+					text5,
+					text6,
+					text4
+				});
+				responseContainer.OnComplete(success: false, req.Uri.PathAndQuery, resp.StatusCode, resp.Message, () => resp.Data, () => resp.DataAsText);
+				if (resp.StatusCode >= 400 && resp.StatusCode < 500)
+				{
+					retryCount = 0;
+				}
+				RetryRequest(requestId, req, resp, responseContainer, --retryCount, useCache, string.Empty);
+				break;
+			}
+			case HTTPRequestStates.Aborted:
+				Debug.LogErrorFormat("[{0}, {1}, {2}, {3}] Request Request Aborted!\n{4}\n{5}", new object[6]
+				{
+					requestId,
+					text,
+					text2,
+					retryCount,
+					text3,
+					text4
+				});
+				responseContainer.Error = "The request was cancelled.";
+				if (responseContainer.OnError != null)
+				{
+					responseContainer.OnError(responseContainer);
+				}
+				break;
+			case HTTPRequestStates.ConnectionTimedOut:
+				Debug.LogErrorFormat("[{0}, {1}, {2}, {3}] Connection Timed Out!\n{4}\n{4}", new object[6]
+				{
+					requestId,
+					text,
+					text2,
+					retryCount,
+					text3,
+					text4
+				});
+				RetryRequest(requestId, req, resp, responseContainer, --retryCount, useCache, "The request timed out.");
+				break;
+			case HTTPRequestStates.TimedOut:
+				Debug.LogErrorFormat("[{0}, {1}, {2}, {3}] Processing the request Timed Out!\n{4}\n{5}", new object[6]
+				{
+					requestId,
+					text,
+					text2,
+					retryCount,
+					text3,
+					text4
+				});
+				RetryRequest(requestId, req, resp, responseContainer, --retryCount, useCache, "The request timed out.");
+				break;
+			}
 		}
 
-		public virtual void HandleSuccessReponse(string jsonResponse, Action<string> successCallbackWithResponse = null, Action<Dictionary<string, object>> successCallbackWithDict = null, Action<List<object>> successCallbackWithList = null)
+		private static void RetryRequest(int requestId, HTTPRequest request, HTTPResponse resp, ApiContainer responseContainer, int retryCount, bool useCache, string errorMessage = "")
 		{
-		}
-
-		protected void RetryRequest(int requestId, HTTPRequest request, Action<string> successCallbackWithResponse, Action<Dictionary<string, object>> successCallbackWithDict, Action<List<object>> successCallbackWithList, Action<string> errorCallback, string errorMessage, int retryCount)
-		{
+			HTTPCacheService.DeleteEntity(request.Uri);
+			string text = (resp != null) ? resp.StatusCode.ToString() : "No Status Code";
 			if (retryCount > 0)
 			{
-				Logger.Log("[" + requestId + "] Retrying request (" + retryCount + ")");
+				Debug.LogFormat("<color=orange>[{0}, {1}, {2}, {3}]</color> Retrying request, because: {4}\n{5}", new object[6]
+				{
+					requestId,
+					text,
+					request.MethodType.ToString(),
+					retryCount,
+					responseContainer.Error,
+					request.Uri
+				});
 				request.Callback = delegate(HTTPRequest originalRequest, HTTPResponse response)
 				{
-					APIResponseHandler aPIResponseHandler = new EditorAPIResponseHandler();
-					aPIResponseHandler.HandleReponse(originalRequest, response, requestId, successCallbackWithResponse, successCallbackWithDict, successCallbackWithList, errorCallback, retryCount);
+					HandleReponse(requestId, originalRequest, response, responseContainer, retryCount, useCache);
 				};
 				request.Send();
 			}
 			else
 			{
-				Logger.Log("[" + requestId + "] Out of retries, reporting error");
-				if (errorCallback != null)
+				if (!string.IsNullOrEmpty(errorMessage))
 				{
-					errorCallback(errorMessage);
+					responseContainer.Error = errorMessage;
 				}
-			}
-		}
-
-		protected string GetErrorMessage(Dictionary<string, object> responseDict)
-		{
-			string result = "Unexpected error!";
-			if (responseDict != null && responseDict.ContainsKey("error"))
-			{
-				Dictionary<string, object> dictionary = (Dictionary<string, object>)responseDict["error"];
-				if (dictionary.ContainsKey("message"))
+				Debug.LogFormat("<color=red>[{0}, {1}, {2}, {3}]</color> Abandoning request, because: {4}\n{5}", new object[6]
 				{
-					result = (string)dictionary["message"];
-				}
-			}
-			return result;
-		}
-
-		public static ApiCachedResponse GetOrClearCachedResponse(string apiRequestPathAndQuery, float cacheLifetime)
-		{
-			int hashCode = apiRequestPathAndQuery.GetHashCode();
-			if (apiResponseCache.TryGetValue(hashCode, out ApiCachedResponse value))
-			{
-				if (Time.get_realtimeSinceStartup() - value.Timestamp > Mathf.Min(value.Lifetime, cacheLifetime))
+					requestId,
+					text,
+					request.MethodType.ToString(),
+					retryCount,
+					responseContainer.Error,
+					request.Uri
+				});
+				if (responseContainer.OnError != null)
 				{
-					apiResponseCache.Remove(hashCode);
-					return null;
+					responseContainer.OnError(responseContainer);
 				}
-				return value;
-			}
-			return null;
-		}
-
-		public static void CacheResponse(string apiRequestPathAndQuery, float cacheLifetime, string data)
-		{
-			if (!(cacheLifetime <= 0f))
-			{
-				int hashCode = apiRequestPathAndQuery.GetHashCode();
-				apiResponseCache[hashCode] = new ApiCachedResponse(data, Time.get_realtimeSinceStartup(), cacheLifetime);
-			}
-		}
-
-		public static void ClearCache()
-		{
-			apiResponseCache.Clear();
-		}
-
-		public static void CleanExpiredCache()
-		{
-			List<int> list = new List<int>();
-			foreach (KeyValuePair<int, ApiCachedResponse> item in apiResponseCache)
-			{
-				if (Time.get_realtimeSinceStartup() - item.Value.Timestamp > item.Value.Lifetime)
-				{
-					list.Add(item.Key);
-				}
-			}
-			for (int i = 0; i < list.Count; i++)
-			{
-				apiResponseCache.Remove(list[i]);
 			}
 		}
 	}

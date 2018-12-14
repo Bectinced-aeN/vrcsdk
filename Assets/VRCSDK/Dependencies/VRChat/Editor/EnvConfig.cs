@@ -20,6 +20,14 @@ public class EnvConfig
         BuildTarget.StandaloneOSXIntel, BuildTarget.StandaloneOSXIntel64, BuildTarget.StandaloneOSXUniversal
     };
 
+#if !VRC_CLIENT
+    static BuildTarget[] allowedBuildtargets = new BuildTarget[]
+    {
+        BuildTarget.StandaloneWindows64,
+        BuildTarget.Android
+    };
+#endif
+
     static System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]> allowedGraphicsAPIs = new System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]>()
     {
         { BuildTarget.Android, null },
@@ -32,10 +40,6 @@ public class EnvConfig
         { BuildTarget.StandaloneOSXIntel, null },
         { BuildTarget.StandaloneOSXIntel64, null },
         { BuildTarget.StandaloneOSXUniversal, null }
-    };
-
-    static BuildTarget[] allowedTargets = new BuildTarget[] {
-        BuildTarget.StandaloneWindows64, BuildTarget.StandaloneWindows
     };
 
     static string[] ensureTheseShadersAreAvailable = new string[]
@@ -154,6 +158,13 @@ public class EnvConfig
             return false;
 
         ConfigurePlayerSettings();
+
+        if (!VRC.Core.RemoteConfig.IsInitialized())
+        {
+            VRC.Core.API.SetOnlineMode(true, "vrchat");
+            VRC.Core.RemoteConfig.Init();
+        }
+
         return true;
     }
 
@@ -496,17 +507,19 @@ public class EnvConfig
 
     static void SetBuildTarget()
     {
+#if !VRC_CLIENT
         Debug.Log("Setting build target");
 
         BuildTarget target = UnityEditor.EditorUserBuildSettings.activeBuildTarget;
 
-        if (!allowedTargets.Contains(target))
+        if (!allowedBuildtargets.Contains(target))
         {
             Debug.LogError("Target not supported, switching to one that is.");
-            target = allowedTargets[0];
+            target = allowedBuildtargets[0];
 #pragma warning disable CS0618 // Type or member is obsolete
             EditorUserBuildSettings.SwitchActiveBuildTarget(target);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
-    }               
+#endif
+    }
 }
