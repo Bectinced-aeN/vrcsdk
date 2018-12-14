@@ -1,0 +1,62 @@
+using UnityEngine;
+
+namespace VRCSDK2
+{
+	public class VRC_AvatarPedestal : MonoBehaviour
+	{
+		public delegate Object InstantiationDelegate(Object prefab);
+
+		public string blueprintId = string.Empty;
+
+		[HideInInspector]
+		public bool grantBlueprintAccess;
+
+		public Transform Placement;
+
+		public bool ChangeAvatarsOnUse;
+
+		public float scale = 1f;
+
+		private GameObject Instance;
+
+		public static InstantiationDelegate Instantiate;
+
+		public VRC_AvatarPedestal()
+			: this()
+		{
+		}
+
+		private void Awake()
+		{
+			//IL_006c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0081: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00a5: Unknown result type (might be due to invalid IL or missing references)
+			GameObject val = Resources.Load<GameObject>("AvatarPedestal");
+			if (val != null && Instantiate != null)
+			{
+				Instance = (Instantiate(val) as GameObject);
+				Instance.get_transform().set_parent(Placement.get_transform());
+				Instance.get_transform().set_localPosition(new Vector3(0f, 0f, 0f));
+				Instance.get_transform().set_localRotation(Quaternion.get_identity());
+				Instance.get_transform().set_localScale(new Vector3(1f, 1f, 1f));
+			}
+		}
+
+		public void SwitchAvatar(string id)
+		{
+			blueprintId = id;
+			if (Instance != null)
+			{
+				Instance.SendMessage("RefreshAvatar", 1);
+			}
+		}
+
+		public void SetAvatarUse()
+		{
+			if (Instance != null)
+			{
+				Instance.SendMessage("SetAvatarUse", 1);
+			}
+		}
+	}
+}

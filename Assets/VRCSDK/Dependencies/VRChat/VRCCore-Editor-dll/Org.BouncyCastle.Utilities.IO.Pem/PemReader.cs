@@ -1,0 +1,79 @@
+using Org.BouncyCastle.Utilities.Encoders;
+using System;
+using System.Collections;
+using System.IO;
+using System.Text;
+
+namespace Org.BouncyCastle.Utilities.IO.Pem
+{
+	internal class PemReader
+	{
+		private const string BeginString = "-----BEGIN ";
+
+		private const string EndString = "-----END ";
+
+		private readonly TextReader reader;
+
+		public TextReader Reader => reader;
+
+		public PemReader(TextReader reader)
+		{
+			if (reader == null)
+			{
+				throw new ArgumentNullException("reader");
+			}
+			this.reader = reader;
+		}
+
+		public PemObject ReadPemObject()
+		{
+			string text = reader.ReadLine();
+			if (text != null && text.StartsWith("-----BEGIN "))
+			{
+				text = text.Substring("-----BEGIN ".Length);
+				int num = text.IndexOf('-');
+				string type = text.Substring(0, num);
+				if (num > 0)
+				{
+					return LoadObject(type);
+				}
+			}
+			return null;
+		}
+
+		private PemObject LoadObject(string type)
+		{
+			string text = "-----END " + type;
+			IList list = Platform.CreateArrayList();
+			StringBuilder stringBuilder = new StringBuilder();
+			string text2;
+			while ((text2 = reader.ReadLine()) != null && text2.IndexOf(text) == -1)
+			{
+				int num = text2.IndexOf(':');
+				if (num == -1)
+				{
+					stringBuilder.Append(text2.Trim());
+				}
+				else
+				{
+					string text3 = text2.Substring(0, num).Trim();
+					if (text3.StartsWith("X-"))
+					{
+						text3 = text3.Substring(2);
+					}
+					string val = text2.Substring(num + 1).Trim();
+					list.Add(new PemHeader(text3, val));
+				}
+			}
+			if (text2 == null)
+			{
+				throw new IOException(text + " not found");
+			}
+			if (stringBuilder.Length % 4 != 0)
+			{
+				throw new IOException("base64 data appears to be truncated");
+			}
+			return new PemObject(type, list, Base64.Decode(stringBuilder.ToString()));
+		}
+	}
+}
