@@ -226,7 +226,8 @@ public class VRC_SdkControlPanel : EditorWindow
                 EditorGUI.BeginChangeCheck();
 
                 EditorGUILayout.Space();
-                OnGUIAvatarCheck(av);
+                if (!checkedForIssues)
+                    OnGUIAvatarCheck(av);
 
                 OnGUIAvatar(av);
 
@@ -916,19 +917,17 @@ public class VRC_SdkControlPanel : EditorWindow
                 OnGUILink(avatar, "See https://docs.vrchat.com/docs/rig-requirements for details."); 
         }
 
+        IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(avatar.Name, avatar.gameObject);
+        HashSet<string> componentsToRemoveNames = new HashSet<string>();
+        foreach (Component c in componentsToRemove)
         {
-            IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(avatar.Name, avatar.gameObject);
-            HashSet<string> componentsToRemoveNames = new HashSet<string>();
-            foreach (Component c in componentsToRemove)
-            {
-                if (componentsToRemoveNames.Contains(c.GetType().Name) == false)
-                    componentsToRemoveNames.Add(c.GetType().Name);
-            }
-
-            if (componentsToRemoveNames.Count > 0)
-                OnGUIError(avatar, "The following component types are found on the Avatar and will be removed by the client: " + string.Join(", ", componentsToRemoveNames.ToArray()));
+            if (componentsToRemoveNames.Contains(c.GetType().Name) == false)
+                componentsToRemoveNames.Add(c.GetType().Name);
         }
-        
+
+        if (componentsToRemoveNames.Count > 0)
+            OnGUIError(avatar, "The following component types are found on the Avatar and will be removed by the client: " + string.Join(", ", componentsToRemoveNames.ToArray()));
+
         if (VRCSDK2.AvatarValidation.EnforceAudioSourceLimits(avatar.gameObject).Count > 0)
             OnGUIWarning(avatar, "Audio sources found on Avatar, they will be adjusted to safe limits, if necessary.");
 

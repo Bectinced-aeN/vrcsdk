@@ -124,10 +124,10 @@ namespace VRCSDK2
                     contentViolence.isOn = worldRecord.tags.Contains("content_violence");
                     contentGore.isOn = worldRecord.tags.Contains("content_gore");
                     contentOther.isOn = worldRecord.tags.Contains("content_other");
-                    shouldUpdateImageToggle.interactable = !isUpdate;
-                    shouldUpdateImageToggle.isOn = isUpdate;
-                    liveBpImage.enabled = isUpdate;
-                    bpImage.enabled = !isUpdate;
+                    shouldUpdateImageToggle.interactable = isUpdate;
+                    shouldUpdateImageToggle.isOn = !isUpdate;
+                    liveBpImage.enabled = !isUpdate;
+                    bpImage.enabled = isUpdate;
 
                     if (APIUser.CurrentUser.developerType < APIUser.DeveloperType.Trusted)
                     {

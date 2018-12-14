@@ -883,10 +883,7 @@ namespace VRC.Core
 				dictionary.Add("order", "descending");
 				break;
 			}
-			if (offset > 0)
-			{
-				dictionary.Add("offset", offset.ToString());
-			}
+			dictionary.Add("offset", offset.ToString());
 			if (!string.IsNullOrEmpty(search))
 			{
 				dictionary.Add("search", search);

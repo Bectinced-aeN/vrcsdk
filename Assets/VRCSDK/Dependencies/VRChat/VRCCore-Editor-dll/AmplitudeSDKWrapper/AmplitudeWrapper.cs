@@ -380,14 +380,15 @@ namespace AmplitudeSDKWrapper
 			{
 				ThreadPool.QueueUserWorkItem(delegate
 				{
-					int batchSize2 = 1;
+					AmplitudeWrapper amplitudeWrapper = this;
+					int batch = 1;
 					while (true)
 					{
 						bool flag = false;
 						lock (_serverUpdateLock)
 						{
 							flag = (Mathf.Max(_serverUpdateDelayMs - (Environment.TickCount - _serverUpdateScheduledTime), 0) == 0);
-							batchSize2 = _serverUpdateBatchSize;
+							batch = _serverUpdateBatchSize;
 						}
 						if (flag || _isAppExiting)
 						{
@@ -404,7 +405,10 @@ namespace AmplitudeSDKWrapper
 							_serverUpdateBatchSize = -1;
 							isUpdateScheduled = 0;
 						}
-						UpdateServer(batchSize2);
+						logQueue.QueueTask(delegate
+						{
+							amplitudeWrapper.UpdateServer(batch);
+						});
 					}
 				});
 			}

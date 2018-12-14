@@ -7,41 +7,56 @@ using Object = UnityEngine.Object;
 
 public class EditorCoroutine
 {
-	public static EditorCoroutine start( IEnumerator _routine )
+	public static EditorCoroutine Start( IEnumerator _routine )
 	{
 		EditorCoroutine coroutine = new EditorCoroutine(_routine);
 		coroutine.start();
 		return coroutine;
 	}
 
-	readonly IEnumerator routine;
+
+    public static EditorCoroutine Start(System.Action _action)
+    {
+        EditorCoroutine coroutine = new EditorCoroutine(_action);
+        coroutine.start();
+        return coroutine;
+    }
+
+    readonly IEnumerator routine;
 	EditorCoroutine( IEnumerator _routine )
 	{
 		routine = _routine;
-	}
+    }
 
-	void start()
+    readonly System.Action action;
+    EditorCoroutine(System.Action _action)
+    {
+        action = _action;
+    }
+
+    void start()
 	{
-		//Debug.Log("start");
 		EditorApplication.update += update;
 	}
 	public void stop()
 	{
-		//Debug.Log("stop");
-		EditorApplication.update -= update;
+        EditorApplication.update -= update;
 	}
 
 	void update()
 	{
-		/* NOTE: no need to try/catch MoveNext,
-		 * if an IEnumerator throws its next iteration returns false.
-		 * Also, Unity probably catches when calling EditorApplication.update.
-		 */
+        if (routine != null)
+        {
+            if (!routine.MoveNext())
+                stop();
+        }
+        else if (action != null)
+        {
+            action();
+            stop();
+        }
+        else
+            stop();
 
-		//Debug.Log("update");
-		if (!routine.MoveNext())
-		{
-			stop();
-		}
-	}
+    }
 }

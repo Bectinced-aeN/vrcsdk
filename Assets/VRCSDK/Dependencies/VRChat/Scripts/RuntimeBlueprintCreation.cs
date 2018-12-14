@@ -62,27 +62,22 @@ namespace VRCSDK2
                 delegate(APIUser user) 
                 {
                     pipelineManager.user = user;
-                    if (isUpdate)
-                    {
-                        ApiAvatar.Fetch(pipelineManager.blueprintId, false,
-                            delegate (ApiAvatar avatar)
-                            {
-                                apiAvatar = avatar;
-                                SetupUI();
-                            }, 
-                            delegate(string message) 
-                            {
-                                apiAvatar = new ApiAvatar();
-                                apiAvatar.id = pipelineManager.blueprintId;
-                                SetupUI();
-                            });
-                    }
-                    else
-                    {
-                        apiAvatar = new ApiAvatar();
-                        apiAvatar.id = pipelineManager.blueprintId;
-                        SetupUI();
-                    }
+
+                    ApiAvatar.Fetch(pipelineManager.blueprintId, false,
+                        delegate (ApiAvatar avatar)
+                        {
+                            apiAvatar = avatar;
+                            pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
+                            SetupUI();
+                        },
+                        delegate (string message)
+                        {
+                            apiAvatar = new ApiAvatar();
+                            apiAvatar.id = pipelineManager.blueprintId;
+                            pipelineManager.completedSDKPipeline = false;
+                            SetupUI();
+                        }
+                    );
                 }, LoginErrorCallback);
         }
         
@@ -121,6 +116,7 @@ namespace VRCSDK2
                     }
                     else // user does not own apiAvatar id associated with descriptor
                     {
+                        Debug.LogErrorFormat("{0} is not an owner of {1}", apiAvatar.authorId, pipelineManager.user.id);
                         blueprintPanel.SetActive(false);
                         errorPanel.SetActive(true);
                     }
@@ -300,22 +296,14 @@ namespace VRCSDK2
             {
                 yield return StartCoroutine(UpdateImage(isUpdate ? apiAvatar.imageUrl : "", GetFriendlyAvatarFileName("Image")));
                 apiAvatar.imageUrl = cloudFrontImageUrl;
-                SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
-                apiAvatar.Save(true, delegate (ApiModel model) 
-                {
-                    AnalyticsSDK.AvatarUploaded(model, true);
-                    doneUploading = true;
-                });
             }
-            else
+
+            SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
+            apiAvatar.Save(true, delegate(ApiModel model) 
             {
-                SetUploadProgress("Saving Avatar", "Almost finished!!", 0.8f);
-                apiAvatar.Save(true, delegate(ApiModel model) 
-                {
-                    AnalyticsSDK.AvatarUploaded(model, true);
-                    doneUploading = true;
-                });
-            }
+                AnalyticsSDK.AvatarUploaded(model, true);
+                doneUploading = true;
+            });
 
             while (!doneUploading)
                 yield return null;

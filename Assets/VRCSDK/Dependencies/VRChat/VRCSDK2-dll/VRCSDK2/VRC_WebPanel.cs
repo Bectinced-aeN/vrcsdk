@@ -104,14 +104,6 @@ namespace VRCSDK2
 			}
 		}
 
-		public void ExecuteScript(string script)
-		{
-			if (_ExecuteScript != null)
-			{
-				_ExecuteScript(script);
-			}
-		}
-
 		public bool BindCall(string function, Delegate handler)
 		{
 			if (_BindCall == null)
@@ -198,7 +190,7 @@ namespace VRCSDK2
 			return list;
 		}
 
-		private void ReadData(string root)
+		private void ReadData(string root, int junk)
 		{
 			string[] files = Directory.GetFiles(root);
 			string[] array = files;
@@ -217,7 +209,7 @@ namespace VRCSDK2
 			string[] array2 = directories;
 			foreach (string root2 in array2)
 			{
-				ReadData(root2);
+				ReadData(root2, 0);
 			}
 		}
 
@@ -227,7 +219,7 @@ namespace VRCSDK2
 			string webRootPath = WebRootPath;
 			if (!string.IsNullOrEmpty(webRootPath) && Directory.Exists(webRootPath) && (!webRootPath.StartsWith(Application.get_dataPath() + Path.DirectorySeparatorChar + "VRCSDK") || webRootPath == Application.get_dataPath() + Path.DirectorySeparatorChar + "VRCSDK" + Path.DirectorySeparatorChar + "Examples" + Path.DirectorySeparatorChar + "Sample Assets" + Path.DirectorySeparatorChar + "WebRoot"))
 			{
-				ReadData(webRootPath);
+				ReadData(webRootPath, 0);
 				string str = string.Join(", ", webData.ConvertAll((WebFile item) => item.path + " [" + item.data.Length + "]").ToArray());
 				Debug.Log((object)("Web Panel has files: \n" + str));
 			}

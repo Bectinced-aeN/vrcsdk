@@ -138,9 +138,7 @@ namespace VRC
                 return;
 
 			if(!APIUser.IsLoggedInWithCredentials && ApiCredentials.Load() )
-            {
 				APIUser.Login((user) => AnalyticsSDK.LoggedInUserChanged(user), null );
-            }
 
             clientInstallPath = SDKClientUtilities.GetSavedVRCInstallPath();
             if(string.IsNullOrEmpty(clientInstallPath))
@@ -148,6 +146,8 @@ namespace VRC
 
             signingIn = false;
 			isInitialized = true;
+
+            VRCContentManagerWindow.ClearContent();
         }
 
         [UnityEditor.Callbacks.DidReloadScripts(int.MaxValue)]
@@ -220,6 +220,7 @@ namespace VRC
                     storedPassword = password = null;
 
                     APIUser.Logout();
+                    VRCContentManagerWindow.ClearContent();
                 }
             }
             else

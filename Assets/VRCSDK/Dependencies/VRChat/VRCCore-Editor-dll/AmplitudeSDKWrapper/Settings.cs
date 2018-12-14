@@ -14,6 +14,8 @@ namespace AmplitudeSDKWrapper
 
 		private Dictionary<string, object> _data = new Dictionary<string, object>();
 
+		private readonly object _dataLock = new object();
+
 		private bool _hasWrittenToStorage;
 
 		private int _lastTimeWrittenToStorage;
@@ -32,8 +34,13 @@ namespace AmplitudeSDKWrapper
 			key = _containerName + "_" + key;
 			object value = null;
 			T result = default(T);
-			lock (_data)
+			lock (_dataLock)
 			{
+				if (_data == null)
+				{
+					Debug.LogError((object)("AmplitudeAPI: Settings.Get " + key + ": _data wasn't initialized"));
+					_data = new Dictionary<string, object>();
+				}
 				try
 				{
 					if (!_data.TryGetValue(key, out value))
@@ -43,9 +50,10 @@ namespace AmplitudeSDKWrapper
 					result = (T)Convert.ChangeType(value, typeof(T));
 					return result;
 				}
-				catch
+				catch (Exception ex)
 				{
-					Debug.LogError((object)("AmplitudeAPI: can't cast settings key - " + key + ", val `" + ((value == null) ? "null" : value.ToString()) + "` type " + ((value == null) ? string.Empty : value.GetType().ToString()) + " - to type - " + typeof(T).ToString()));
+					Debug.LogError((object)("AmplitudeAPI: exception reading <" + typeof(T).GetType().Name + "> setting - " + key + ", val `" + ((value == null) ? "null" : value.ToString()) + "`: "));
+					Debug.LogException(ex);
 					return result;
 				}
 			}
@@ -54,8 +62,13 @@ namespace AmplitudeSDKWrapper
 		internal void Save<T>(string key, T value)
 		{
 			key = _containerName + "_" + key;
-			lock (_data)
+			lock (_dataLock)
 			{
+				if (_data == null)
+				{
+					Debug.LogError((object)("AmplitudeAPI: Settings.Save " + key + ": _data wasn't initialized"));
+					_data = new Dictionary<string, object>();
+				}
 				_data[key] = value;
 			}
 			if (!_hasWrittenToStorage || Mathf.Max(20000 - (Environment.TickCount - _lastTimeWrittenToStorage), 0) == 0)
@@ -68,18 +81,32 @@ namespace AmplitudeSDKWrapper
 
 		private void LoadFromStorage()
 		{
-			lock (_data)
+			lock (_dataLock)
 			{
 				try
 				{
 					string json = File.ReadAllText(GetSettingsFilePath());
-					_data = (Json.Decode(json) as Dictionary<string, object>);
+					Dictionary<string, object> dictionary = Json.Decode(json) as Dictionary<string, object>;
+					if (dictionary == null)
+					{
+						throw new Exception("Couldn't decode JSON");
+					}
+					_data = dictionary;
 				}
-				catch (Exception)
+				catch (FileNotFoundException)
 				{
-					goto end_IL_002f;
-					IL_0035:
-					end_IL_002f:;
+				}
+				catch (DirectoryNotFoundException)
+				{
+				}
+				catch (Exception ex3)
+				{
+					Debug.LogError((object)"AmplitudeAPI: Settings.LoadFromStorage: exception loading settings:");
+					Debug.LogException(ex3);
+				}
+				if (_data == null)
+				{
+					_data = new Dictionary<string, object>();
 				}
 			}
 		}
@@ -91,8 +118,13 @@ namespace AmplitudeSDKWrapper
 
 		internal void WriteToStorage()
 		{
-			lock (_data)
+			lock (_dataLock)
 			{
+				if (_data == null)
+				{
+					Debug.LogError((object)"AmplitudeAPI: Settings.WriteToStorage: _data wasn't initialized");
+					_data = new Dictionary<string, object>();
+				}
 				try
 				{
 					Directory.CreateDirectory(Path.GetDirectoryName(GetSettingsFilePath()));
@@ -101,9 +133,6 @@ namespace AmplitudeSDKWrapper
 				catch (Exception ex)
 				{
 					Debug.LogError((object)("AmplitudeAPI: Couldn't save settings: " + GetSettingsFilePath() + "\n" + ex.Message));
-					goto end_IL_0039;
-					IL_005f:
-					end_IL_0039:;
 				}
 			}
 		}

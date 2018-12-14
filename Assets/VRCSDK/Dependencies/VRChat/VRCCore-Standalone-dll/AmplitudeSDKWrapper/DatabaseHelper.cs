@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 
 namespace AmplitudeSDKWrapper
@@ -13,12 +14,11 @@ namespace AmplitudeSDKWrapper
 	{
 		private static string DB_PATH = Path.Combine(Application.get_temporaryCachePath(), "amplitude.sqlite");
 
+		private bool _initialized;
+
 		public DatabaseHelper()
 		{
-			using (SQLiteConnection sQLiteConnection = new SQLiteConnection(GetConnectionString()))
-			{
-				sQLiteConnection.CreateTable<Event>();
-			}
+			CheckInit();
 		}
 
 		public string GetConnectionString()
@@ -33,135 +33,198 @@ namespace AmplitudeSDKWrapper
 
 		public int AddEvent(string evt)
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			int ret = -1;
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
+				Event @event = new Event
 				{
-					Event @event = new Event();
-					@event.Text = evt;
-					Event event2 = @event;
-					if (sQLiteConnection.Insert(event2) == 0)
-					{
-						Debug.Log((object)"AmplitudeAPI: DatabaseHelper.AddEvent: Insert failed");
-						return -1;
-					}
-					return event2.Id;
-					IL_0046:;
-				}
-				catch (SQLiteException ex)
+					Text = evt
+				};
+				if (db.Insert(@event) == 0)
 				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.AddEvent failed");
-					Debug.LogException((Exception)ex);
+					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.AddEvent: Insert failed");
 				}
-			}
-			return -1;
+				else
+				{
+					ret = @event.Id;
+				}
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.AddEvent failed");
+				Debug.LogException(e);
+			});
+			return ret;
 		}
 
 		public int GetEventCount()
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			int ret = -1;
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
-				{
-					return sQLiteConnection.Table<Event>().Count();
-					IL_0018:;
-				}
-				catch (SQLiteException ex)
-				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetEventCount: GetNumberRows failed");
-					Debug.LogException((Exception)ex);
-				}
-			}
-			return 0;
+				ret = db.Table<Event>().Count();
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetEventCount: GetNumberRows failed");
+				Debug.LogException(e);
+			});
+			return ret;
 		}
 
 		public KeyValuePair<int, IEnumerable<Event>> GetEvents(int lessThanId, int limit)
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			KeyValuePair<int, IEnumerable<Event>> ret = new KeyValuePair<int, IEnumerable<Event>>(-1, new List<Event>());
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
+				ParameterExpression parameterExpression = Expression.Parameter(typeof(Event), "e");
+				TableQuery<Event> tableQuery = db.Table<Event>();
+				if (lessThanId >= 0)
 				{
-					ParameterExpression parameterExpression = Expression.Parameter(typeof(Event), "e");
-					TableQuery<Event> tableQuery = sQLiteConnection.Table<Event>();
-					if (lessThanId >= 0)
-					{
-						tableQuery = from e in tableQuery
-						where e.Id < lessThanId
-						select e;
-					}
-					tableQuery = tableQuery.OrderBy(Expression.Lambda<Func<Event, int>>(Expression.Property(parameterExpression, (MethodInfo)MethodBase.GetMethodFromHandle((RuntimeMethodHandle)/*OpCode not supported: LdMemberToken*/)), new ParameterExpression[1]
-					{
-						parameterExpression
-					}));
-					if (limit >= 0)
-					{
-						tableQuery = tableQuery.Take(limit);
-					}
-					List<Event> list = tableQuery.ToList();
-					if (list.Count() > 0)
-					{
-						return new KeyValuePair<int, IEnumerable<Event>>(list.Last().Id, list);
-					}
+					tableQuery = from e in tableQuery
+					where e.Id < lessThanId
+					select e;
 				}
-				catch (SQLiteException ex)
+				tableQuery = tableQuery.OrderBy(Expression.Lambda<Func<Event, int>>(Expression.Property(parameterExpression, (MethodInfo)MethodBase.GetMethodFromHandle((RuntimeMethodHandle)/*OpCode not supported: LdMemberToken*/)), new ParameterExpression[1]
 				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetEvents failed");
-					Debug.LogException((Exception)ex);
+					parameterExpression
+				}));
+				if (limit >= 0)
+				{
+					tableQuery = tableQuery.Take(limit);
 				}
-			}
-			return new KeyValuePair<int, IEnumerable<Event>>(-1, new List<Event>());
+				List<Event> list = tableQuery.ToList();
+				if (list.Count() > 0)
+				{
+					ret = new KeyValuePair<int, IEnumerable<Event>>(list.Last().Id, list);
+				}
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetEvents failed");
+				Debug.LogException(e);
+			});
+			return ret;
 		}
 
 		public int GetNthEventId(int n)
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			int retId = -1;
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
-				{
-					Event @event = (from i in sQLiteConnection.Table<Event>()
-					orderby i.Id
-					select i).Skip(n - 1).Take(1).First();
-					return @event.Id;
-					IL_006c:;
-				}
-				catch (SQLiteException ex)
-				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetNthEventId failed");
-					Debug.LogException((Exception)ex);
-				}
-			}
-			return -1;
+				Event @event = (from i in db.Table<Event>()
+				orderby i.Id
+				select i).Skip(n - 1).Take(1).First();
+				retId = @event.Id;
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.GetNthEventId failed");
+				Debug.LogException(e);
+			});
+			return retId;
 		}
 
 		public void RemoveEvents(int maxId)
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
-				{
-					sQLiteConnection.Execute("DELETE FROM Event WHERE Id <= ?", maxId);
-				}
-				catch (SQLiteException ex)
-				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.RemoveEvents failed");
-					Debug.LogException((Exception)ex);
-				}
-			}
+				db.Execute("DELETE FROM Event WHERE Id <= ?", maxId);
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.RemoveEvents failed");
+				Debug.LogException(e);
+			});
 		}
 
 		public void RemoveEvent(int id)
 		{
-			using (SQLiteConnection sQLiteConnection = GetConnection())
+			CheckInit();
+			CheckedExecute(delegate(SQLiteConnection db)
 			{
-				try
+				db.Execute("DELETE FROM Event WHERE Id = ?", id);
+			}, delegate(Exception e)
+			{
+				Debug.Log((object)"AmplitudeAPI: DatabaseHelper.RemoveEvent failed");
+				Debug.LogException(e);
+			});
+		}
+
+		private void CheckInit()
+		{
+			if (!_initialized)
+			{
+				CheckedExecute(delegate(SQLiteConnection db)
 				{
-					sQLiteConnection.Execute("DELETE FROM Event WHERE Id = ?", id);
-				}
-				catch (SQLiteException ex)
+					db.CreateTable<Event>();
+					_initialized = true;
+				}, delegate(Exception e)
 				{
-					Debug.Log((object)"AmplitudeAPI: DatabaseHelper.RemoveEvent failed");
-					Debug.LogException((Exception)ex);
+					Debug.Log((object)"AmplitudeAPI: DatabaseHelper: failed to initialize database");
+					Debug.LogException(e);
+				}, handleException: false);
+			}
+		}
+
+		private void CheckedExecute(Action<SQLiteConnection> fn, Action<Exception> onError, bool handleException = true)
+		{
+			try
+			{
+				using (SQLiteConnection sQLiteConnection = GetConnection())
+				{
+					if (sQLiteConnection == null)
+					{
+						throw new Exception("No database connection");
+					}
+					fn?.Invoke(sQLiteConnection);
 				}
+			}
+			catch (SQLiteException ex)
+			{
+				if (handleException && (ex.Result == SQLite3.Result.Corrupt || ex.Result == SQLite3.Result.SchemaChngd || ex.Result == SQLite3.Result.NonDBFile || ex.Result == SQLite3.Result.Full))
+				{
+					Debug.LogError((object)"AmplitudeAPI: DatabaseHelper: trying to delete corrupt database");
+					DeleteFileAndWait(DB_PATH);
+					_initialized = false;
+					CheckInit();
+					CheckedExecute(fn, onError, handleException: false);
+				}
+				else
+				{
+					onError?.Invoke(ex);
+				}
+			}
+			catch (Exception obj)
+			{
+				onError?.Invoke(obj);
+			}
+		}
+
+		private void DeleteFileAndWait(string fileToDelete)
+		{
+			try
+			{
+				FileInfo fileInfo = new FileInfo(fileToDelete);
+				if (fileInfo.Exists)
+				{
+					fileInfo.Delete();
+					fileInfo.Refresh();
+					for (int i = 0; i < 5; i++)
+					{
+						if (!fileInfo.Exists)
+						{
+							break;
+						}
+						Thread.Sleep(100);
+						fileInfo.Refresh();
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.LogError((object)("DeleteFileAndWait exception: " + fileToDelete));
+				Debug.LogException(ex);
 			}
 		}
 	}
