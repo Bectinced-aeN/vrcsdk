@@ -45,7 +45,14 @@ namespace VRCSDK2
 			OnDataStorageAdd,
 			OnAvatarHit,
 			OnStationEntered,
-			OnStationExited
+			OnStationExited,
+			OnVideoStart,
+			OnVideoEnd,
+			OnVideoPlay,
+			OnVideoPause,
+			OnDisable,
+			OnOwnershipTransfer,
+			OnParticleCollision
 		}
 
 		public static class TypeCollections
@@ -153,6 +160,15 @@ namespace VRCSDK2
 
 			[SerializeField]
 			public float[] Probabilities = new float[0];
+
+			[Tooltip("Midi Channel [1-16], 0=any")]
+			public int MidiChannel;
+
+			[Tooltip("Midi Note [0-127]")]
+			public int MidiNote;
+
+			[Tooltip("OSC Address")]
+			public string OscAddr;
 		}
 
 		private class OccupantInfo
@@ -435,6 +451,16 @@ namespace VRCSDK2
 			ExecuteTriggerType(TriggerType.OnEnable);
 		}
 
+		private void OnDisable()
+		{
+			ExecuteTriggerType(TriggerType.OnDisable);
+		}
+
+		private void OnOwnershipTransferred()
+		{
+			ExecuteTriggerType(TriggerType.OnOwnershipTransfer);
+		}
+
 		private void OnDrawGizmos()
 		{
 			List<VRC_Trigger> list = new List<VRC_Trigger>();
@@ -448,7 +474,6 @@ namespace VRCSDK2
 				if (!(obj == null))
 				{
 					Gizmos.DrawLine(this.get_transform().get_position(), obj.get_transform().get_position());
-					VRC_Trigger component = obj.GetComponent<VRC_Trigger>();
 				}
 			};
 			while (list3.Count > 0)
@@ -598,6 +623,11 @@ namespace VRCSDK2
 		public void OnStationExited()
 		{
 			ExecuteTriggerType(TriggerType.OnStationExited);
+		}
+
+		public void OnParticleCollision(GameObject other)
+		{
+			ExecuteTriggerType(TriggerType.OnParticleCollision);
 		}
 
 		private void OnTriggerEnter(Collider other)

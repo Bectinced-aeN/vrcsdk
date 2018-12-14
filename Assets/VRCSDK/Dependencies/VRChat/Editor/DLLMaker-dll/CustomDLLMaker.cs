@@ -353,6 +353,11 @@ public class CustomDLLMaker
 			{
 				MigrateObjectToNamespacedObject(item5.Key, item5.Value, namespaceName, dictionary, dictionary2);
 			}
+			List<object> migratedComponents = new List<object>();
+			foreach (Component item6 in list)
+			{
+				MigrateComponentReferences(item6, dictionary2, migratedComponents);
+			}
 			for (int k = 0; k < list2.Count; k++)
 			{
 				Object.DestroyImmediate(list2[k], true);
@@ -368,6 +373,208 @@ public class CustomDLLMaker
 	{
 		EditorPrefs.DeleteKey("externalPluginPath");
 		EditorPrefs.DeleteKey("lastExternalPluginPath");
+	}
+
+	private static void MigrateComponentReferences(object o, Dictionary<Component, Component> componentMap, List<object> migratedComponents)
+	{
+		if (o != null)
+		{
+			Object val = o as Object;
+			if (!(val != null) || !AssetDatabase.Contains(val))
+			{
+				Component val2 = o as Component;
+				if ((!(val2 != null) || !componentMap.ContainsKey(val2) || !(val2 != componentMap[val2])) && !migratedComponents.Contains(o))
+				{
+					migratedComponents.Add(o);
+					BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+					Type type = o.GetType();
+					PropertyInfo[] properties = type.GetProperties(bindingAttr);
+					for (int i = 0; i < properties.Length; i++)
+					{
+						if (properties[i].CanWrite)
+						{
+							Type propertyType = GetPropertyType(o, properties[i]);
+							if (propertyType != null)
+							{
+								try
+								{
+									if (propertyType.IsSubclassOf(typeof(Component)))
+									{
+										Component key = properties[i].GetValue(o, null) as Component;
+										if (componentMap.ContainsKey(key))
+										{
+											properties[i].SetValue(o, componentMap[key], null);
+										}
+									}
+									else if (propertyType.IsClass && propertyType != typeof(string))
+									{
+										object value = properties[i].GetValue(o, null);
+										MigrateComponentReferences(value, componentMap, migratedComponents);
+									}
+								}
+								catch (Exception ex)
+								{
+									Debug.LogError((object)("Exception: " + ex.ToString()));
+								}
+							}
+						}
+					}
+					FieldInfo[] fields = type.GetFields(bindingAttr);
+					FieldInfo[] array = fields;
+					foreach (FieldInfo fieldInfo in array)
+					{
+						object value2 = fieldInfo.GetValue(o);
+						Type fieldType = GetFieldType(o, fieldInfo);
+						if (fieldType == null)
+						{
+							fieldType = fieldInfo.FieldType;
+						}
+						try
+						{
+							if (value2 != null && fieldInfo.Attributes != FieldAttributes.Private && fieldType != typeof(GameObject[]) && fieldType != typeof(List<GameObject>))
+							{
+								if (fieldType != null && typeof(Component[]).IsAssignableFrom(fieldType))
+								{
+									bool flag = false;
+									Component[] array2 = value2 as Component[];
+									for (int k = 0; k < array2.Length; k++)
+									{
+										if (array2[k] != null && componentMap.ContainsKey(array2[k]))
+										{
+											flag = true;
+											array2[k] = componentMap[array2[k]];
+										}
+									}
+									if (flag)
+									{
+										fieldInfo.SetValue(o, array2);
+									}
+								}
+								else if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Component)))
+								{
+									Type type2 = fieldInfo.FieldType.GetGenericArguments().Single();
+									if (type2.IsSubclassOf(typeof(Component)))
+									{
+										bool flag2 = false;
+										IList list = value2 as IList;
+										for (int l = 0; l < list.Count; l++)
+										{
+											if (componentMap.ContainsKey(list[l] as Component))
+											{
+												list[l] = componentMap[list[l] as Component];
+												flag2 = true;
+											}
+										}
+										if (flag2)
+										{
+											fieldInfo.SetValue(o, list);
+										}
+									}
+									else
+									{
+										IList list2 = value2 as IList;
+										if (list2 != null)
+										{
+											for (int m = 0; m < list2.Count; m++)
+											{
+												MigrateComponentReferences(list2[m], componentMap, migratedComponents);
+											}
+										}
+									}
+								}
+								else if (fieldType != null && fieldType.IsArray)
+								{
+									Type elementType = fieldInfo.FieldType.GetElementType();
+									if (elementType.IsSubclassOf(typeof(Component)))
+									{
+										bool flag3 = false;
+										object[] array3 = value2 as object[];
+										for (int n = 0; n < array3.Length; n++)
+										{
+											if (componentMap.ContainsKey(array3[n] as Component))
+											{
+												array3[n] = componentMap[array3[n] as Component];
+												flag3 = true;
+											}
+										}
+										if (flag3)
+										{
+											fieldInfo.SetValue(o, array3);
+										}
+									}
+									else
+									{
+										object[] array4 = value2 as object[];
+										if (array4 != null)
+										{
+											for (int num = 0; num < array4.Length; num++)
+											{
+												MigrateComponentReferences(array4[num], componentMap, migratedComponents);
+											}
+										}
+									}
+								}
+								else if (fieldType != null && fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
+								{
+									Type type3 = fieldInfo.FieldType.GetGenericArguments().Single();
+									if (type3.IsSubclassOf(typeof(Component)))
+									{
+										bool flag4 = false;
+										IList list3 = value2 as IList;
+										for (int num2 = 0; num2 < list3.Count; num2++)
+										{
+											if (componentMap.ContainsKey(list3[num2] as Component))
+											{
+												list3[num2] = componentMap[list3[num2] as Component];
+												flag4 = true;
+											}
+										}
+										if (flag4)
+										{
+											fieldInfo.SetValue(o, list3);
+										}
+									}
+									else
+									{
+										IList list4 = value2 as IList;
+										if (list4 != null)
+										{
+											for (int num3 = 0; num3 < list4.Count; num3++)
+											{
+												MigrateComponentReferences(list4[num3], componentMap, migratedComponents);
+											}
+										}
+									}
+								}
+								else if (fieldType == null || !typeof(Object[]).IsAssignableFrom(fieldType))
+								{
+									if (fieldType != null && fieldType.GetGenericArguments().Length > 0 && fieldType.GetGenericArguments()[0].IsSubclassOf(typeof(Object)))
+									{
+										Object val3 = value2 as Object;
+										if (val3 != null)
+										{
+											MigrateComponentReferences(val3, componentMap, migratedComponents);
+										}
+									}
+									else if ((fieldType == null || !fieldType.IsGenericType) && (fieldType == null || !fieldType.IsEnum))
+									{
+										Component val4 = value2 as Component;
+										if (val4 != null && componentMap.ContainsKey(val4))
+										{
+											fieldInfo.SetValue(o, componentMap[val4]);
+										}
+									}
+								}
+							}
+						}
+						catch (Exception ex2)
+						{
+							Debug.LogException(ex2);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private static void MigrateObjectToNamespacedObject(object o, object nO, string namespaceName, Dictionary<GameObject, GameObject> prefabMap, Dictionary<Component, Component> componentMap)
@@ -677,6 +884,11 @@ public class CustomDLLMaker
 			result = (fieldInfo.GetValue(c) as Component);
 		}
 		return result;
+	}
+
+	private static Type GetPropertyType(object c, PropertyInfo propertyInfo)
+	{
+		return (propertyInfo != null && propertyInfo.GetValue(c, null) != null) ? propertyInfo.GetValue(c, null).GetType() : null;
 	}
 
 	private static Type GetFieldType(object c, FieldInfo fieldInfo)

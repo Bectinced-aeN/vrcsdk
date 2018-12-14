@@ -49,9 +49,9 @@ public class VRC_VisualDamage : MonoBehaviour
 
 	private void Update()
 	{
-		//IL_0039: Unknown result type (might be due to invalid IL or missing references)
-		//IL_004f: Unknown result type (might be due to invalid IL or missing references)
-		if (renderer.get_enabled())
+		//IL_0055: Unknown result type (might be due to invalid IL or missing references)
+		//IL_006b: Unknown result type (might be due to invalid IL or missing references)
+		if (renderer != null && curve != null && renderer.get_enabled())
 		{
 			if (currentTime < 1f)
 			{

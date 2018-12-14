@@ -5,11 +5,17 @@ using UnityEngine;
 
 namespace VRC.Core
 {
-	public class AnalyticsInterface
+	public static class AnalyticsInterface
 	{
-		public static void Initialize(string apiKey, string buildVersion)
+		public static void Initialize(string apiKey)
 		{
-			AmplitudeWrapper.Initialize(apiKey, buildVersion);
+			AmplitudeWrapper.Initialize(apiKey);
+		}
+
+		public static void SetBuildVersion(string buildVersion)
+		{
+			CheckInstance();
+			AmplitudeWrapper.Instance.SetBuildVersion(buildVersion);
 		}
 
 		public static void Send(IEnumerable<ApiAnalyticEvent.EventInfo> events)
@@ -63,8 +69,13 @@ namespace VRC.Core
 
 		public static void Send(string eventType, Dictionary<string, object> eventProperties)
 		{
+			Send(eventType, eventProperties, AnalyticsEventOptions.None);
+		}
+
+		public static void Send(string eventType, Dictionary<string, object> eventProperties, AnalyticsEventOptions options)
+		{
 			CheckInstance();
-			AmplitudeWrapper.Instance.LogEvent(eventType, eventProperties);
+			AmplitudeWrapper.Instance.LogEvent(eventType, eventProperties, options);
 		}
 
 		public static void SetUserId(string userId)

@@ -279,7 +279,7 @@ namespace VRC.Core
 		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f)
 		{
 			string text = (!disableCache) ? "cyan" : "red";
-			Debug.Log((object)("<color=" + text + ">Dispatch " + method + " " + endpoint + ((requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams))) + " disableCache: " + disableCache.ToString() + "</color>"));
+			Logger.Log("<color=" + text + ">Dispatch " + method + " " + endpoint + ((requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams))) + " disableCache: " + disableCache.ToString() + "</color>", DebugLevel.API);
 			UpdateDelegator.Dispatch(delegate
 			{
 				SendRequestInternal(endpoint, method, responseContainer, requestParams, needsAPIKey, authenticationRequired, disableCache, cacheLifetime);
@@ -334,14 +334,10 @@ namespace VRC.Core
 					}
 					string uriPath = baseUri.Uri.PathAndQuery;
 					bool useCache = !disableCache && method == HTTPMethods.Get;
-					if (endpoint == "worlds/recent")
-					{
-						ApiCache.recentWorldsQuery = uriPath;
-					}
 					ApiCache.CachedResponse cachedResponse = (!useCache) ? null : ApiCache.GetOrClearCachedResponse(baseUri.Uri.PathAndQuery, cacheLifetime);
 					if (cachedResponse != null)
 					{
-						Debug.Log((object)("<color=cyan>Using cached " + method + " request to " + baseUri.Uri + "</color>"));
+						Logger.Log("<color=cyan>Using cached " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
 						try
 						{
 							if (responseContainer.OnComplete(success: true, baseUri.Uri.PathAndQuery, 200, string.Empty, () => cachedResponse.Data, () => cachedResponse.DataAsText, cachedResponse.Timestamp))
@@ -360,7 +356,7 @@ namespace VRC.Core
 					}
 					else if (method == HTTPMethods.Get && activeRequests.ContainsKey(uriPath))
 					{
-						Debug.Log((object)("<color=cyan>Piggy-backing " + method + " request to " + baseUri.Uri + "</color>"));
+						Logger.Log("<color=cyan>Piggy-backing " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
 						OnRequestFinishedDelegate originalCallback = activeRequests[uriPath].Callback;
 						activeRequests[uriPath].Callback = delegate(HTTPRequest req, HTTPResponse resp)
 						{
@@ -385,7 +381,7 @@ namespace VRC.Core
 					else
 					{
 						int requestId = ++lastRequestId;
-						Debug.Log((object)("<color=lightblue>[" + requestId + "] Sending " + method + " request to " + baseUri.Uri + "</color>"));
+						Logger.Log("<color=lightblue>[" + requestId + "] Sending " + method + " request to " + baseUri.Uri + "</color>", DebugLevel.API);
 						HTTPRequest hTTPRequest = new HTTPRequest(baseUri.Uri, delegate(HTTPRequest req, HTTPResponse resp)
 						{
 							if (activeRequests.ContainsKey(uriPath))

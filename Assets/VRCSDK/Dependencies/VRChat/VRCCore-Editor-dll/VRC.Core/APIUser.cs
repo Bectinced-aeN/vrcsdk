@@ -29,6 +29,14 @@ namespace VRC.Core
 
 		public const float SearchCacheTime = 60f;
 
+		public bool hasFetchedFavoriteWorlds;
+
+		private List<string> _favoriteWorldIds;
+
+		public bool hasFetchedFavoriteFriends;
+
+		private List<string> _favoriteFriendIds;
+
 		[ApiField(Required = false)]
 		public string blob
 		{
@@ -78,8 +86,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[DefaultValue(DeveloperType.None)]
 		[ApiField]
+		[DefaultValue(DeveloperType.None)]
 		public DeveloperType developerType
 		{
 			get;
@@ -282,6 +290,38 @@ namespace VRC.Core
 			protected set;
 		}
 
+		public List<string> favoriteWorldIds
+		{
+			get
+			{
+				if (_favoriteWorldIds == null)
+				{
+					_favoriteWorldIds = new List<string>();
+				}
+				return _favoriteWorldIds;
+			}
+			set
+			{
+				_favoriteWorldIds = value;
+			}
+		}
+
+		public List<string> favoriteFriendIds
+		{
+			get
+			{
+				if (_favoriteFriendIds == null)
+				{
+					_favoriteFriendIds = new List<string>();
+				}
+				return _favoriteFriendIds;
+			}
+			set
+			{
+				_favoriteFriendIds = value;
+			}
+		}
+
 		public bool isAccountVerified => true;
 
 		public bool hasNoPowers => !isAccountVerified || developerType == DeveloperType.None;
@@ -299,6 +339,8 @@ namespace VRC.Core
 		public bool canPublishAvatars => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_avatar_access") || RemoteConfig.GetBool("disableAvatarGating"));
 
 		public bool canPublishWorlds => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_world_access") || RemoteConfig.GetBool("disableAvatarGating"));
+
+		public bool hasBasicTrustLevel => isAccountVerified && (developerType == DeveloperType.Internal || HasTag("system_trust_basic"));
 
 		public static bool IsLoggedIn => CurrentUser != null;
 
@@ -373,9 +415,10 @@ namespace VRC.Core
 			{
 				OnSuccess = delegate(ApiContainer c)
 				{
+					CurrentUser = (c.Model as APIUser);
 					if (successCallback != null)
 					{
-						successCallback(c.Model as APIUser);
+						successCallback(CurrentUser);
 					}
 				},
 				OnError = delegate(ApiContainer c)
@@ -602,6 +645,47 @@ namespace VRC.Core
 			}
 		}
 
+		public static void FetchFavoriteFriends(Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null)
+		{
+			List<APIUser> list = new List<APIUser>();
+			foreach (string favoriteFriendId in CurrentUser.favoriteFriendIds)
+			{
+				APIUser target = null;
+				if (!ApiCache.Fetch(favoriteFriendId, ref target))
+				{
+					break;
+				}
+				list.Add(target);
+			}
+			if (list.Count == CurrentUser.favoriteFriendIds.Count)
+			{
+				if (successCallback != null)
+				{
+					successCallback(list);
+				}
+			}
+			else
+			{
+				ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
+				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				{
+					if (successCallback != null)
+					{
+						successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
+					}
+				};
+				apiModelListContainer.OnError = delegate(ApiContainer c)
+				{
+					if (errorCallback != null)
+					{
+						errorCallback(c.Error);
+					}
+				};
+				ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
+				API.SendGetRequest("auth/user/friends/favorite", responseContainer, null, disableCache: true);
+			}
+		}
+
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
 		{
 			ApiModelContainer<ApiNotification> apiModelContainer = new ApiModelContainer<ApiNotification>();
@@ -716,6 +800,15 @@ namespace VRC.Core
 			if (CurrentUser != null && CurrentUser.friendIDs != null)
 			{
 				return CurrentUser.friendIDs.Any((string u) => u == userId);
+			}
+			return false;
+		}
+
+		public static bool IsFriendsWithAndHasFavorited(string userId)
+		{
+			if (CurrentUser != null && CurrentUser.favoriteFriendIds != null)
+			{
+				return CurrentUser.favoriteFriendIds.Any((string u) => u == userId);
 			}
 			return false;
 		}

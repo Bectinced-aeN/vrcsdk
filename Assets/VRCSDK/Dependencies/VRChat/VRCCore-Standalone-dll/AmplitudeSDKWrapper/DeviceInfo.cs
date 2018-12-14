@@ -5,8 +5,6 @@ namespace AmplitudeSDKWrapper
 {
 	public class DeviceInfo
 	{
-		private string _version;
-
 		private string _osName;
 
 		private string _deviceModel;
@@ -17,15 +15,9 @@ namespace AmplitudeSDKWrapper
 
 		private string _platform;
 
-		public DeviceInfo(string buildVersion)
+		public DeviceInfo()
 		{
-			_version = buildVersion;
 			CacheValues();
-		}
-
-		public string GetAppVersion()
-		{
-			return _version;
 		}
 
 		public string GetOsName()
@@ -35,7 +27,7 @@ namespace AmplitudeSDKWrapper
 
 		public string GetOsVersion()
 		{
-			return _osName;
+			return string.Empty;
 		}
 
 		public string GetModel()

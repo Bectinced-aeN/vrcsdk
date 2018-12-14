@@ -17,6 +17,7 @@ namespace VRC.Core
 			Created,
 			Active,
 			Recent,
+			Favorite,
 			None
 		}
 
@@ -192,6 +193,13 @@ namespace VRC.Core
 
 		[ApiField(Required = false, Name = "assetVersion")]
 		public int apiVersion
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public int latestAssetVersion
 		{
 			get;
 			set;
@@ -517,6 +525,9 @@ namespace VRC.Core
 			case SortHeading.Recent:
 				endpoint = "worlds/recent";
 				break;
+			case SortHeading.Favorite:
+				endpoint = "worlds/favorites";
+				break;
 			}
 			switch (owner)
 			{
@@ -726,21 +737,20 @@ namespace VRC.Core
 			goto IL_0000;
 		}
 
-		public void FetchInstance(string instanceId, Action<ApiWorldInstance> success, Action<string> error = null)
+		public ApiWorldInstance FetchInstance(string instanceId, Action<ApiWorldInstance> success, Action<string> error = null)
 		{
 			for (int i = 0; i < mWorldInstances.Count; i++)
 			{
 				if (mWorldInstances[i].idWithTags == instanceId)
 				{
-					FetchInstance(i, success, error);
-					return;
+					return FetchInstance(i, success, error);
 				}
 			}
 			mWorldInstances.Add(new ApiWorldInstance(this, instanceId, 0));
-			FetchInstance(mWorldInstances.Count - 1, success, error);
+			return FetchInstance(mWorldInstances.Count - 1, success, error);
 		}
 
-		public void FetchInstance(int index, Action<ApiWorldInstance> success, Action<string> error = null)
+		public ApiWorldInstance FetchInstance(int index, Action<ApiWorldInstance> success, Action<string> error = null)
 		{
 			if (index < 0 || index >= mWorldInstances.Count)
 			{
@@ -748,30 +758,29 @@ namespace VRC.Core
 				{
 					error("Instance index out of range.");
 				}
+				return null;
 			}
-			else
+			string idWithTags = mWorldInstances[index].idWithTags;
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
 			{
-				string idWithTags = mWorldInstances[index].idWithTags;
-				ApiDictContainer apiDictContainer = new ApiDictContainer();
-				apiDictContainer.OnSuccess = delegate(ApiContainer c)
+				Dictionary<string, object> responseDictionary = (c as ApiDictContainer).ResponseDictionary;
+				mWorldInstances[index] = new ApiWorldInstance(this, responseDictionary, c.DataTimestamp);
+				if (success != null)
 				{
-					Dictionary<string, object> responseDictionary = (c as ApiDictContainer).ResponseDictionary;
-					mWorldInstances[index] = new ApiWorldInstance(this, responseDictionary, c.DataTimestamp);
-					if (success != null)
-					{
-						success(mWorldInstances[index]);
-					}
-				};
-				apiDictContainer.OnError = delegate(ApiContainer c)
+					success(mWorldInstances[index]);
+				}
+			};
+			apiDictContainer.OnError = delegate(ApiContainer c)
+			{
+				if (error != null)
 				{
-					if (error != null)
-					{
-						error(c.Error);
-					}
-				};
-				ApiDictContainer responseContainer = apiDictContainer;
-				API.SendGetRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, null, disableCache: true);
-			}
+					error(c.Error);
+				}
+			};
+			ApiDictContainer responseContainer = apiDictContainer;
+			API.SendGetRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, null, disableCache: true);
+			return mWorldInstances[index];
 		}
 
 		public void PutInstance(ApiWorldInstance inst, Action success, Action<string> error = null)

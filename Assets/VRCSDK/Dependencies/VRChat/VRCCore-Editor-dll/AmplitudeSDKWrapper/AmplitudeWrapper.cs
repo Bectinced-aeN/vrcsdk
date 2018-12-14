@@ -5,6 +5,7 @@ using System.Threading;
 using UnityEngine;
 using VRC.Core;
 using VRC.Core.BestHTTP;
+using VRC.Core.BestHTTP.Forms;
 using VRC.Core.BestHTTP.JSON;
 
 namespace AmplitudeSDKWrapper
@@ -99,51 +100,41 @@ namespace AmplitudeSDKWrapper
 
 		public static AmplitudeWrapper Instance => instance;
 
-		public AmplitudeWrapper(string apiKey)
+		public AmplitudeWrapper(string api_key)
 		{
-			Init(apiKey, null, null);
+			Init(api_key, null);
 		}
 
-		public AmplitudeWrapper(string apiKey, string buildVersion)
+		public AmplitudeWrapper(string api_key, string userId)
 		{
-			Init(apiKey, buildVersion, null);
+			Init(api_key, userId);
 		}
 
-		public AmplitudeWrapper(string apiKey, string buildVersion, string userId)
+		public static AmplitudeWrapper Initialize(string api_key)
 		{
-			Init(apiKey, buildVersion, userId);
+			return Initialize(api_key, null);
 		}
 
-		public static AmplitudeWrapper Initialize(string apiKey)
-		{
-			return Initialize(apiKey, null, null);
-		}
-
-		public static AmplitudeWrapper Initialize(string apiKey, string buildVersion)
-		{
-			return Initialize(apiKey, buildVersion, null);
-		}
-
-		public static AmplitudeWrapper Initialize(string apiKey, string buildVersion, string userId)
+		public static AmplitudeWrapper Initialize(string api_key, string userId)
 		{
 			if (instance == null)
 			{
-				instance = new AmplitudeWrapper(apiKey, buildVersion, userId);
+				instance = new AmplitudeWrapper(api_key, userId);
 			}
 			return instance;
 		}
 
-		private void Init(string apiKey, string buildVersion, string userId)
+		private void Init(string api_key, string userId)
 		{
-			if (string.IsNullOrEmpty(apiKey))
+			if (string.IsNullOrEmpty(api_key))
 			{
 				throw new ArgumentException("apiKey must not be null or empty");
 			}
+			apiKey = api_key;
 			httpQueue = new LimitedConcurrencyLevelTaskScheduler(1);
 			logQueue = new LimitedConcurrencyLevelTaskScheduler(1);
 			dbHelper = new DatabaseHelper();
 			settings = new Settings("com.amplitude");
-			this.apiKey = apiKey;
 			if (userId != null)
 			{
 				SetUserId(userId);
@@ -152,9 +143,8 @@ namespace AmplitudeSDKWrapper
 			{
 				this.userId = InitializeUserId();
 			}
-			deviceInfo = new DeviceInfo(buildVersion);
+			deviceInfo = new DeviceInfo();
 			deviceId = InitializeDeviceId();
-			_buildVersionString = buildVersion;
 			sessionId = -1L;
 			userProperties = null;
 			StartSession();
@@ -186,6 +176,11 @@ namespace AmplitudeSDKWrapper
 		{
 			this.userId = userId;
 			settings.Save("userId", userId);
+		}
+
+		public void SetBuildVersion(string buildVersion)
+		{
+			_buildVersionString = buildVersion;
 		}
 
 		public string InitializeUserId()
@@ -222,26 +217,31 @@ namespace AmplitudeSDKWrapper
 
 		public void LogEvent(string eventType)
 		{
-			CheckedLogEvent(eventType, null, CurrentTimeMillis());
+			CheckedLogEvent(eventType, null, CurrentTimeMillis(), AnalyticsEventOptions.None);
 		}
 
 		public void LogEvent(string eventType, IDictionary<string, object> eventProperties)
 		{
-			CheckedLogEvent(eventType, eventProperties, CurrentTimeMillis());
+			CheckedLogEvent(eventType, eventProperties, CurrentTimeMillis(), AnalyticsEventOptions.None);
 		}
 
-		private void CheckedLogEvent(string eventType, IDictionary<string, object> eventProperties, long timestamp)
+		public void LogEvent(string eventType, IDictionary<string, object> eventProperties, AnalyticsEventOptions options)
+		{
+			CheckedLogEvent(eventType, eventProperties, CurrentTimeMillis(), options);
+		}
+
+		private void CheckedLogEvent(string eventType, IDictionary<string, object> eventProperties, long timestamp, AnalyticsEventOptions options)
 		{
 			if (!string.IsNullOrEmpty(eventType))
 			{
 				logQueue.QueueTask(delegate
 				{
-					LogEvent(eventType, eventProperties, timestamp);
+					LogEvent(eventType, eventProperties, timestamp, options);
 				});
 			}
 		}
 
-		private int LogEvent(string eventType, IDictionary<string, object> eventProperties, long timestamp)
+		private int LogEvent(string eventType, IDictionary<string, object> eventProperties, long timestamp, AnalyticsEventOptions options)
 		{
 			if (timestamp <= 0)
 			{
@@ -251,8 +251,8 @@ namespace AmplitudeSDKWrapper
 			dictionary.Add("user_id", userId);
 			dictionary.Add("device_id", deviceId);
 			dictionary.Add("event_type", eventType);
-			dictionary.Add("session_id", sessionId);
-			dictionary.Add("insert_id", Hash(userId + deviceId + eventType + sessionId));
+			dictionary.Add("session_id", ((options & AnalyticsEventOptions.MarkOutOfSession) == AnalyticsEventOptions.None) ? sessionId : (-1));
+			dictionary.Add("insert_id", Hash(userId + deviceId + eventType + sessionId + timestamp));
 			dictionary.Add("time", timestamp);
 			dictionary.Add("event_properties", eventProperties);
 			dictionary.Add("user_properties", userProperties);
@@ -428,6 +428,11 @@ namespace AmplitudeSDKWrapper
 					Debug.LogError((object)"AmplitudeAPI: PostEvents: failed to serialize events to JSON");
 					onError(ErrorCode.GeneralError);
 				}
+				else if (string.IsNullOrEmpty(apiKey))
+				{
+					Debug.LogError((object)"AmplitudeAPI: PostEvents: apiKey is missing!");
+					onError(ErrorCode.GeneralError);
+				}
 				else
 				{
 					UpdateDelegator.Dispatch(delegate
@@ -491,7 +496,7 @@ namespace AmplitudeSDKWrapper
 						});
 						hTTPRequest.ConnectTimeout = TimeSpan.FromSeconds(20.0);
 						hTTPRequest.Timeout = TimeSpan.FromSeconds(60.0);
-						hTTPRequest.AddHeader("Content-Type", "application/x-www-form-urlencoded");
+						hTTPRequest.FormUsage = HTTPFormUsage.UrlEncoded;
 						hTTPRequest.AddField("api_key", apiKey);
 						hTTPRequest.AddField("event", eventsJson);
 						hTTPRequest.Send();

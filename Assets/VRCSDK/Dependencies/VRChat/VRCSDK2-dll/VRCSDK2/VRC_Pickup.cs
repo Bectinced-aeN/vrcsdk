@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace VRCSDK2
 {
 	[RequireComponent(typeof(Rigidbody))]
-	public class VRC_Pickup : VRC_Behaviour, INetworkID
+	public class VRC_Pickup : VRC_Behaviour, INetworkID, IVRCEventProvider
 	{
 		public enum PickupOrientation
 		{
@@ -55,16 +56,16 @@ namespace VRCSDK2
 		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType useEventBroadcastType;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseDownEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string UseUpEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
 		[HideInInspector]
@@ -151,7 +152,7 @@ namespace VRCSDK2
 		})]
 		public void Drop(int instigator)
 		{
-			if (ForceDrop != null)
+			if (ForceDrop != null && currentPlayer != null)
 			{
 				if (currentPlayer.playerId == instigator)
 				{
@@ -202,6 +203,43 @@ namespace VRCSDK2
 					component.set_isTrigger(originalTrigger);
 				}
 			}
+		}
+
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void PlayHaptics()
+		{
+			GenerateHapticEvent();
+		}
+
+		public IEnumerable<VRC_EventHandler.VrcEvent> ProvideEvents()
+		{
+			List<VRC_EventHandler.VrcEvent> list = new List<VRC_EventHandler.VrcEvent>();
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "PlayHaptics",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 0,
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				},
+				ParameterString = "PlayHaptics"
+			});
+			list.Add(new VRC_EventHandler.VrcEvent
+			{
+				Name = "Drop",
+				EventType = VRC_EventHandler.VrcEventType.SendRPC,
+				ParameterInt = 0,
+				ParameterObjects = (GameObject[])new GameObject[1]
+				{
+					this.get_gameObject()
+				},
+				ParameterString = "Drop"
+			});
+			return list;
 		}
 	}
 }

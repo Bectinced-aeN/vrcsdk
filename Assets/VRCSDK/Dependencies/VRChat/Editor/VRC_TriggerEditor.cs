@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor;
 using UnityEditorInternal;
 using System.Linq;
@@ -217,7 +218,7 @@ namespace VRCSDK2
         private void RenderTriggerEditor(SerializedProperty triggerProperty, int idx)
         {
             EditorGUILayout.PropertyField(triggerProperty.FindPropertyRelative("AfterSeconds"), new GUIContent("Delay in Seconds"));
-
+            
             VRC_Trigger.TriggerType triggerType = (VRC_Trigger.TriggerType)triggerProperty.FindPropertyRelative("TriggerType").intValue;
             switch (triggerType)
             {
@@ -244,6 +245,10 @@ namespace VRCSDK2
                 case VRC_Trigger.TriggerType.OnDataStorageChange:
                 case VRC_Trigger.TriggerType.OnDataStorageRemove:
                     RenderDataStorage(triggerProperty);
+                    break;
+                case VRC_Trigger.TriggerType.OnParticleCollision:
+                    //RenderHelpBox("Triggers for each particle in attached particle system that collides with something.", MessageType.Info); 
+                    RenderEmpty(triggerProperty);
                     break;
                 default:
                     if (VRC_Trigger.TypeCollections.InteractiveTypes.Contains(triggerType) || VRC_Trigger.TypeCollections.PickupTypes.Contains(triggerType))
@@ -657,7 +662,35 @@ namespace VRCSDK2
             if (objectLists[idx] == null)
             {
                 objectLists[idx] = new ReorderableList(objectsProperty.serializedObject, objectsProperty, true, true, true, true);
-                objectLists[idx].drawHeaderCallback = (Rect rect) => EditorGUI.LabelField(rect, new GUIContent("Receivers"));
+                objectLists[idx].drawHeaderCallback = (Rect rect) => 
+                {
+                    string infoString = "Receivers";
+                    if (objectsProperty.arraySize == 0)
+                        infoString = "Receivers: This GameObject";
+                    EditorGUI.LabelField(rect, new GUIContent(infoString));
+
+                    Event evt = Event.current;
+                    if (!rect.Contains(evt.mousePosition))
+                        return;
+
+                    if (evt.type == EventType.DragUpdated)
+                        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        GameObject[] dragObjects = DragAndDrop.objectReferences.OfType<GameObject>().ToArray();
+                        int startIndex = objectsProperty.arraySize;
+                        objectsProperty.arraySize = objectsProperty.arraySize + dragObjects.Length;
+
+                        for (int i = 0; i < dragObjects.Length; i++)
+                        {
+                            SerializedProperty newElem = objectsProperty.GetArrayElementAtIndex(startIndex + i);
+                            newElem.objectReferenceValue = dragObjects[i];
+                        }
+
+                        DragAndDrop.AcceptDrag();
+                        evt.Use();
+                    }
+                };
                 objectLists[idx].drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
                 {
                     SerializedProperty target = objectLists[idx].serializedProperty.GetArrayElementAtIndex(index);
@@ -666,6 +699,8 @@ namespace VRCSDK2
                 };
             }
             objectLists[idx].DoLayoutList();
+            if (objectsProperty.arraySize == 0)
+                RenderHelpBox("This trigger will target the GameObject it's on, because the receivers list is empty.", MessageType.Info);
         }
 
         private void RenderTargetComponentList<T>(SerializedProperty objectsProperty, int idx, string label = "Receivers") where T : Component
@@ -673,7 +708,35 @@ namespace VRCSDK2
             if (objectLists[idx] == null)
             {
                 objectLists[idx] = new ReorderableList(objectsProperty.serializedObject, objectsProperty, true, true, true, true);
-                objectLists[idx].drawHeaderCallback = (Rect rect) => EditorGUI.LabelField(rect, new GUIContent(label));
+                objectLists[idx].drawHeaderCallback = (Rect rect) =>
+                {
+                    string infoString = label;
+                    if (objectsProperty.arraySize == 0)
+                        infoString = label + ": This " + typeof(T).Name;
+                    EditorGUI.LabelField(rect, new GUIContent(infoString));
+
+                    Event evt = Event.current;
+                    if (!rect.Contains(evt.mousePosition))
+                        return;
+
+                    if (evt.type == EventType.DragUpdated)
+                        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        GameObject[] dragObjects = DragAndDrop.objectReferences.OfType<GameObject>().ToArray();
+                        int startIndex = objectsProperty.arraySize;
+                        objectsProperty.arraySize = objectsProperty.arraySize + dragObjects.Length;
+
+                        for (int i = 0; i < dragObjects.Length; i++)
+                        {
+                            SerializedProperty newElem = objectsProperty.GetArrayElementAtIndex(startIndex + i);
+                            newElem.objectReferenceValue = dragObjects[i];
+                        }
+
+                        DragAndDrop.AcceptDrag();
+                        evt.Use();
+                    }
+                };
                 objectLists[idx].drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
                 {
                     SerializedProperty target = objectLists[idx].serializedProperty.GetArrayElementAtIndex(index);
@@ -688,6 +751,8 @@ namespace VRCSDK2
                 };
             }
             objectLists[idx].DoLayoutList();
+            if (objectsProperty.arraySize == 0)
+                RenderHelpBox("This trigger will target the GameObject it's on, because the receivers list is empty.", MessageType.Info);
         }
 
         public void RenderEventEditor(SerializedProperty shadowProperty, SerializedProperty triggerProperty, SerializedProperty eventProperty, int triggerIdx)
@@ -699,6 +764,7 @@ namespace VRCSDK2
             SerializedProperty parameterBoolOpProperty = eventProperty.FindPropertyRelative("ParameterBoolOp");
             SerializedProperty parameterFloatProperty = eventProperty.FindPropertyRelative("ParameterFloat");
             SerializedProperty parameterIntProperty = eventProperty.FindPropertyRelative("ParameterInt");
+            SerializedProperty parameterBytesProperty = eventProperty.FindPropertyRelative("ParameterBytes");
 
             if (parameterObjectProperty.objectReferenceValue != null && parameterObjectsProperty.arraySize == 0)
             {
@@ -951,9 +1017,68 @@ namespace VRCSDK2
                     }
                     break;
 #endif
+                case VRC_EventHandler.VrcEventType.AddVelocity:
+                case VRC_EventHandler.VrcEventType.SetVelocity:
+                    {
+                        RenderTargetComponentList<Rigidbody>(parameterObjectsProperty, triggerIdx);
+                        RenderVector3andSpacePropertyEditor(parameterBytesProperty, new GUIContent("Velocity"));
+                    }
+                    break;
+                case VRC_EventHandler.VrcEventType.AddAngularVelocity:
+                case VRC_EventHandler.VrcEventType.SetAngularVelocity:
+                    {
+                        RenderTargetComponentList<Rigidbody>(parameterObjectsProperty, triggerIdx);
+                        RenderVector3andSpacePropertyEditor(parameterBytesProperty, new GUIContent("Angular Velocity"));
+                    }
+                    break;
+                case VRC_EventHandler.VrcEventType.AddForce:
+                    {
+                        RenderTargetComponentList<Rigidbody>(parameterObjectsProperty, triggerIdx);
+                        RenderVector3andSpacePropertyEditor(parameterBytesProperty, new GUIContent("Force"));
+                    }
+                    break;
+                case VRC_EventHandler.VrcEventType.SetUIText:
+                    {
+                        RenderTargetComponentList<Text>(parameterObjectsProperty, triggerIdx);
+                        RenderPropertyEditor(shadowProperty, parameterStringProperty, new GUIContent("Text"));
+                    }
+                    break;
                 default:
                     RenderHelpBox("Unsupported event type", MessageType.Error);
                     break;
+            }
+        }
+
+        private void RenderVector3andSpacePropertyEditor(SerializedProperty propertyBytes, GUIContent label)
+        {
+            object[] parameters = null;
+            parameters = VRCSDK2.VRC_Serialization.ParameterDecoder(VRC_EditorTools.ReadBytesFromProperty(propertyBytes));
+            if (parameters.Length == 0)
+                parameters = new object[1] { new Vector4() };
+
+            EditorGUI.BeginChangeCheck();
+            Vector3 vec3Field = EditorGUILayout.Vector3Field(label,new Vector3(((Vector4)parameters[0]).x, ((Vector4)parameters[0]).y, ((Vector4)parameters[0]).z));
+            bool spaceField = EditorGUILayout.Toggle("Use World Space", ((Vector4)parameters[0]).w > .5f ? true : false);
+            parameters[0] = new Vector4(vec3Field.x, vec3Field.y, vec3Field.z, Convert.ToSingle(spaceField));
+            if (EditorGUI.EndChangeCheck())
+            {
+                VRC_EditorTools.WriteBytesToProperty(propertyBytes, VRCSDK2.VRC_Serialization.ParameterEncoder(parameters));
+            }
+        }
+
+        private void RenderVector3PropertyEditor(SerializedProperty propertyBytes, GUIContent label)
+        {
+            object[] parameters = null;
+            parameters = VRCSDK2.VRC_Serialization.ParameterDecoder(VRC_EditorTools.ReadBytesFromProperty(propertyBytes));
+            if (parameters.Length == 0)
+                parameters = new object[1] { new Vector3() };
+
+            EditorGUI.BeginChangeCheck();
+            parameters[0] = EditorGUILayout.Vector3Field(label, (Vector3)parameters[0]);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                VRC_EditorTools.WriteBytesToProperty(propertyBytes, VRCSDK2.VRC_Serialization.ParameterEncoder(parameters));
             }
         }
 
@@ -1109,6 +1234,20 @@ namespace VRCSDK2
                     if (parameters[idx] == null || parameters[idx].GetType() != paramType)
                         parameters[idx] = false;
                     parameters[idx] = EditorGUILayout.Toggle(paramInfo[idx].Name, (bool)parameters[idx]);
+                }
+                else if (paramType.IsEnum)
+                {
+                    // make an array of strings of the enum values
+                    var values = Enum.GetValues(paramType);
+                    string[] itemStrings = new string[values.Length];
+                    int i=0;
+                    foreach (var item in Enum.GetValues(paramType))
+                    {
+                        itemStrings[i++] = item.ToString();
+                    } 
+                    if (parameters[idx] == null || parameters[idx].GetType() != paramType)
+                        parameters[idx] = Enum.Parse(paramType, itemStrings[0]);
+                    parameters[idx] = Enum.Parse( paramType, itemStrings[ EditorGUILayout.Popup(paramInfo[idx].Name, (int)parameters[idx], itemStrings) ] );
                 }
                 else if (paramType == typeof(double))
                 {

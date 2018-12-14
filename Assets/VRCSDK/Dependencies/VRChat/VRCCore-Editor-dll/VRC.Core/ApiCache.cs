@@ -44,8 +44,6 @@ namespace VRC.Core
 			}
 		}
 
-		public static string recentWorldsQuery = string.Empty;
-
 		private static Dictionary<int, CachedResponse> apiResponseCache = new Dictionary<int, CachedResponse>();
 
 		public static Dictionary<Type, Dictionary<string, CacheEntry>> cache = new Dictionary<Type, Dictionary<string, CacheEntry>>();
@@ -84,11 +82,6 @@ namespace VRC.Core
 		public static void ClearResponseCache()
 		{
 			apiResponseCache.Clear();
-		}
-
-		public static void ClearRecentWorldsResponseCache()
-		{
-			apiResponseCache.Remove(recentWorldsQuery.GetHashCode());
 		}
 
 		public static bool Contains<T>(string id) where T : class, ApiCacheObject

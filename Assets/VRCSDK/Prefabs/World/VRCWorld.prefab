@@ -5,12 +5,12 @@ GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Component:
-  - 4: {fileID: 416072}
-  - 114: {fileID: 11473296}
-  - 114: {fileID: 11412196}
-  - 114: {fileID: 11498812}
+  - component: {fileID: 416072}
+  - component: {fileID: 11473296}
+  - component: {fileID: 11412196}
+  - component: {fileID: 11498812}
   m_Layer: 0
   m_Name: VRCWorld
   m_TagString: Untagged
@@ -27,10 +27,10 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &11412196
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -44,6 +44,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Events: []
   CombinedNetworkId: -1
+  _dispatcher: {fileID: 0}
   _registered: 0
 --- !u!114 &11473296
 MonoBehaviour:
@@ -59,8 +60,14 @@ MonoBehaviour:
   spawns:
   - {fileID: 416072}
   spawnOrder: 2
+  spawnOrientation: 0
   ReferenceCamera: {fileID: 0}
   RespawnHeightY: -100
+  ObjectBehaviourAtRespawnHeight: 1
+  ForbidUserPortals: 0
+  UseCustomVoiceFalloffRange: 0
+  VoiceFalloffRangeNear: 4
+  VoiceFalloffRangeFar: 350
   useAssignedLayers: 0
   autoSpatializeAudioSources: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -79,11 +86,10 @@ MonoBehaviour:
   DrawDistance: 0
   DynamicPrefabs: []
   DynamicMaterials: []
-  UpdateTimeInMS: 10
+  UpdateTimeInMS: 33
   LightMapsNear: []
   LightMapsFar: []
   LightMode: 0
-  LoadRenderSettings: 0
   RenderAmbientEquatorColor: {r: 0, g: 0, b: 0, a: 0}
   RenderAmbientGroundColor: {r: 0, g: 0, b: 0, a: 0}
   RenderAmbientIntensity: 0
@@ -119,7 +125,6 @@ MonoBehaviour:
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
   blueprintId: 
-  user: {fileID: 0}
   contentType: 0
   assetBundleUnityVersion: 
 --- !u!1001 &100100000

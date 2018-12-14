@@ -22,13 +22,24 @@ public static class ExtensionMethods
 		return val;
 	}
 
-	public static string GetHierarchyPath(this Transform transform)
+	public static string GetHierarchyPath(this Transform transform, Transform relativeTransform = null)
 	{
 		string text = transform.get_name();
-		while (transform.get_parent() != null)
+		while (transform.get_parent() != null && transform.get_parent() != relativeTransform)
 		{
 			transform = transform.get_parent();
 			text = transform.get_name() + "/" + text;
+		}
+		return text;
+	}
+
+	public static string GetShortHierarchyPath(this Transform transform, Transform relativeTransform = null)
+	{
+		string text = transform.GetSiblingIndex().ToString();
+		while (transform.get_parent() != null && transform.get_parent() != relativeTransform)
+		{
+			transform = transform.get_parent();
+			text = transform.GetSiblingIndex().ToString() + "/" + text;
 		}
 		return text;
 	}

@@ -35,7 +35,13 @@ namespace VRCSDK2
 			AnimationIntAdd = 24,
 			AnimationIntSubtract = 25,
 			AnimationIntMultiply = 26,
-			AnimationIntDivide = 27
+			AnimationIntDivide = 27,
+			AddVelocity = 28,
+			SetVelocity = 29,
+			AddAngularVelocity = 30,
+			SetAngularVelocity = 0x1F,
+			AddForce = 0x20,
+			SetUIText = 33
 		}
 
 		public enum VrcBroadcastType
@@ -98,8 +104,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public GameObject[] ParameterObjects;
 
-			[HideInInspector]
 			[SerializeField]
+			[HideInInspector]
 			public byte[] ParameterBytes;
 		}
 

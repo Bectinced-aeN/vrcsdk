@@ -14,7 +14,8 @@ namespace VRC.Core
 		{
 			if (!_isInitialized)
 			{
-				AnalyticsInterface.Initialize("05932e9b759849f1c921866f92047b03", sdkVersion);
+				AnalyticsInterface.Initialize("05932e9b759849f1c921866f92047b03");
+				AnalyticsInterface.SetBuildVersion(sdkVersion);
 				_isInitialized = true;
 			}
 		}
@@ -35,7 +36,7 @@ namespace VRC.Core
 				{
 					AnalyticsInterface.SetUserId(user.id);
 					AnalyticsInterface.SetUserProperties(null);
-					AnalyticsInterface.Send("SDK_LoginSuccess");
+					AnalyticsInterface.Send("SDK_LoginSuccess", null, AnalyticsEventOptions.MarkOutOfSession);
 				}
 				else
 				{
@@ -55,7 +56,7 @@ namespace VRC.Core
 					"modelId",
 					value
 				}
-			});
+			}, AnalyticsEventOptions.MarkOutOfSession);
 		}
 
 		public static void WorldUploaded(ApiModel model, bool isUpdate)
@@ -68,7 +69,7 @@ namespace VRC.Core
 					"modelId",
 					value
 				}
-			});
+			}, AnalyticsEventOptions.MarkOutOfSession);
 		}
 
 		private static void CheckInit()

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{46E4482A-E04D-48B9-A7B0-0EFC4F2D50A6}</ProjectGuid>
+    <ProjectGuid>{577093FF-1956-4909-AAD7-5AA09008CA61}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -47,6 +47,7 @@
     <Compile Include="VRCSDK2\IVRCEventReceiver.cs" />
     <Compile Include="VRCSDK2\IVRCEventSender.cs" />
     <Compile Include="VRCSDK2\IVRC_Destructible.cs" />
+    <Compile Include="VRCSDK2\IVRC_SerializableBehaviour.cs" />
     <Compile Include="VRCSDK2\Networking.cs" />
     <Compile Include="VRCSDK2\Player.cs" />
     <Compile Include="VRCSDK2\RPC.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="VRCSDK2\VRC_KeyEvents.cs" />
     <Compile Include="VRCSDK2\VRC_Label.cs" />
     <Compile Include="VRCSDK2\VRC_MetadataListener.cs" />
+    <Compile Include="VRCSDK2\VRC_MidiNoteIn.cs" />
     <Compile Include="VRCSDK2\VRC_MirrorCamera.cs" />
     <Compile Include="VRCSDK2\VRC_MirrorReflection.cs" />
     <Compile Include="VRCSDK2\VRC_NpcApi.cs" />
@@ -88,6 +90,7 @@
     <Compile Include="VRCSDK2\VRC_ObjectApi.cs" />
     <Compile Include="VRCSDK2\VRC_ObjectSpawn.cs" />
     <Compile Include="VRCSDK2\VRC_ObjectSync.cs" />
+    <Compile Include="VRCSDK2\VRC_OscButtonIn.cs" />
     <Compile Include="VRCSDK2\VRC_PhysicsRoot.cs" />
     <Compile Include="VRCSDK2\VRC_Pickup.cs" />
     <Compile Include="VRCSDK2\VRC_PlayerApi.cs" />
@@ -98,7 +101,6 @@
     <Compile Include="VRCSDK2\VRC_SceneDescriptor.cs" />
     <Compile Include="VRCSDK2\VRC_SceneResetPosition.cs" />
     <Compile Include="VRCSDK2\VRC_SceneSmoothShift.cs" />
-    <Compile Include="VRCSDK2\VRC_SerializableBehaviour.cs" />
     <Compile Include="VRCSDK2\VRC_Serialization.cs" />
     <Compile Include="VRCSDK2\VRC_SlideShow.cs" />
     <Compile Include="VRCSDK2\VRC_SpecialLayer.cs" />
@@ -108,6 +110,7 @@
     <Compile Include="VRCSDK2\VRC_StereoObject.cs" />
     <Compile Include="VRCSDK2\VRC_SyncAnimation.cs" />
     <Compile Include="VRCSDK2\VRC_SyncVideoPlayer.cs" />
+    <Compile Include="VRCSDK2\VRC_SyncVideoStream.cs" />
     <Compile Include="VRCSDK2\VRC_TimedEvents.cs" />
     <Compile Include="VRCSDK2\VRC_Trigger.cs" />
     <Compile Include="VRCSDK2\VRC_TriggerColliderEventTrigger.cs" />
@@ -115,6 +118,8 @@
     <Compile Include="VRCSDK2\VRC_TutorialAreaMarker.cs" />
     <Compile Include="VRCSDK2\VRC_UiShape.cs" />
     <Compile Include="VRCSDK2\VRC_UseEvents.cs" />
+    <Compile Include="VRCSDK2\VRC_VideoScreen.cs" />
+    <Compile Include="VRCSDK2\VRC_VideoSpeaker.cs" />
     <Compile Include="VRCSDK2\VRC_Water.cs" />
     <Compile Include="VRCSDK2\VRC_WebPanel.cs" />
     <Compile Include="VRC_VisualDamage.cs" />

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{FF8E47D0-300B-4E01-983C-E43852B32E3C}</ProjectGuid>
+    <ProjectGuid>{A951C157-DFA6-4DB4-A955-29DD1FEECF3B}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -1003,6 +1003,7 @@
     <Compile Include="VRC.Core.BestHTTP\OnUploadProgressDelegate.cs" />
     <Compile Include="VRC.Core.BestHTTP\StreamList.cs" />
     <Compile Include="VRC.Core.BestHTTP\SupportedProtocols.cs" />
+    <Compile Include="VRC.Core\AnalyticsEventOptions.cs" />
     <Compile Include="VRC.Core\AnalyticsInterface.cs" />
     <Compile Include="VRC.Core\AnalyticsSDK.cs" />
     <Compile Include="VRC.Core\API.cs" />
@@ -1014,6 +1015,7 @@
     <Compile Include="VRC.Core\ApiContainer.cs" />
     <Compile Include="VRC.Core\ApiCredentials.cs" />
     <Compile Include="VRC.Core\ApiDictContainer.cs" />
+    <Compile Include="VRC.Core\ApiFavorite.cs" />
     <Compile Include="VRC.Core\ApiFieldAttribute.cs" />
     <Compile Include="VRC.Core\ApiFile.cs" />
     <Compile Include="VRC.Core\ApiListContainer.cs" />
@@ -1032,6 +1034,7 @@
     <Compile Include="VRC.Core\ApiWorldInstance.cs" />
     <Compile Include="VRC.Core\AssetVersion.cs" />
     <Compile Include="VRC.Core\DebugLevel.cs" />
+    <Compile Include="VRC.Core\LocalConfig.cs" />
     <Compile Include="VRC.Core\Logger.cs" />
     <Compile Include="VRC.Core\PipelineManager.cs" />
     <Compile Include="VRC.Core\RemoteConfig.cs" />

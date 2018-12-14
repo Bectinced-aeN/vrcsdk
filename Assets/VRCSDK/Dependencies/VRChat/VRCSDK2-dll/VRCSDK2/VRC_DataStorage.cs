@@ -33,7 +33,7 @@ namespace VRCSDK2
 
 			public VrcDataType type;
 
-			public VRC_SerializableBehaviour serializeComponent;
+			public MonoBehaviour serializeComponent;
 
 			public bool valueBool;
 

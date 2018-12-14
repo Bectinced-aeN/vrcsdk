@@ -66,6 +66,28 @@ namespace VRC.Core
 			return result;
 		}
 
+		public static int GetInt(string key, int defaultVal = 0)
+		{
+			if (!IsInitialized())
+			{
+				Init();
+			}
+			int result = defaultVal;
+			if (IsInitialized() && HasKey(key))
+			{
+				object value = GetValue(key);
+				if (!(value is double) || (double)value != (double)(int)(double)value)
+				{
+					Debug.LogError((object)("RemoteConfig: " + key + " is not an int"));
+				}
+				else
+				{
+					result = (int)(double)value;
+				}
+			}
+			return result;
+		}
+
 		public static bool GetBool(string key, bool defaultVal = false)
 		{
 			if (!IsInitialized())

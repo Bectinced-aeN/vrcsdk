@@ -64,7 +64,7 @@ namespace VRCSDK2
 
 		private void Start()
 		{
-			if (uiCanvas != null)
+			if (uiCanvas != null && GetEventCamera != null)
 			{
 				uiCanvas.set_worldCamera(GetEventCamera());
 			}

@@ -115,7 +115,7 @@ public class EnvConfig
         "Sprites/Default",
         "Sprites/Diffuse",
         "UI/Default",
-        "UI/Unlit/WebPanelTransparent",
+        "VRChat/UI/Unlit/WebPanelTransparent",
 #endif
     };
 

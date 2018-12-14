@@ -24,21 +24,7 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
-		public string moderatorUserId
-		{
-			get;
-			set;
-		}
-
-		[ApiField(Required = false)]
-		public string moderatorDisplayName
-		{
-			get;
-			set;
-		}
-
-		[ApiField(Required = false)]
+		[ApiField(Required = false, Name = "moderated")]
 		public string targetUserId
 		{
 			get;
@@ -68,13 +54,6 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public DateTime created
-		{
-			get;
-			set;
-		}
-
-		[ApiField(Required = false)]
-		public string moderated
 		{
 			get;
 			set;
@@ -112,6 +91,9 @@ namespace VRC.Core
 				moderationType = (ModerationType)(int)Enum.Parse(typeof(ModerationType), value);
 				return true;
 			}
+			case "targetUserId":
+				targetUserId = (data as string);
+				return true;
 			default:
 				return base.WriteField(fieldName, data);
 			}

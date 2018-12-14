@@ -1,21 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
-using VRC.Core.BestHTTP;
+using VRC.Core.BestHTTP.JSON;
 
 namespace VRC.Core
 {
-	public class RemoteConfig
+	public class LocalConfig
 	{
 		public delegate void OnConfigInitialized();
-
-		private const string SECURE_PLAYER_PREFS_PW = "vl9u1grTnvXA";
 
 		private static Dictionary<string, object> config;
 
 		public static OnConfigInitialized onConfigInitialized;
-
-		private static string configBlobKey => API.GetApiUrl() + " " + API.GetOrganization() + " configBlob";
 
 		private static object GetValue(string key)
 		{
@@ -28,14 +25,7 @@ namespace VRC.Core
 
 		public static void Init(Action onInit = null, Action onError = null)
 		{
-			if (!IsInitialized())
-			{
-				FetchConfig(onInit, onError);
-			}
-			else
-			{
-				onInit();
-			}
+			FetchConfig(onInit, onError);
 		}
 
 		public static bool HasKey(string key)
@@ -78,7 +68,7 @@ namespace VRC.Core
 				object value = GetValue(key);
 				if (!(value is double) || (double)value != (double)(int)(double)value)
 				{
-					Debug.LogError((object)("RemoteConfig: " + key + " is not an int"));
+					Debug.LogError((object)("LocalConfig: " + key + " is not an int"));
 				}
 				else
 				{
@@ -100,7 +90,7 @@ namespace VRC.Core
 				object value = GetValue(key);
 				if (!(value is bool))
 				{
-					Debug.LogError((object)("RemoteConfig: " + key + " is not a bool"));
+					Debug.LogError((object)("LocalConfig: " + key + " is not a bool"));
 				}
 				else
 				{
@@ -135,32 +125,38 @@ namespace VRC.Core
 
 		private static void FetchConfig(Action onFetched = null, Action onError = null)
 		{
-			Debug.Log((object)"Fetching fresh config");
-			Logger.Log("FetchConfig", DebugLevel.All);
-			API.SendRequest("config", HTTPMethods.Get, new ApiDictContainer
+			Debug.Log((object)"Fetching fresh local config");
+			Logger.Log("FetchLocalConfig", DebugLevel.All);
+			string path = Application.get_persistentDataPath() + Path.PathSeparator + "config.json";
+			if (File.Exists(path))
 			{
-				OnSuccess = delegate(ApiContainer c)
+				try
 				{
-					config = (c as ApiDictContainer).ResponseDictionary;
-					Logger.Log("finshed fetching and set config", DebugLevel.All);
-					if (onFetched != null)
-					{
-						onFetched();
-					}
+					object obj = Json.Decode(File.ReadAllText(path));
+					config = (Dictionary<string, object>)obj;
+					Logger.Log("finshed fetching and set local config", DebugLevel.All);
+					onFetched?.Invoke();
 					if (onConfigInitialized != null)
 					{
 						onConfigInitialized();
 					}
-				},
-				OnError = delegate
-				{
-					Logger.LogError("Could not fetch fresh config file. Using cached if available.");
-					if (onError != null)
-					{
-						onError();
-					}
 				}
-			}, null, needsAPIKey: false, authenticationRequired: false);
+				catch (Exception)
+				{
+					Debug.LogError((object)"Error reading local config");
+					onError?.Invoke();
+				}
+			}
+			else
+			{
+				config = new Dictionary<string, object>();
+				Logger.Log("no local config found", DebugLevel.All);
+				onFetched?.Invoke();
+				if (onConfigInitialized != null)
+				{
+					onConfigInitialized();
+				}
+			}
 		}
 	}
 }
