@@ -264,7 +264,7 @@ namespace VRC.Core
 				}
 			};
 			ApiModelListContainer<ApiNotification> responseContainer = apiModelListContainer;
-			API.SendRequest("auth/user/notifications", HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, authenticationRequired: true, disableCache: true);
+			API.SendRequest("auth/user/notifications", HTTPMethods.Get, responseContainer, dictionary, authenticationRequired: true, disableCache: true);
 		}
 	}
 }

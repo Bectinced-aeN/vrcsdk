@@ -150,7 +150,7 @@ namespace VRC
                 return;
 
 			if(!APIUser.IsLoggedInWithCredentials && ApiCredentials.Load() )
-				APIUser.Login((user) => AnalyticsSDK.LoggedInUserChanged(user), null );
+				APIUser.FetchCurrentUser((c) => AnalyticsSDK.LoggedInUserChanged(c.Model as APIUser), null );
 
             clientInstallPath = SDKClientUtilities.GetSavedVRCInstallPath();
             if(string.IsNullOrEmpty(clientInstallPath))
@@ -233,7 +233,6 @@ namespace VRC
                     storedUsername = username = null;
                     storedPassword = password = null;
 
-					ApiCredentials.Clear();
                     VRC.Tools.ClearCookies();
 					APIUser.Logout();
                     VRCContentManagerWindow.ClearContent();
@@ -255,6 +254,41 @@ namespace VRC
                         SignIn(true);
                     if (GUILayout.Button("Sign up"))
                         Application.OpenURL("http://vrchat.com/register");
+                }
+            }
+
+            {
+                EditorGUILayout.Separator();
+                EditorGUILayout.LabelField("Logging", EditorStyles.boldLabel);
+
+                // API logging
+                {
+                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("apiLoggingEnabled");
+                    bool enableLogging = EditorGUILayout.Toggle("API Logging Enabled", isLoggingEnabled);
+                    if (enableLogging != isLoggingEnabled)
+                    {
+                        if (enableLogging)
+                            VRC.Core.Logger.AddDebugLevel(DebugLevel.API);
+                        else
+                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.API);
+
+                        UnityEditor.EditorPrefs.SetBool("apiLoggingEnabled", enableLogging);
+                    }
+                }
+
+                // All logging
+                {
+                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("allLoggingEnabled");
+                    bool enableLogging = EditorGUILayout.Toggle("All Logging Enabled", isLoggingEnabled);
+                    if (enableLogging != isLoggingEnabled)
+                    {
+                        if (enableLogging)
+                            VRC.Core.Logger.AddDebugLevel(DebugLevel.All);
+                        else
+                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.All);
+
+                        UnityEditor.EditorPrefs.SetBool("allLoggingEnabled", enableLogging);
+                    }
                 }
             }
 
@@ -314,36 +348,6 @@ namespace VRC
             {
                 EditorGUILayout.Separator();
                 EditorGUILayout.LabelField("Developer", EditorStyles.boldLabel);
-
-                // API logging
-                {
-                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("apiLoggingEnabled");
-                    bool enableLogging = EditorGUILayout.Toggle("API Logging Enabled", isLoggingEnabled);
-                    if (enableLogging != isLoggingEnabled)
-                    {
-                        if (enableLogging)
-                            VRC.Core.Logger.AddDebugLevel(DebugLevel.API);
-                        else
-                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.API);
-
-                        UnityEditor.EditorPrefs.SetBool("apiLoggingEnabled", enableLogging);
-                    } 
-                }
-
-                // All logging
-                {
-                    bool isLoggingEnabled = UnityEditor.EditorPrefs.GetBool("allLoggingEnabled");
-                    bool enableLogging = EditorGUILayout.Toggle("All Logging Enabled", isLoggingEnabled);
-                    if (enableLogging != isLoggingEnabled)
-                    {
-                        if (enableLogging)
-                            VRC.Core.Logger.AddDebugLevel(DebugLevel.All);
-                        else
-                            VRC.Core.Logger.RemoveDebugLevel(DebugLevel.All);
-
-                        UnityEditor.EditorPrefs.SetBool("allLoggingEnabled", enableLogging);
-                    }
-                }
             }
             else
             {
@@ -438,11 +442,12 @@ namespace VRC
 
             Init();
 
-            ApiCredentials.Clear();
-            ApiCredentials.SetUser(username, password);
-            APIUser.Login(
-                delegate (APIUser user)
+            APIUser.Login(username, password,
+                delegate (ApiModelContainer<APIUser> c)
                 {
+                    APIUser user = c.Model as APIUser;
+                    if (c.Cookies.ContainsKey("auth"))
+                        ApiCredentials.Set(user.username, username, "vrchat", c.Cookies["auth"]);
                     signingIn = false;
                     error = null;
                     storedUsername = username;
@@ -460,16 +465,16 @@ namespace VRC
 
 					refreshWindow = true;
 				},
-                delegate (string message)
+                delegate (ApiModelContainer<APIUser> c)
                 {
                     signingIn = false;
                     storedUsername = null;
                     storedPassword = null;
-                    error = message;
+                    error = c.Error;
                     VRC.Tools.ClearCookies();
                     APIUser.Logout();
 					refreshWindow = true;
-                    VRC.Core.Logger.Log("Error logging in: " + message);
+                    VRC.Core.Logger.Log("Error logging in: " + error);
                 }
             );
         }

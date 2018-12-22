@@ -148,6 +148,13 @@ public class ONSPAudioSource : MonoBehaviour
     public void Reset()
     {
         var source = GetComponent<AudioSource>();
+
+        if(source == null)
+        {
+            enabled = false;
+            return;
+        }
+
         SetParameters(ref source);
     }
 
@@ -173,6 +180,14 @@ public class ONSPAudioSource : MonoBehaviour
     {
 		// We might iterate through multiple sources / game object
 		var source = GetComponent<AudioSource>();
+        if (source == null)
+            return;
+
+        if(source == null)
+        {
+            enabled = false;
+            return;
+        }
 
         // READ-ONLY PARAMETER TEST      
 #if TEST_READONLY_PARAMETERS

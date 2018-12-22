@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{03E3AD72-27D7-4CF1-BF90-14F54748A29E}</ProjectGuid>
+    <ProjectGuid>{8F86EEB9-3BD4-493F-A1A0-1C8918303968}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -975,6 +975,7 @@
     <Compile Include="VRC.Core\ApiFeedback.cs" />
     <Compile Include="VRC.Core\ApiFieldAttribute.cs" />
     <Compile Include="VRC.Core\ApiFile.cs" />
+    <Compile Include="VRC.Core\ApiGroup.cs" />
     <Compile Include="VRC.Core\ApiListContainer.cs" />
     <Compile Include="VRC.Core\ApiModel.cs" />
     <Compile Include="VRC.Core\ApiModelContainer.cs" />

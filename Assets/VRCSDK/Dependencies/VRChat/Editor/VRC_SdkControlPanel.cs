@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using VRC.Core;
+using VRCSDK2;
 
 [ExecuteInEditMode]
 public class VRC_SdkControlPanel : EditorWindow
@@ -14,6 +15,15 @@ public class VRC_SdkControlPanel : EditorWindow
     const string kCantPublishContent = "Before you can upload avatars or worlds, you will need to spend some time in VRChat.";
     const string kCantPublishAvatars = "Before you can upload avatars, you will need to spend some time in VRChat.";
     const string kCantPublishWorlds = "Before you can upload worlds, you will need to spend some time in VRChat.";
+    private const string kAvatarOptimizationTipsURL = "https://docs.vrchat.com/docs/avatar-optimizing-tips";
+    private const string kAvatarRigRequirementsURL = "https://docs.vrchat.com/docs/rig-requirements";
+
+    static Texture _perfIcon_VeryGood;
+    static Texture _perfIcon_Good;
+    static Texture _perfIcon_Medium;
+    static Texture _perfIcon_Bad;
+    static Texture _perfIcon_VeryBad;
+
 
     [MenuItem("VRChat SDK/Show Build Control Panel")]
     static void Init()
@@ -47,6 +57,7 @@ public class VRC_SdkControlPanel : EditorWindow
         GUIInfos.Clear();
         GUIWarnings.Clear();
         GUILinks.Clear();
+        GUIStats.Clear();
         checkedForIssues = false;
     }
 
@@ -57,7 +68,7 @@ public class VRC_SdkControlPanel : EditorWindow
 
     private void OnLostFocus()
     {
-        ResetIssues();    
+        ResetIssues();
     }
 
     bool checkedForIssues = false;
@@ -66,6 +77,7 @@ public class VRC_SdkControlPanel : EditorWindow
     Dictionary<Object, List<string>> GUIWarnings = new Dictionary<Object, List<string>>();
     Dictionary<Object, List<string>> GUIInfos = new Dictionary<Object, List<string>>();
     Dictionary<Object, List<string>> GUILinks = new Dictionary<Object, List<string>>();
+    Dictionary<Object, List<KeyValuePair<string, PerformanceRating>>> GUIStats = new Dictionary<Object, List<KeyValuePair<string, PerformanceRating>>>();
 
     void AddToReport(Dictionary<Object, List<string>> report, Object subject, string output)
     {
@@ -75,13 +87,13 @@ public class VRC_SdkControlPanel : EditorWindow
             report.Add(subject, new List<string>());
         report[subject].Add(output);
     }
-    
+
     void OnGUIError(Object subject, string output)
     {
         if (!checkedForIssues)
             AddToReport(GUIErrors, subject, output);
     }
-    
+
     void OnGUIWarning(Object subject, string output)
     {
         if (!checkedForIssues)
@@ -94,15 +106,33 @@ public class VRC_SdkControlPanel : EditorWindow
             AddToReport(GUIInfos, subject, output);
     }
 
-    void OnGUILink(Object subject, string output)
+    void OnGUILink(Object subject, string output, string link)
     {
         if (!checkedForIssues)
-            AddToReport(GUILinks, subject, output);
+            AddToReport(GUILinks, subject, output + "\n" + link);
+    }
+
+    void OnGUIStat(Object subject, string output, PerformanceRating rating)
+    {
+        if (checkedForIssues)
+            return;
+
+        if (subject == null)
+            subject = this;
+        if (!GUIStats.ContainsKey(subject))
+            GUIStats.Add(subject, new List<KeyValuePair<string, PerformanceRating>>());
+        GUIStats[subject].Add(new KeyValuePair<string, PerformanceRating>(output, rating));
     }
 
     VRCSDK2.VRC_SceneDescriptor[] scenes;
     VRCSDK2.VRC_AvatarDescriptor[] avatars;
     Vector2 scrollPos;
+
+    private bool showAvatarPerformanceDetails
+    {
+        get { return EditorPrefs.GetBool("VRCSDK2_showAvatarPerformanceDetails", false); }
+        set { EditorPrefs.SetBool("VRCSDK2_showAvatarPerformanceDetails", value); }
+    }
 
     void Update()
     {
@@ -141,13 +171,13 @@ public class VRC_SdkControlPanel : EditorWindow
         EditorGUILayout.LabelField("Client Version Date", VRC.Core.SDKClientUtilities.GetTestClientVersionDate());
         EditorGUILayout.LabelField("SDK Version Date", VRC.Core.SDKClientUtilities.GetSDKVersionDate());
 
-/**
-        // Commented this out 12/12/2017 bc client no longer produces version files, resulting in this warning always appearing - Graham
-        if (!VRC.Core.SDKClientUtilities.IsClientNewerThanSDK())
-        {
-            OnGUIWarning(null, "Your SDK is newer than the VRChat client you're testing with. Some SDK features may not work as expected. You can change VRC clients in VRChat SDK/Settings.");
-        }
-**/
+        /**
+                // Commented this out 12/12/2017 bc client no longer produces version files, resulting in this warning always appearing - Graham
+                if (!VRC.Core.SDKClientUtilities.IsClientNewerThanSDK())
+                {
+                    OnGUIWarning(null, "Your SDK is newer than the VRChat client you're testing with. Some SDK features may not work as expected. You can change VRC clients in VRChat SDK/Settings.");
+                }
+        **/
 
         if (VRC.Core.RemoteConfig.IsInitialized())
         {
@@ -206,6 +236,14 @@ public class VRC_SdkControlPanel : EditorWindow
         else if (avatars.Length > 0)
         {
             GUILayout.Label("Avatar Options", EditorStyles.boldLabel);
+            bool prevShowPerfDetails = showAvatarPerformanceDetails;
+            bool showPerfDetails = EditorGUILayout.ToggleLeft("Show All Avatar Performance Details", prevShowPerfDetails);
+            if (showPerfDetails != prevShowPerfDetails)
+            {
+                showAvatarPerformanceDetails = showPerfDetails;
+                ResetIssues();
+            }
+
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             foreach (var av in avatars)
             {
@@ -312,12 +350,65 @@ public class VRC_SdkControlPanel : EditorWindow
         if (GUIWarnings.ContainsKey(subject))
             foreach (string error in GUIWarnings[subject].Where(s => !string.IsNullOrEmpty(s)))
                 EditorGUILayout.HelpBox(error, MessageType.Warning);
+
+        if (GUIStats.ContainsKey(subject))
+        {
+            GUIStyle style = GUI.skin.GetStyle("HelpBox");
+
+            foreach (var kvp in GUIStats[subject].Where(k => k.Value == PerformanceRating.VeryBad))
+                GUILayout.Box(new GUIContent(kvp.Key, GetPerformanceIconForRating(kvp.Value)), style);
+
+            foreach (var kvp in GUIStats[subject].Where(k => k.Value == PerformanceRating.Bad))
+                GUILayout.Box(new GUIContent(kvp.Key, GetPerformanceIconForRating(kvp.Value)), style);
+
+            foreach (var kvp in GUIStats[subject].Where(k => k.Value == PerformanceRating.Medium))
+                GUILayout.Box(new GUIContent(kvp.Key, GetPerformanceIconForRating(kvp.Value)), style);
+
+            foreach (var kvp in GUIStats[subject].Where(k => k.Value == PerformanceRating.Good || k.Value == PerformanceRating.VeryGood))
+                GUILayout.Box(new GUIContent(kvp.Key, GetPerformanceIconForRating(kvp.Value)), style);
+        }
+
         if (GUIInfos.ContainsKey(subject))
             foreach (string error in GUIInfos[subject].Where(s => !string.IsNullOrEmpty(s)))
                 EditorGUILayout.HelpBox(error, MessageType.Info);
         if (GUILinks.ContainsKey(subject))
             foreach (string error in GUILinks[subject].Where(s => !string.IsNullOrEmpty(s)))
-                EditorGUILayout.SelectableLabel(error);
+            {
+                var s = error.Split('\n');
+                if (GUILayout.Button(s[0]))
+                    Application.OpenURL(s[1]);
+            }
+    }
+
+    private Texture GetPerformanceIconForRating(PerformanceRating value)
+    {
+        if (_perfIcon_VeryGood == null)
+            _perfIcon_VeryGood = Resources.Load<Texture>("PerformanceIcons/Perf_Great_32");
+        if (_perfIcon_Good == null)
+            _perfIcon_Good = Resources.Load<Texture>("PerformanceIcons/Perf_Good_32");
+        if (_perfIcon_Medium == null)
+            _perfIcon_Medium = Resources.Load<Texture>("PerformanceIcons/Perf_Medium_32");
+        if (_perfIcon_Bad == null)
+            _perfIcon_Bad = Resources.Load<Texture>("PerformanceIcons/Perf_Poor_32");
+        if (_perfIcon_VeryBad == null)
+            _perfIcon_VeryBad = Resources.Load<Texture>("PerformanceIcons/Perf_Horrible_32");
+
+        switch (value)
+        {
+            case PerformanceRating.None:
+            case PerformanceRating.VeryGood:
+                return _perfIcon_VeryGood;
+            case PerformanceRating.Good:
+                return _perfIcon_Good;
+            case PerformanceRating.Medium:
+                return _perfIcon_Medium;
+            case PerformanceRating.Bad:
+                return _perfIcon_Bad;
+            case PerformanceRating.VeryBad:
+                return _perfIcon_VeryBad;
+        }
+
+        return _perfIcon_VeryGood;
     }
 
     void OnGUISceneCheck(VRCSDK2.VRC_SceneDescriptor scene)
@@ -325,7 +416,7 @@ public class VRC_SdkControlPanel : EditorWindow
         CheckUploadChanges(scene);
 
         EditorGUILayout.InspectorTitlebar(true, scene.gameObject);
-        
+
         if (VRC.Core.APIUser.CurrentUser != null && VRC.Core.APIUser.CurrentUser.hasScriptingAccess && !CustomDLLMaker.DoesScriptDirExist())
         {
             CustomDLLMaker.CreateDirectories();
@@ -339,10 +430,10 @@ public class VRC_SdkControlPanel : EditorWindow
         if (g.y == 0)
             OnGUIWarning(scene, "Zero gravity will make walking extremely difficult, though we support different gravity, player orientation is always 'upwards' so this may not have the effect you're looking for.");
 
-        #if PLAYMAKER
+#if PLAYMAKER
             if (VRCSDK2.VRC_PlaymakerHelper.ValidatePlaymaker() == false)
                 OnGUIError(scene, VRCSDK2.VRC_PlaymakerHelper.GetErrors());
-        #endif
+#endif
 
         if (!UpdateLayers.AreLayersSetup())
             OnGUIError(scene, "Layers are not yet configured for VRChat. Please press the 'Setup Layers for VRChat' button above to apply layer settings and enable Test/Publish.");
@@ -351,7 +442,7 @@ public class VRC_SdkControlPanel : EditorWindow
             OnGUIError(scene, "Physics Collision Layer Matrix is not yet configured for VRChat. Please press the 'Setup Collision Layer Matrix for VRChat' button above to apply collision settings and enable Test/Publish.");
 
         // warn those without scripting access if they choose to script locally
-        if(VRC.Core.APIUser.CurrentUser != null && !VRC.Core.APIUser.CurrentUser.hasScriptingAccess && CustomDLLMaker.DoesScriptDirExist())
+        if (VRC.Core.APIUser.CurrentUser != null && !VRC.Core.APIUser.CurrentUser.hasScriptingAccess && CustomDLLMaker.DoesScriptDirExist())
         {
             OnGUIWarning(scene, "Your account does not have permissions to upload custom scripts. You can test locally but need to contact VRChat to publish your world with scripts.");
         }
@@ -368,7 +459,7 @@ public class VRC_SdkControlPanel : EditorWindow
         {
             CustomDLLMaker.CreateDirectories();
         }
-        
+
         if (scene.UpdateTimeInMS < (int)(1000f / 90f * 3f))
             OnGUIWarning(scene, "Room has a very fast update rate; experience may suffer with many users.");
     }
@@ -385,8 +476,8 @@ public class VRC_SdkControlPanel : EditorWindow
             if (scene.apiWorld == null)
             {
                 ApiWorld world = API.FromCacheOrNew<ApiWorld>(pms[0].blueprintId);
-                world.Fetch(null, false, 
-                    (c) => scene.apiWorld = c.Model as ApiWorld, 
+                world.Fetch(null, false,
+                    (c) => scene.apiWorld = c.Model as ApiWorld,
                     (c) =>
                     {
                         if (c.Code == 404)
@@ -517,78 +608,6 @@ public class VRC_SdkControlPanel : EditorWindow
             OnGUIInformation(null, "Layer " + layer + " " + name + "\n" + description);
     }
 
-    int CountPolygons(Renderer r)
-    {
-        int result = 0;
-        SkinnedMeshRenderer smr = r as SkinnedMeshRenderer;
-        if (smr != null)
-        {
-            if (smr.sharedMesh == null)
-                return 0;
-
-            for (int i = 0; i < smr.sharedMesh.subMeshCount; ++i)
-                result += smr.sharedMesh.GetTriangles(i).Length / 3;
-        }
-
-        ParticleSystemRenderer pr = r as ParticleSystemRenderer;
-        if (pr != null)
-        {
-            result += pr.GetComponent<ParticleSystem>().main.maxParticles;
-        }
-
-        MeshRenderer mr = r as MeshRenderer;
-        if (mr != null)
-        {
-            var mf = mr.GetComponent<MeshFilter>();
-            if (mf == null || mf.sharedMesh == null)
-                return 0;
-            for (int i = 0; i < mf.sharedMesh.subMeshCount; ++i)
-                result += mf.sharedMesh.GetTriangles(i).Length / 3;
-        }
-
-        return result;
-    }
-
-    void AnalyzeGeometry(GameObject go, out Bounds bounds, out int polycount)
-    {
-        polycount = 0;
-        bounds = new Bounds(go.transform.position, Vector3.zero);
-        List<Renderer> ignore = new List<Renderer>();
-
-        var lods = go.GetComponentsInChildren<LODGroup>();
-        foreach (var lod in lods)
-        {
-            LOD[] options = lod.GetLODs();
-
-            int highestLodPolies = 0;
-            foreach (LOD l in options)
-            {
-                int thisLodPolies = 0;
-                foreach (Renderer r in l.renderers)
-                {
-                    ignore.Add(r);
-                    thisLodPolies += CountPolygons(r);
-                }
-                if (thisLodPolies > highestLodPolies)
-                    highestLodPolies = thisLodPolies;
-            }
-
-            polycount += highestLodPolies;
-        }
-
-        var renderers = go.GetComponentsInChildren<Renderer>();
-        foreach (var r in renderers)
-        {
-            if( (r as ParticleSystemRenderer) == null )
-                bounds.Encapsulate(r.bounds);
-
-            if (ignore.Contains(r) == false)
-                polycount += CountPolygons(r);
-        }
-
-        bounds.center -= go.transform.position;
-    }
-
     bool IsAncestor(Transform ancestor, Transform child)
     {
         bool found = false;
@@ -649,7 +668,7 @@ public class VRC_SdkControlPanel : EditorWindow
             HumanBodyBones[] hbbArray = (HumanBodyBones[])System.Enum.GetValues(typeof(HumanBodyBones));
             Dictionary<Transform, string> hbbDict = new Dictionary<Transform, string>();
 
-            for (int i=0; i<hbbArray.Length; i++)
+            for (int i = 0; i < hbbArray.Length; i++)
             {
                 Transform t = anim.GetBoneTransform(hbbArray[i]);
                 string n = hbbArray[i].ToString();
@@ -714,7 +733,7 @@ public class VRC_SdkControlPanel : EditorWindow
             anim.avatar = AvatarBuilder.BuildHumanAvatar(avObj, desc);
             if (anim.avatar.isValid && anim.avatar.isHuman)
             {
-                anim.avatar.name = "{ADJUSTED}"+origAvatar.name;
+                anim.avatar.name = "{ADJUSTED}" + origAvatar.name;
                 // shift all the bone mappings
                 torso = chest;
                 chest = upchest;
@@ -722,7 +741,7 @@ public class VRC_SdkControlPanel : EditorWindow
             }
             else
             {
-                OnGUIError(ad, "Automatic rig adjustment on "+origAvatar.name+" failed. You will need to manually configure the humanoid rig. Make sure the UpperChest slot is empty.");
+                OnGUIError(ad, "Automatic rig adjustment on " + origAvatar.name + " failed. You will need to manually configure the humanoid rig. Make sure the UpperChest slot is empty.");
                 anim.avatar = origAvatar;
                 return;
             }
@@ -755,9 +774,9 @@ public class VRC_SdkControlPanel : EditorWindow
         Transform lhand = anim.GetBoneTransform(HumanBodyBones.LeftHand);
         Transform rhand = anim.GetBoneTransform(HumanBodyBones.RightHand);
 
-        hasHead = null!=head;
-        hasFeet = (null!=lfoot && null!=rfoot);
-        hasHands = (null!=lhand && null!=rhand);
+        hasHead = null != head;
+        hasFeet = (null != lfoot && null != rfoot);
+        hasHands = (null != lhand && null != rhand);
 
         if (!hasHead || !hasFeet || !hasHands)
         {
@@ -772,13 +791,13 @@ public class VRC_SdkControlPanel : EditorWindow
         Transform rindex = anim.GetBoneTransform(HumanBodyBones.RightIndexProximal);
         Transform rmiddle = anim.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
 
-        hasThreeFingers = null!=lthumb && null!=lindex && null!=lmiddle && null!=rthumb && null!=rindex && null!=rmiddle;
+        hasThreeFingers = null != lthumb && null != lindex && null != lmiddle && null != rthumb && null != rindex && null != rmiddle;
 
         if (!hasThreeFingers)
         {
             // although its only a warning, we return here because the rest
             // of the analysis is for VRIK
-            OnGUIWarning(ad, "Thumb, Index, and Middle finger bones are not mapped, Full-Body IK will be disabled."); 
+            OnGUIWarning(ad, "Thumb, Index, and Middle finger bones are not mapped, Full-Body IK will be disabled.");
             status = false;
         }
 
@@ -796,7 +815,7 @@ public class VRC_SdkControlPanel : EditorWindow
         Transform lclav = anim.GetBoneTransform(HumanBodyBones.LeftShoulder);
         Transform rclav = anim.GetBoneTransform(HumanBodyBones.RightShoulder);
 
-        if (null==neck || null==lclav || null==rclav || null==pelvis || null==torso || null==chest)
+        if (null == neck || null == lclav || null == rclav || null == pelvis || null == torso || null == chest)
         {
             OnGUIError(ad, "Spine hierarchy missing elements, make sure that Pelvis, Spine, Chest, Neck and Shoulders are mapped.");
             return false;
@@ -838,7 +857,7 @@ public class VRC_SdkControlPanel : EditorWindow
             status = false;
         }
 
-        if ( !(IsAncestor(pelvis, rfoot) && IsAncestor(pelvis, lfoot) && IsAncestor(pelvis, lhand) || IsAncestor(pelvis, rhand) || IsAncestor(pelvis, lhand)) )
+        if (!(IsAncestor(pelvis, rfoot) && IsAncestor(pelvis, lfoot) && IsAncestor(pelvis, lhand) || IsAncestor(pelvis, rhand) || IsAncestor(pelvis, lhand)))
         {
             OnGUIWarning(ad, "This avatar has a split heirarchy (Hips bone is not the ancestor of all humanoid bones). IK may not work correctly.");
             status = false;
@@ -850,10 +869,10 @@ public class VRC_SdkControlPanel : EditorWindow
         Vector3 legRDir = rhip.TransformVector(hipLocalUp);
         float angL = Vector3.Angle(Vector3.up, legLDir);
         float angR = Vector3.Angle(Vector3.up, legRDir);
-        if ( angL < 175f || angR < 175f )
+        if (angL < 175f || angR < 175f)
         {
             string angle = string.Format("{0:F1}", Mathf.Min(angL, angR));
-            OnGUIWarning(ad, "The angle between pelvis and thigh bones should be close to 180 degrees (this avatar's angle is "+angle+"). Your avatar may not work well with full-body IK and Tracking.");
+            OnGUIWarning(ad, "The angle between pelvis and thigh bones should be close to 180 degrees (this avatar's angle is " + angle + "). Your avatar may not work well with full-body IK and Tracking.");
             status = false;
         }
         return status;
@@ -861,20 +880,11 @@ public class VRC_SdkControlPanel : EditorWindow
 
     void OnGUIAvatarCheck(VRCSDK2.VRC_AvatarDescriptor avatar)
     {
-        int polycount;
-        Bounds bounds;
-        AnalyzeGeometry(avatar.gameObject, out bounds, out polycount);
-        if (polycount < 10000)
-            OnGUIInformation(avatar, "Polygons: " + polycount);
-        else if (polycount < 15000)
-            OnGUIWarning(avatar, "Polygons: " + polycount + " - Please try to reduce your avatar poly count to less thatn 10k.");
-        else if (polycount < 20000)
-            OnGUIWarning(avatar, "Polygons: " + polycount + " - This avatar will not perform well on many systems.");
-        else
-            OnGUIError(avatar, "Polygons: " + polycount + " - This avatar has too many polygons. It must have less than 20k and should have less than 10k.");
+        AvatarPerformanceStats perfStats = AvatarPerformance.CalculatePerformanceStats(avatar.Name, avatar.gameObject);
 
-        if (bounds.size.x > 5f || bounds.size.y > 6.0f || bounds.size.z > 5f)
-            OnGUIError(avatar, "This avatar measures too large on at least one axis. It must be <5m on a side but it's bounds are " + bounds.size.ToString());
+        OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.Overall);
+        OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.PolyCount);
+        OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.AABB);
 
         var eventHandler = avatar.GetComponentInChildren<VRCSDK2.VRC_EventHandler>();
         if (eventHandler != null)
@@ -896,7 +906,7 @@ public class VRC_SdkControlPanel : EditorWindow
         }
         else if (avatar.gameObject.activeInHierarchy == false)
         {
-            OnGUIError(avatar, "Your avatar is disabled in the scene heirarchy!");
+            OnGUIError(avatar, "Your avatar is disabled in the scene hierarchy!");
         }
         else
         {
@@ -922,12 +932,12 @@ public class VRC_SdkControlPanel : EditorWindow
                 else if (shoulderPosition.y > 2.5f)
                     OnGUIWarning(avatar, "This avatar is tall. This is probably taller than you want.");
             }
-            
-            if ( AnalyzeIK(avatar, avatar.gameObject, anim) == false )
-                OnGUILink(avatar, "See https://docs.vrchat.com/docs/rig-requirements for details."); 
+
+            if (AnalyzeIK(avatar, avatar.gameObject, anim) == false)
+                OnGUILink(avatar, "See Avatar Rig Requirements for more information.", kAvatarRigRequirementsURL);
         }
 
-        IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(avatar.Name, avatar.gameObject);
+        IEnumerable<Component> componentsToRemove = VRCSDK2.AvatarValidation.FindIllegalComponents(avatar.gameObject);
         HashSet<string> componentsToRemoveNames = new HashSet<string>();
         foreach (Component c in componentsToRemove)
         {
@@ -941,8 +951,49 @@ public class VRC_SdkControlPanel : EditorWindow
         if (VRCSDK2.AvatarValidation.EnforceAudioSourceLimits(avatar.gameObject).Count > 0)
             OnGUIWarning(avatar, "Audio sources found on Avatar, they will be adjusted to safe limits, if necessary.");
 
+        if (VRCSDK2.AvatarValidation.EnforceAvatarStationLimits(avatar.gameObject).Count > 0)
+            OnGUIWarning(avatar, "Stations found on Avatar, they will be adjusted to safe limits, if necessary.");
+
         if (avatar.gameObject.GetComponentInChildren<Camera>() != null)
             OnGUIWarning(avatar, "Cameras are removed from non-local avatars at runtime.");
+
+        foreach (AvatarPerformanceCategory perfCategory in System.Enum.GetValues(typeof(AvatarPerformanceCategory)))
+        {
+            if (perfCategory == AvatarPerformanceCategory.Overall ||
+                perfCategory == AvatarPerformanceCategory.PolyCount ||
+                perfCategory == AvatarPerformanceCategory.AABB ||
+                perfCategory == AvatarPerformanceCategory.AvatarPerformanceCategoryCount)
+            {
+                continue;
+            }
+
+            OnGUIPerformanceInfo(avatar, perfStats, perfCategory);
+        }
+
+        OnGUILink(avatar, "Avatar Optimization Tips", kAvatarOptimizationTipsURL);
+    }
+
+    void OnGUIPerformanceInfo(Object avatar, AvatarPerformanceStats perfStats, AvatarPerformanceCategory perfCategory)
+    {
+        string text;
+        PerformanceInfoDisplayLevel displayLevel;
+        PerformanceRating rating = perfStats.GetPerformanceRatingForCategory(perfCategory);
+        perfStats.GetSDKPerformanceInfoText(out text, out displayLevel, perfCategory, rating);
+
+        if (displayLevel == PerformanceInfoDisplayLevel.None || string.IsNullOrEmpty(text))
+            return;
+
+        if (displayLevel == PerformanceInfoDisplayLevel.Verbose && showAvatarPerformanceDetails)
+            OnGUIStat(avatar, text, rating);
+        if (displayLevel == PerformanceInfoDisplayLevel.Info)
+            OnGUIStat(avatar, text, rating);
+        if (displayLevel == PerformanceInfoDisplayLevel.Warning)
+            OnGUIStat(avatar, text, rating);
+        if (displayLevel == PerformanceInfoDisplayLevel.Error)
+        {
+            OnGUIStat(avatar, text, rating);
+            OnGUIError(avatar, text);
+        }
     }
 
     void OnGUIAvatar(VRCSDK2.VRC_AvatarDescriptor avatar)
@@ -956,7 +1007,7 @@ public class VRC_SdkControlPanel : EditorWindow
             if (APIUser.CurrentUser.canPublishAvatars)
             {
                 VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
-                VRC_SdkBuilder.ExportAndUploadAvatarBlueprint(avatar.gameObject); 
+                VRC_SdkBuilder.ExportAndUploadAvatarBlueprint(avatar.gameObject);
             }
             else
             {
@@ -1011,5 +1062,29 @@ public class VRC_SdkControlPanel : EditorWindow
         }
 
         Application.OpenURL(RemoteConfig.GetString("sdkDiscordUrl"));
+    }
+
+    [MenuItem("VRChat SDK/Help/Avatar Optimization Tips")]
+    public static void ShowAvatarOptimizationTips()
+    {
+        if (!RemoteConfig.IsInitialized())
+        {
+            RemoteConfig.Init(() => ShowAvatarOptimizationTips());
+            return;
+        }
+
+        Application.OpenURL(kAvatarOptimizationTipsURL);
+    }
+
+    [MenuItem("VRChat SDK/Help/Avatar Rig Requirements")]
+    public static void ShowAvatarRigRequirements()
+    {
+        if (!RemoteConfig.IsInitialized())
+        {
+            RemoteConfig.Init(() => ShowAvatarRigRequirements());
+            return;
+        }
+
+        Application.OpenURL(kAvatarRigRequirementsURL);
     }
 }

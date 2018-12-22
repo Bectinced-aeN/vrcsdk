@@ -61,30 +61,32 @@ namespace VRCSDK2
 
         void Login()
         {
-            ApiCredentials.Load();
-            APIUser.Login(
-                delegate (APIUser user)
-                {
-                    pipelineManager.user = user;
+            if (!ApiCredentials.Load())
+                LoginErrorCallback("Not logged in");
+            else
+                APIUser.FetchCurrentUser(
+                    delegate (ApiModelContainer<APIUser> c)
+                    {
+                        pipelineManager.user = c.Model as APIUser;
 
-                    ApiAvatar av = new ApiAvatar() { id = pipelineManager.blueprintId };
-                    av.Get(false,
-                        (c) =>
-                        {
-                            Debug.Log("<color=magenta>Updating an existing avatar.</color>");
-                            apiAvatar = c.Model as ApiAvatar;
-                            pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
-                            SetupUI();
-                        },
-                        (c) =>
-                        {
-                            Debug.Log("<color=magenta>Creating a new avatar.</color>");
-                            apiAvatar = new ApiAvatar();
-                            apiAvatar.id = pipelineManager.blueprintId;
-                            pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
-                            SetupUI();
-                        });
-                }, LoginErrorCallback);
+                        ApiAvatar av = new ApiAvatar() { id = pipelineManager.blueprintId };
+                        av.Get(false,
+                            (c2) =>
+                            {
+                                Debug.Log("<color=magenta>Updating an existing avatar.</color>");
+                                apiAvatar = c2.Model as ApiAvatar;
+                                pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
+                                SetupUI();
+                            },
+                            (c2) =>
+                            {
+                                Debug.Log("<color=magenta>Creating a new avatar.</color>");
+                                apiAvatar = new ApiAvatar();
+                                apiAvatar.id = pipelineManager.blueprintId;
+                                pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(apiAvatar.authorId);
+                                SetupUI();
+                            });
+                    }, (c) => { LoginErrorCallback(c.Error); });
         }
 
         void SetupUI()

@@ -50,7 +50,7 @@ namespace VRC.Core
 			},
 			{
 				1,
-				"[<color=orange>API</color>] "
+				"[<color=red>API</color>] "
 			},
 			{
 				2,

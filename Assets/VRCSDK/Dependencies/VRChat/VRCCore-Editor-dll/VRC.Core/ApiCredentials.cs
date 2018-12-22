@@ -1,5 +1,4 @@
 using UnityEngine;
-using VRC.Core.BestHTTP.Authentication;
 
 namespace VRC.Core
 {
@@ -7,80 +6,70 @@ namespace VRC.Core
 	{
 		private const string SECURE_PLAYER_PREFS_PW = "vl9u1grTnvXA";
 
-		private static string username;
-
-		private static string password;
-
-		private static Credentials webCredentials;
-
 		private static string authToken;
+
+		private static string provider;
+
+		private static string providerUserId;
+
+		private static string humanName;
+
+		public static bool Clear()
+		{
+			Set(null, null, null, null);
+			return !Load();
+		}
 
 		public static bool Load()
 		{
-			if (!SecurePlayerPrefs.HasKey("username") || !SecurePlayerPrefs.HasKey("password"))
+			authToken = (provider = (providerUserId = null));
+			try
 			{
-				return false;
+				SecurePlayerPrefs.SetString("username", string.Empty, "vl9u1grTnvXA");
+				SecurePlayerPrefs.SetString("password", string.Empty, "vl9u1grTnvXA");
+				provider = SecurePlayerPrefs.GetString("authTokenProvider", "vl9u1grTnvXA");
+				providerUserId = SecurePlayerPrefs.GetString("authTokenProviderUserId", "vl9u1grTnvXA");
+				authToken = SecurePlayerPrefs.GetString("authToken", "vl9u1grTnvXA");
+				humanName = SecurePlayerPrefs.GetString("humanName", "vl9u1grTnvXA");
 			}
-			username = SecurePlayerPrefs.GetString("username", "vl9u1grTnvXA");
-			password = SecurePlayerPrefs.GetString("password", "vl9u1grTnvXA");
-			webCredentials = new Credentials(AuthenticationTypes.Basic, username, password);
-			authToken = null;
-			return true;
-		}
-
-		public static void SetUser(string user, string pass, bool save = true)
-		{
-			username = user;
-			password = pass;
-			webCredentials = new Credentials(AuthenticationTypes.Basic, username, password);
-			authToken = null;
-			if (save)
+			catch
 			{
-				SecurePlayerPrefs.SetString("username", username, "vl9u1grTnvXA");
-				SecurePlayerPrefs.SetString("password", password, "vl9u1grTnvXA");
-				PlayerPrefs.Save();
 			}
+			return !string.IsNullOrEmpty(authToken);
 		}
 
-		public static void Clear()
+		public static void Set(string humanName, string providerid, string provider, string token)
 		{
-			username = null;
-			password = null;
-			webCredentials = null;
-			authToken = null;
-			SecurePlayerPrefs.DeleteKey("username");
-			SecurePlayerPrefs.DeleteKey("password");
-			SecurePlayerPrefs.DeleteKey("authTokenProvider");
-			SecurePlayerPrefs.DeleteKey("authTokenProviderUserId");
-			PlayerPrefs.Save();
-		}
-
-		public static void SetAuthToken(string token, string provider)
-		{
-			username = null;
-			password = null;
-			webCredentials = null;
+			if (provider == null)
+			{
+				provider = string.Empty;
+			}
+			if (providerid == null)
+			{
+				providerid = string.Empty;
+			}
+			if (token == null)
+			{
+				token = string.Empty;
+			}
+			if (humanName == null)
+			{
+				humanName = string.Empty;
+			}
+			SecurePlayerPrefs.SetString("authTokenProvider", "vrchat", "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("authTokenProviderUserId", providerid, "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("authToken", token, "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("humanName", humanName, "vl9u1grTnvXA");
+			humanName = humanName;
 			authToken = token;
-			SecurePlayerPrefs.SetString("authTokenProvider", provider, "vl9u1grTnvXA");
-			SecurePlayerPrefs.DeleteKey("password");
+			providerid = providerid;
+			provider = provider;
 			PlayerPrefs.Save();
 		}
 
-		public static void SetAuthToken(string token, string provider, string providerUserId)
+		public static string GetHumanName()
 		{
-			username = null;
-			password = null;
-			webCredentials = null;
-			authToken = token;
-			SecurePlayerPrefs.SetString("authTokenProvider", provider, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("authTokenProviderUserId", providerUserId, "vl9u1grTnvXA");
-			SecurePlayerPrefs.DeleteKey("password");
-			PlayerPrefs.Save();
-		}
-
-		public static object GetWebCredentials()
-		{
-			return webCredentials;
+			return humanName;
 		}
 
 		public static string GetAuthToken()
@@ -90,17 +79,12 @@ namespace VRC.Core
 
 		public static string GetAuthTokenProvider()
 		{
-			return SecurePlayerPrefs.GetString("authTokenProvider", "vl9u1grTnvXA");
+			return provider;
 		}
 
 		public static string GetAuthTokenProviderUserId()
 		{
-			return SecurePlayerPrefs.GetString("authTokenProviderUserId", "vl9u1grTnvXA");
-		}
-
-		public static string GetUsername()
-		{
-			return username;
+			return providerUserId;
 		}
 	}
 }

@@ -16,7 +16,7 @@ namespace VRC.Core
 
 			public static FavoriteType World => new FavoriteType("world");
 
-			public static FavoriteType Friend => new FavoriteType("friend");
+			public static FavoriteType Friend => new FavoriteType("user");
 
 			public static FavoriteType Avatar => new FavoriteType("avatar");
 
@@ -33,6 +33,36 @@ namespace VRC.Core
 		public const int MaxFavoriteAvatars = 3;
 
 		public const int MaxFavoriteFriendGroups = 3;
+
+		public const int MaxWorldPlaylists = 3;
+
+		[ApiField]
+		public new string id
+		{
+			get;
+			set;
+		}
+
+		[ApiField]
+		public string type
+		{
+			get;
+			set;
+		}
+
+		[ApiField]
+		public string favoriteId
+		{
+			get;
+			set;
+		}
+
+		[ApiField]
+		public List<string> tags
+		{
+			get;
+			set;
+		}
 
 		public static void AddFavorite(string objectId, FavoriteType favoriteType, Action successCallback, Action<string> errorCallback, List<string> tags = null)
 		{
@@ -85,7 +115,7 @@ namespace VRC.Core
 
 		public static void FetchFavoriteIds(FavoriteType favoriteType, Action<List<string>> successCallback = null, Action<string> errorCallback = null, string tag = null)
 		{
-			if (favoriteType.value == "world" || favoriteType.value == "avatar" || favoriteType.value == "friend")
+			if (favoriteType.value == "world" || favoriteType.value == "avatar" || favoriteType.value == "user")
 			{
 				ApiModelListContainer<ApiModel> apiModelListContainer = new ApiModelListContainer<ApiModel>();
 				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
@@ -118,7 +148,7 @@ namespace VRC.Core
 				{
 					target = "avatars/favorites";
 				}
-				else if (favoriteType.value == "friend")
+				else if (favoriteType.value == "user")
 				{
 					target = "auth/user/friends/favorite";
 					if (tag != null)

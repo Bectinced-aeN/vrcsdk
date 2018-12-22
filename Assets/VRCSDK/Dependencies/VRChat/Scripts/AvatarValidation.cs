@@ -54,7 +54,9 @@ namespace VRCSDK2
             "UnityEngine.TrailRenderer",
             "UnityEngine.Cloth",
             "UnityEngine.Light",
-            "UnityEngine.Collider",
+            "UnityEngine.BoxCollider",
+            "UnityEngine.SphereCollider",
+            "UnityEngine.CapsuleCollider",
             "UnityEngine.Rigidbody",
             "UnityEngine.Joint",
             "UnityEngine.Camera",
@@ -71,7 +73,9 @@ namespace VRCSDK2
             "VRCSDK2.VRC_IKFollower",
             "VRC_IKFollowerInternal",
             "RealisticEyeMovements.EyeAndHeadAnimator",
-            "AvatarAudioSourceFilter"
+            "AvatarAudioSourceFilter",
+            "VRCSDK2.VRC_Station",
+            "VRC_StationInternal",
         };
 
         public static bool ps_limiter_enabled = false;
@@ -86,41 +90,21 @@ namespace VRCSDK2
         public static int ps_collision_penalty_low = 10;
         public static int ps_trails_penalty = 10;
         public static int ps_max_particle_force = 0; // can not be disabled
-        
-        public static IEnumerable<Component> FindIllegalComponents(string Name, GameObject currentAvatar)
+
+        const int MAX_STATIONS_PER_AVATAR = 6;
+        const float MAX_STATION_ACTIVATE_DISTANCE = 0f;
+        const float MAX_STATION_LOCATION_DISTANCE = 2f;
+        const float MAX_STATION_COLLIDER_DIMENSION = 2f;
+
+
+        public static IEnumerator RemoveIllegalComponentsEnumerator(GameObject target, bool retry = true)
         {
-            List<Component> bad = new List<Component>();
-            IEnumerator seeker = FindIllegalComponentsEnumerator(Name, currentAvatar, (c) => bad.Add(c));
-            while (seeker.MoveNext()) ;
-            return bad;
+            return Validation.RemoveIllegalComponentsEnumerator(target, Validation.WhitelistedTypes("avatar", ComponentTypeWhiteList), retry);
         }
 
-        public static void RemoveIllegalComponents(string Name, GameObject currentAvatar, bool retry = true)
+        public static IEnumerable<Component> FindIllegalComponents(GameObject target)
         {
-            IEnumerator remover = RemoveIllegalComponentsEnumerator(Name, currentAvatar, retry);
-            while (remover.MoveNext()) ;
-        }
-
-        public static IEnumerator RemoveIllegalComponentsEnumerator(string Name, GameObject currentAvatar, bool retry = true)
-        {
-            bool foundBad = false;
-            yield return VRCSDK2.AvatarValidation.FindIllegalComponentsEnumerator(Name, currentAvatar, (c) => {
-                if (c != null)
-                {
-                    Debug.LogWarningFormat("Removed component of type {0}", c.GetType().Name);
-                    RemoveDependancies(c);
-
-#if VRC_CLIENT
-                    Object.DestroyImmediate(c, true);
-#else
-                    Object.DestroyImmediate(c, false);
-#endif
-                    foundBad = true;
-                }
-            });
-
-            if (retry && foundBad)
-                yield return RemoveIllegalComponentsEnumerator(Name, currentAvatar, false);
+            return Validation.FindIllegalComponents(target, Validation.WhitelistedTypes("avatar", ComponentTypeWhiteList));
         }
 
         public static List<AudioSource> EnforceAudioSourceLimits(GameObject currentAvatar)
@@ -241,7 +225,7 @@ namespace VRCSDK2
                             sources[i].enabled = false;
                             sources[i].clip = null;
 #else
-                            Object.DestroyImmediate(sources[i]);
+                            Validation.RemoveComponent(sources[i]);
 #endif
                         }
                     }
@@ -334,6 +318,107 @@ namespace VRCSDK2
             }
         }
 
+        public static List<VRCSDK2.VRC_Station> EnforceAvatarStationLimits(GameObject currentAvatar)
+        {
+            List<VRCSDK2.VRC_Station> found = new List<VRCSDK2.VRC_Station>();
+            IEnumerator enforcer = EnforceAvatarStationLimitsEnumerator(currentAvatar, (a) => found.Add(a));
+            while (enforcer.MoveNext()) ;
+            return found;
+        }
+
+        public static IEnumerator EnforceAvatarStationLimitsEnumerator(GameObject currentAvatar, System.Action<VRCSDK2.VRC_Station> onFound)
+        {
+            Queue<GameObject> children = new Queue<GameObject>();
+            children.Enqueue(currentAvatar.gameObject);
+            int station_count = 0;
+            while (children.Count > 0)
+            {
+                GameObject child = children.Dequeue();
+                if (child == null)
+                    continue;
+
+                int childCount = child.transform.childCount;
+                for (int idx = 0; idx < child.transform.childCount; ++idx)
+                    children.Enqueue(child.transform.GetChild(idx).gameObject);
+
+                VRCSDK2.VRC_Station[] stations = child.transform.GetComponents<VRCSDK2.VRC_Station>();
+
+                if (stations != null && stations.Length > 0)
+                {
+                    for (int i=0; i < stations.Length; i++)
+                    {
+                        VRCSDK2.VRC_Station station = stations[i];
+                        if (station == null)
+                            continue;
+
+#if VRC_CLIENT
+                        VRC_StationInternal station_internal = station.transform.GetComponent<VRC_StationInternal>();
+#endif
+                        if (station_count < MAX_STATIONS_PER_AVATAR)
+                        {
+                            bool marked_for_destruction = false;
+                            // keep this station, but limit it
+                            if (station.disableStationExit)
+                            {
+                                Debug.LogError("["+currentAvatar.name+"]==> Stations on avatars cannot disable station exit. Re-enabled.");
+                                station.disableStationExit = false;
+                            }
+                            if (station.stationEnterPlayerLocation != null)
+                            {
+                                if (Vector3.Distance(station.stationEnterPlayerLocation.position, station.transform.position) > MAX_STATION_LOCATION_DISTANCE)
+                                {
+#if VRC_CLIENT
+                                    marked_for_destruction = true;
+                                    Debug.LogError("["+currentAvatar.name+"]==> Station enter location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station disabled.");
+#else
+                                    Debug.LogError("Station enter location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station will be disabled at runtime.");
+#endif
+                                }
+                                if (Vector3.Distance(station.stationExitPlayerLocation.position, station.transform.position) > MAX_STATION_LOCATION_DISTANCE)
+                                {
+#if VRC_CLIENT
+                                    marked_for_destruction = true;
+                                    Debug.LogError("["+currentAvatar.name+"]==> Station exit location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station disabled.");
+#else
+                                    Debug.LogError("Station exit location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station will be disabled at runtime.");
+#endif
+                                }
+
+                                if (marked_for_destruction)
+                                {
+#if VRC_CLIENT
+                                    Validation.RemoveComponent(station);
+                                    if (station_internal != null)
+                                        Validation.RemoveComponent(station_internal);
+#endif
+                                }
+                                else
+                                {
+                                    if (onFound != null)
+                                        onFound(station);
+                                }
+
+                            }
+                        }
+                        else
+                        {
+#if VRC_CLIENT
+                            Debug.LogError("["+currentAvatar.name+"]==> Removing station over limit of "+MAX_STATIONS_PER_AVATAR);
+                            Validation.RemoveComponent(station);
+                            if (station_internal != null)
+                                Validation.RemoveComponent(station_internal);
+#else
+                            Debug.LogError("Too many stations on avatar("+ currentAvatar.name +"). Maximum allowed="+MAX_STATIONS_PER_AVATAR+". Extra stations will be removed at runtime.");
+#endif
+                        }
+
+                        station_count++;
+                    }
+                }
+                yield return null;
+            }
+        }
+
         public static void RemoveCameras(GameObject currentAvatar, bool localPlayer, bool friend)
         {
             if (!localPlayer && currentAvatar != null)
@@ -351,12 +436,11 @@ namespace VRCSDK2
                     }
                     else
                     {
-                        RemoveDependancies(camera);
 
                         camera.enabled = false;
                         if (camera.targetTexture != null)
                             camera.targetTexture = new RenderTexture(16, 16, 24);
-                        MonoBehaviour.DestroyImmediate(camera);
+                        Validation.RemoveComponent(camera);
                     }
                 }
             }
@@ -395,85 +479,12 @@ namespace VRCSDK2
 
                     Debug.LogWarning("Removing Animator comp from " + anim.gameObject.name);
 
-                    RemoveDependancies(anim);
-
                     anim.enabled = false;
-                    MonoBehaviour.DestroyImmediate(anim);
+                    Validation.RemoveComponent(anim);
                 } 
             }
 
-            // remove legacy Animation comps
-            {
-                foreach (Animation anim in currentAvatar.GetComponentsInChildren<Animation>(true))
-                {
-                    if (anim == null || anim.gameObject == null)
-                        continue;
-
-                    Debug.LogWarning("Removing Animation comp from " + anim.gameObject.name);
-
-                    RemoveDependancies(anim);
-
-                    anim.enabled = false;
-                    MonoBehaviour.DestroyImmediate(anim);
-                }
-            }
-        }
-
-        public static void RemoveLightComponents(GameObject currentAvatar)
-        {
-            if (currentAvatar == null)
-                return;
-
-            foreach (Light light in currentAvatar.GetComponentsInChildren<Light>(true))
-            {
-                if (light == null || light.gameObject == null)
-                    continue;
-
-                Debug.LogWarning("Removing Light comp from " + light.gameObject.name);
-
-                RemoveDependancies(light);
-
-                light.enabled = false;
-                MonoBehaviour.DestroyImmediate(light);
-            }
-        }
-
-        public static void RemoveLineRendererComponents(GameObject currentAvatar)
-        {
-            if (currentAvatar == null)
-                return;
-
-            foreach (var comp in currentAvatar.GetComponentsInChildren<LineRenderer>(true))
-            {
-                if (comp == null || comp.gameObject == null)
-                    continue;
-
-                Debug.LogWarning("Removing LineRenderer comp from " + comp.gameObject.name);
-
-                RemoveDependancies(comp);
-
-                comp.enabled = false;
-                MonoBehaviour.DestroyImmediate(comp);
-            }
-        }
-
-        public static void RemoveTrailRendererComponents(GameObject currentAvatar) 
-        {
-            if (currentAvatar == null)
-                return;
-
-            foreach (var comp in currentAvatar.GetComponentsInChildren<TrailRenderer>(true))
-            {
-                if (comp == null || comp.gameObject == null)
-                    continue;
-
-                Debug.LogWarning("Removing TrailRenderer comp from " + comp.gameObject.name);
-
-                RemoveDependancies(comp);
-
-                comp.enabled = false;
-                MonoBehaviour.DestroyImmediate(comp);
-            }
+            Validation.RemoveComponentsOfType<Animation>(currentAvatar);
         }
 
         static Color32 GetTrustLevelColor(VRC.Core.APIUser user)
@@ -658,7 +669,8 @@ namespace VRCSDK2
                     if (particleSystems.Count > ps_max_systems)
                     {
                         Debug.LogError("Too many particle systems, #" + particleSystems.Count + " named " + ps.gameObject.name + " deleted");
-                        Object.DestroyImmediate(ps);
+                        Validation.RemoveComponent(ps);
+                        continue;
                     }
                     else
                     {
@@ -710,7 +722,7 @@ namespace VRCSDK2
                                     if (heighestPoly > ps_mesh_particle_poly_limit)
                                     {
                                         Debug.LogError("Particle system named " + ps.gameObject.name + " breached polygon limits, it has been deleted");
-                                        Object.DestroyImmediate(ps);
+                                        Validation.RemoveComponent(ps);
                                         continue;
                                     }
                                 }
@@ -785,125 +797,6 @@ namespace VRCSDK2
                     }
             }
             return hasLegacyAnims;
-        }
-
-        private static IEnumerator FindIllegalComponentsEnumerator(string Name, GameObject currentAvatar, System.Action<Component> onFound)
-        {
-            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
-            watch.Start();
-
-            System.Type[] foundTypes = WhiteListedTypes;
-            HashSet<System.Type> typesInUse = new HashSet<System.Type>();
-            List<Component> componentsInUse = new List<Component>();
-            Queue<GameObject> children = new Queue<GameObject>();
-            children.Enqueue(currentAvatar.gameObject);
-            while (children.Count > 0)
-            {
-                GameObject child = children.Dequeue();
-                int childCount = child.transform.childCount;
-                for (int idx = 0; idx < child.transform.childCount; ++idx)
-                    children.Enqueue(child.transform.GetChild(idx).gameObject);
-                foreach (Component c in child.transform.GetComponents<Component>())
-                {
-                    if (c == null)
-                        continue;
-
-                    if (typesInUse.Contains(c.GetType()) == false)
-                        typesInUse.Add(c.GetType());
-
-                    if (!foundTypes.Any(allowedType => c.GetType() == allowedType || c.GetType().IsSubclassOf(allowedType)))
-                    {
-                        onFound(c);
-                        yield return null;
-                    }
-
-                    if (watch.ElapsedMilliseconds > 1)
-                    {
-                        yield return null;
-                        watch.Reset();
-                    }
-                }
-            }
-        }
-
-        private static System.Type[] _foundTypes = null;
-        private static System.Type[] WhiteListedTypes
-        {
-            get
-            {
-                if (_foundTypes != null)
-                    return _foundTypes;
-
-                Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-
-                _foundTypes = ComponentTypeWhiteList.Select((name) =>
-                {
-                    foreach (Assembly a in assemblies)
-                    {
-                        System.Type found = a.GetType(name);
-                        if (found != null)
-                            return found;
-                    }
-
-                //This is really verbose for some SDK scenes, eg.
-                //If they don't have FinalIK installed
-#if VRC_CLIENT && UNITY_EDITOR
-                Debug.LogError("Could not find type " + name);
-#endif
-                return null;
-                }).Where(t => t != null).ToArray();
-
-                return _foundTypes;
-            }
-        }
-
-        private static void RemoveDependancies(Component component)
-        {
-            if (component == null)
-                return;
-
-            Component[] components = component.GetComponents<Component>();
-            if (components == null || components.Length == 0)
-                return;
-
-            System.Type compType = component.GetType();
-            foreach (var c in components)
-            {
-                if (c == null)
-                    continue;
-
-                bool deleteMe = false;
-                object[] requires = c.GetType().GetCustomAttributes(typeof(RequireComponent), true);
-                if (requires == null || requires.Length == 0)
-                    continue;
-
-                foreach (var r in requires)
-                {
-                    RequireComponent rc = r as RequireComponent;
-                    if (rc == null)
-                        continue;
-
-                    if (rc.m_Type0 == compType ||
-                        rc.m_Type1 == compType ||
-                        rc.m_Type2 == compType)
-                    {
-                        deleteMe = true;
-                    }
-                }
-
-                if (deleteMe)
-                {
-                    Debug.LogErrorFormat("Deleting component dependency {0} found on {1}", c.GetType().Name, component.gameObject.name);
-
-                    RemoveDependancies(c);
-
-#if VRC_CLIENT
-                    Object.DestroyImmediate(c, true);
-#else
-                        Object.DestroyImmediate(c,false);
-#endif
-                }
-            }
         }
 
         private static float GetCurveMax(ParticleSystem.MinMaxCurve minMaxCurve)

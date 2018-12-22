@@ -34,6 +34,14 @@ namespace VRCSDK2
 
 		public VRC_ObjectApi controlsObject;
 
+		public VRC_Trigger.CustomTriggerTarget OnRemotePlayerEnterStation;
+
+		public VRC_Trigger.CustomTriggerTarget OnLocalPlayerEnterStation;
+
+		public VRC_Trigger.CustomTriggerTarget OnRemotePlayerExitStation;
+
+		public VRC_Trigger.CustomTriggerTarget OnLocalPlayerExitStation;
+
 		public static InitializationDelegate Initialize;
 
 		public VRC_Station()

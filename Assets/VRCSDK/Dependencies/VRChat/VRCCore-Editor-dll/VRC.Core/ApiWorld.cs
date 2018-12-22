@@ -11,6 +11,7 @@ namespace VRC.Core
 	{
 		public enum SortHeading
 		{
+			None,
 			Featured,
 			Trending,
 			Updated,
@@ -19,7 +20,9 @@ namespace VRC.Core
 			Recent,
 			Favorite,
 			Labs,
-			None
+			Playlist,
+			Shuffle,
+			Publication
 		}
 
 		public enum SortOwnership
@@ -220,8 +223,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
 		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
 		public string platform
 		{
 			get;
@@ -526,7 +529,7 @@ namespace VRC.Core
 					};
 					apiDictContainer.OnError = onFailure;
 					ApiDictContainer responseContainer = apiDictContainer;
-					API.SendRequest("worlds/" + base.id + "/" + instanceID, HTTPMethods.Get, responseContainer, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: true);
+					API.SendRequest("worlds/" + base.id + "/" + instanceID, HTTPMethods.Get, responseContainer, parameters);
 				}
 				else
 				{
@@ -534,7 +537,7 @@ namespace VRC.Core
 					apiModelContainer.OnSuccess = onSuccess;
 					apiModelContainer.OnError = onFailure;
 					ApiModelContainer<ApiWorld> responseContainer2 = apiModelContainer;
-					API.SendRequest("worlds/" + base.id, HTTPMethods.Get, responseContainer2, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: true);
+					API.SendRequest("worlds/" + base.id, HTTPMethods.Get, responseContainer2, parameters);
 				}
 			}
 		}
@@ -559,11 +562,21 @@ namespace VRC.Core
 			case SortHeading.Created:
 				dictionary.Add("sort", "created");
 				break;
+			case SortHeading.Publication:
+				dictionary.Add("sort", "publicationDate");
+				break;
+			case SortHeading.Shuffle:
+				dictionary.Add("sort", "shuffle");
+				break;
 			case SortHeading.Active:
 				endpoint = "worlds/active";
 				break;
 			case SortHeading.Recent:
 				endpoint = "worlds/recent";
+				break;
+			case SortHeading.Playlist:
+				endpoint = "worlds/favorites";
+				dictionary.Add("userId", userId);
 				break;
 			case SortHeading.Favorite:
 				endpoint = "worlds/favorites";
@@ -638,7 +651,7 @@ namespace VRC.Core
 				}
 			};
 			ApiModelListContainer<ApiWorld> responseContainer = apiModelListContainer;
-			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, releaseStatus != ReleaseStatus.Public, disableCache, 180f);
+			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, authenticationRequired: true, disableCache, 180f);
 		}
 
 		public static void AddLocal(ApiWorld world)

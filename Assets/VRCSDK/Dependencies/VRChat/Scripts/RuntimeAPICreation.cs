@@ -147,7 +147,7 @@ namespace VRCSDK2
             return val;
         }
 
-        protected void OnSDKPipelineComplete()
+        protected void OnSDKPipelineComplete(string contentUrl=null)
         {
             VRC.Core.Logger.Log("OnSDKPipelineComplete", DebugLevel.All);
             isUploading = false;
@@ -157,7 +157,13 @@ namespace VRCSDK2
             UnityEditor.EditorApplication.isPaused = false;
             UnityEditor.EditorApplication.isPlaying = false;
             UnityEditor.EditorUtility.ClearProgressBar();
-            UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Update Complete! Launch VRChat to see your upl content.", "Okay");
+            if (UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Update Complete! Launch VRChat to see your uploaded content." + (null==contentUrl ? "" : "\n\nManage content at: " + contentUrl ), (null == contentUrl) ? "Okay" : "Open URL", (null == contentUrl) ? "" : "Done" ))
+            {
+                if (null!=contentUrl)
+                {
+                    Application.OpenURL(contentUrl);
+                }
+            }
         }
 
         protected void OnSDKPipelineError(string error, string details)

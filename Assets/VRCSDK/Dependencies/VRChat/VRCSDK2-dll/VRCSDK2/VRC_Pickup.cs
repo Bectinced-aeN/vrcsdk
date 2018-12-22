@@ -52,28 +52,28 @@ namespace VRCSDK2
 
 		public string UseText = "Use";
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public VRC_EventHandler.VrcBroadcastType useEventBroadcastType;
 
 		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseDownEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseUpEventName;
 
 		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string PickupEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string DropEventName;
 
 		public float ThrowVelocityBoostMinSpeed = 1f;

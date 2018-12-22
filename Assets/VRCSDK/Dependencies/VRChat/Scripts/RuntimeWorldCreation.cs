@@ -70,19 +70,25 @@ namespace VRCSDK2
 
             releasePublic.gameObject.SetActive(false);
 
-            ApiCredentials.Load();
-            APIUser.Login(
-                delegate (APIUser user)
-                {
-                    UserLoggedInCallback(user);
-                },
-                delegate (string err)
-                {
-                    VRC.Core.Logger.LogError("Could not log in - " + err, DebugLevel.Always);
-                    blueprintPanel.SetActive(false);
-                    errorPanel.SetActive(true);
-                }
-            );
+            System.Action<string> onError = (err) => {
+                VRC.Core.Logger.LogError("Could not authenticate - " + err, DebugLevel.Always);
+                blueprintPanel.SetActive(false);
+                errorPanel.SetActive(true);
+            };
+
+            if (!ApiCredentials.Load())
+                onError("Not logged in");
+            else
+                APIUser.FetchCurrentUser(
+                    delegate (ApiModelContainer<APIUser> c)
+                    {
+                        UserLoggedInCallback(c.Model as APIUser);
+                    },
+                    delegate (ApiModelContainer<APIUser> c)
+                    {
+                        onError(c.Error);
+                    }
+                );
         }
 
         void UserLoggedInCallback(APIUser user)
@@ -314,7 +320,8 @@ namespace VRCSDK2
             else
                 yield return StartCoroutine(CreateBlueprint());
 
-            OnSDKPipelineComplete();
+            string uploadedWorldURL = "https://vrchat.com/home/world/" + pipelineManager.blueprintId;
+            OnSDKPipelineComplete(uploadedWorldURL);
         }
 
         private string GetFriendlyWorldFileName(string type)

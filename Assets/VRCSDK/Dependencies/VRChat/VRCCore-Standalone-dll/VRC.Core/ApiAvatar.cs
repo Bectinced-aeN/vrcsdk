@@ -348,7 +348,7 @@ namespace VRC.Core
 			};
 			ApiModelListContainer<ApiAvatar> responseContainer = apiModelListContainer;
 			string endpoint = (!areFavorites) ? "avatars" : "avatars/favorites";
-			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, needsAPIKey: true, owner != Owner.Public, disableCache, 180f);
+			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, authenticationRequired: true, disableCache, 180f);
 		}
 
 		public override void Save(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)

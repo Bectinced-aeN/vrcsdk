@@ -517,7 +517,7 @@ namespace VRC.Core
 				apiModelContainer.OnSuccess = successCallback;
 				apiModelContainer.OnError = errorCallback;
 				ApiModelContainer<ApiFile> responseContainer = apiModelContainer;
-				API.SendRequest(MakeRequestEndpoint(), HTTPMethods.Post, responseContainer, dictionary, needsAPIKey: true, Application.get_isEditor());
+				API.SendRequest(MakeRequestEndpoint(), HTTPMethods.Post, responseContainer, dictionary, authenticationRequired: true, Application.get_isEditor());
 			}
 		}
 
@@ -595,7 +595,7 @@ namespace VRC.Core
 				apiModelContainer.OnSuccess = successCallback;
 				apiModelContainer.OnError = errorCallback;
 				ApiModelContainer<ApiFile> responseContainer = apiModelContainer;
-				API.SendRequest("file/" + base.id + "/" + versionNumber, HTTPMethods.Delete, responseContainer);
+				API.SendRequest("file/" + base.id + "/" + versionNumber, HTTPMethods.Delete, responseContainer, null, authenticationRequired: true, disableCache: true);
 			}
 		}
 

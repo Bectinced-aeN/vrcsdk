@@ -20,6 +20,13 @@ namespace VRC.Core
 			public int count;
 		}
 
+		public class CredentialsBundle
+		{
+			public string Username;
+
+			public string Password;
+		}
+
 		public const string devApiUrl = "https://dev-api.vrchat.cloud/api/1/";
 
 		public const string betaApiUrl = "https://beta-api.vrchat.cloud/api/1/";
@@ -36,7 +43,7 @@ namespace VRC.Core
 
 		public static ApiOnlineMode API_ONLINE_MODE = ApiOnlineMode.Uninitialized;
 
-		public static string ApiKey;
+		private static string ApiKey;
 
 		public static Dictionary<string, EndpointAccessEntry> EndpointAccessTimes = new Dictionary<string, EndpointAccessEntry>();
 
@@ -66,7 +73,7 @@ namespace VRC.Core
 
 		public static bool IsReady()
 		{
-			return API_ORGANIZATION != null && API_ONLINE_MODE != ApiOnlineMode.Uninitialized;
+			return API_ORGANIZATION != null && API_ONLINE_MODE != 0 && !string.IsNullOrEmpty(ApiCredentials.GetAuthToken());
 		}
 
 		public static T FromCacheOrNew<T>(string id, float maxCacheAge = -1f) where T : ApiModel, ApiCacheObject, new()
@@ -129,7 +136,7 @@ namespace VRC.Core
 				}
 				return (T)model;
 			}
-			model.Fetch(onSuccess, onFailure);
+			model.Fetch(onSuccess, onFailure, null, disableCache);
 			return (T)model;
 		}
 
@@ -235,24 +242,24 @@ namespace VRC.Core
 			return GetApiUrl() == "https://dev-api.vrchat.cloud/api/1/";
 		}
 
-		public static void SendGetRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool disableCache = false, float cacheLifetime = 3600f)
+		public static void SendGetRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool disableCache = false, float cacheLifetime = 3600f, CredentialsBundle credentials = null)
 		{
-			SendRequest(target, HTTPMethods.Get, responseContainer, requestParams, needsAPIKey: true, authenticationRequired: true, disableCache, cacheLifetime);
+			SendRequest(target, HTTPMethods.Get, responseContainer, requestParams, authenticationRequired: true, disableCache, cacheLifetime, 2, credentials);
 		}
 
-		public static void SendPostRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null)
+		public static void SendPostRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, CredentialsBundle credentials = null)
 		{
-			SendRequest(target, HTTPMethods.Post, responseContainer, requestParams);
+			SendRequest(target, HTTPMethods.Post, responseContainer, requestParams, authenticationRequired: true, disableCache: false, 3600f, 2, credentials);
 		}
 
-		public static void SendPutRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null)
+		public static void SendPutRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, CredentialsBundle credentials = null)
 		{
-			SendRequest(target, HTTPMethods.Put, responseContainer, requestParams);
+			SendRequest(target, HTTPMethods.Put, responseContainer, requestParams, authenticationRequired: true, disableCache: false, 3600f, 2, credentials);
 		}
 
-		public static void SendDeleteRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null)
+		public static void SendDeleteRequest(string target, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, CredentialsBundle credentials = null)
 		{
-			SendRequest(target, HTTPMethods.Delete, responseContainer, requestParams);
+			SendRequest(target, HTTPMethods.Delete, responseContainer, requestParams, authenticationRequired: true, disableCache: false, 3600f, 2, credentials);
 		}
 
 		public static List<T> ConvertJsonListToModelList<T>(List<object> json, ref string error, float dataTimestamp) where T : ApiModel, new()
@@ -289,17 +296,19 @@ namespace VRC.Core
 			return null;
 		}
 
-		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2)
+		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2, CredentialsBundle credentials = null)
 		{
-			string text = (!disableCache) ? "cyan" : "red";
-			Logger.LogFormat(DebugLevel.API, "<color={0}>Dispatch {1} {2} {3} disableCache: {4} retryCount: {5}</color>", text, method, endpoint, (requestParams == null) ? string.Empty : (" params: " + Json.Encode(requestParams)), disableCache.ToString(), retryCount.ToString());
+			if (Logger.DebugLevelIsEnabled(DebugLevel.API))
+			{
+				Logger.LogFormat(DebugLevel.API, "Requesting {0} {1} {2} disableCache: {3} retryCount: {4}", method, endpoint, (requestParams == null) ? "{{}}" : Json.Encode(requestParams).Replace("{", "{{").Replace("}", "}}"), disableCache.ToString(), retryCount.ToString());
+			}
 			UpdateDelegator.Dispatch(delegate
 			{
-				SendRequestInternal(endpoint, method, responseContainer, requestParams, needsAPIKey, authenticationRequired, disableCache, cacheLifetime, retryCount);
+				SendRequestInternal(endpoint, method, responseContainer, requestParams, authenticationRequired, disableCache, cacheLifetime, retryCount, credentials);
 			});
 		}
 
-		private static void SendRequestInternal(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool needsAPIKey = true, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2)
+		private static void SendRequestInternal(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2, CredentialsBundle credentials = null)
 		{
 			if (responseContainer == null)
 			{
@@ -350,7 +359,7 @@ namespace VRC.Core
 					ApiCache.CachedResponse cachedResponse = (!useCache) ? null : ApiCache.GetOrClearCachedResponse(baseUri.Uri.PathAndQuery, cacheLifetime);
 					if (cachedResponse != null)
 					{
-						Logger.LogFormat(DebugLevel.API, "<color=cyan>Using cached {0} request to {1}</color>", method, baseUri.Uri);
+						Logger.LogFormat(DebugLevel.API, "Using cached {0} request to {1}", method, baseUri.Uri);
 						try
 						{
 							if (responseContainer.OnComplete(success: true, baseUri.Uri.PathAndQuery, 200, string.Empty, () => cachedResponse.Data, () => cachedResponse.DataAsText, cachedResponse.Timestamp))
@@ -369,7 +378,7 @@ namespace VRC.Core
 					}
 					else if (method == HTTPMethods.Get && activeRequests.ContainsKey(uriPath))
 					{
-						Logger.LogFormat(DebugLevel.API, "<color=cyan>Piggy-backing {0} request to {1}</color>", method, baseUri.Uri);
+						Logger.LogFormat(DebugLevel.API, "Piggy-backing {0} request to {1}", method, baseUri.Uri);
 						OnRequestFinishedDelegate originalCallback = activeRequests[uriPath].Callback;
 						activeRequests[uriPath].Callback = delegate(HTTPRequest req, HTTPResponse resp)
 						{
@@ -394,7 +403,7 @@ namespace VRC.Core
 					else
 					{
 						int requestId = ++lastRequestId;
-						Logger.LogFormat(DebugLevel.API, "<color=lightblue>[{0}] Sending {1} request to {2}</color>", requestId, method, baseUri.Uri);
+						Logger.LogFormat(DebugLevel.API, "[{0}] Sending {1} request to {2}", requestId, method, baseUri.Uri);
 						HTTPRequest hTTPRequest = new HTTPRequest(baseUri.Uri, delegate(HTTPRequest req, HTTPResponse resp)
 						{
 							if (activeRequests.ContainsKey(uriPath))
@@ -403,27 +412,37 @@ namespace VRC.Core
 							}
 							APIResponseHandler.HandleReponse(requestId, req, resp, responseContainer, retryCount, useCache);
 						});
-						if (method == HTTPMethods.Get)
+						if (authenticationRequired)
 						{
-							activeRequests.Add(uriPath, hTTPRequest);
+							if (credentials != null)
+							{
+								hTTPRequest.Credentials = new Credentials(AuthenticationTypes.Basic, credentials.Username, credentials.Password);
+							}
+							else if (!string.IsNullOrEmpty(ApiCredentials.GetAuthToken()))
+							{
+								List<Cookie> cookies = hTTPRequest.Cookies;
+								cookies.Add(new Cookie("auth", ApiCredentials.GetAuthToken()));
+								hTTPRequest.Cookies = cookies;
+							}
+							else
+							{
+								Logger.LogErrorFormat(DebugLevel.API, "No credentials!");
+							}
 						}
 						hTTPRequest.AddHeader("X-Requested-With", "XMLHttpRequest");
 						hTTPRequest.AddHeader("X-MacAddress", DeviceID);
 						hTTPRequest.AddHeader("Content-Type", (method != 0) ? "application/json" : "application/x-www-form-urlencoded");
 						hTTPRequest.AddHeader("Origin", "vrchat.com");
 						hTTPRequest.MethodType = method;
-						hTTPRequest.Credentials = (ApiCredentials.GetWebCredentials() as Credentials);
-						if (authenticationRequired && ApiCredentials.GetAuthToken() != null)
-						{
-							List<Cookie> cookies = hTTPRequest.Cookies;
-							cookies.Add(new Cookie("auth", ApiCredentials.GetAuthToken()));
-							hTTPRequest.Cookies = cookies;
-						}
 						hTTPRequest.ConnectTimeout = TimeSpan.FromSeconds(20.0);
 						hTTPRequest.Timeout = TimeSpan.FromSeconds(20.0);
 						if (!string.IsNullOrEmpty(text))
 						{
 							hTTPRequest.RawData = Encoding.UTF8.GetBytes(text);
+						}
+						if (method == HTTPMethods.Get)
+						{
+							activeRequests.Add(uriPath, hTTPRequest);
 						}
 						hTTPRequest.DisableCache = true;
 						hTTPRequest.Send();
@@ -443,7 +462,7 @@ namespace VRC.Core
 						EndpointAccessTimes[key].count++;
 					}
 				};
-				if (needsAPIKey && !IsOffline())
+				if (endpoint != "config" && string.IsNullOrEmpty(ApiKey) && !IsOffline())
 				{
 					FetchApiKey(action);
 				}

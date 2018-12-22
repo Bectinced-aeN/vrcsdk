@@ -140,6 +140,16 @@ namespace VRC.Core
 			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Auto);
 		}
 
+		public virtual void SaveField(string field, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null)
+		{
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			dictionary.Add("id", id);
+			object data = null;
+			ReadField(field, ref data);
+			dictionary.Add(field, data);
+			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Auto, dictionary);
+		}
+
 		public virtual void Post(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
 		{
 			PostOrPut(onSuccess, onFailure, PostOrPutSelect.Post, parameters);
@@ -389,7 +399,7 @@ namespace VRC.Core
 					{
 						OnSuccess = onSuccess,
 						OnError = onFailure
-					}, null, needsAPIKey: true, Application.get_isEditor());
+					}, null, authenticationRequired: true, Application.get_isEditor());
 				}
 			}
 		}

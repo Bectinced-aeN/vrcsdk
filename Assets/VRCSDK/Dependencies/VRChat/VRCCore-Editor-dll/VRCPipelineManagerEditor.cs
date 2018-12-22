@@ -30,10 +30,10 @@ public class VRCPipelineManagerEditor : Editor
 			{
 				API.SetOnlineMode(online: true);
 				loggingIn = true;
-				APIUser.Login(delegate(APIUser user)
+				APIUser.FetchCurrentUser(delegate(ApiModelContainer<APIUser> c)
 				{
 					loggingIn = false;
-					pipeline.user = user;
+					pipeline.user = (c.Model as APIUser);
 				}, delegate
 				{
 					loggingIn = false;

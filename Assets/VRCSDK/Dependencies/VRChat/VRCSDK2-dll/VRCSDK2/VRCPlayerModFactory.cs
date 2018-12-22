@@ -7,13 +7,10 @@ namespace VRCSDK2
 	{
 		public enum PlayerModType
 		{
-			Jump,
-			Speed,
-			Voice,
-			RoomKeys,
-			Health,
-			Gun,
-			Prop
+			Jump = 0,
+			Speed = 1,
+			Voice = 2,
+			Health = 4
 		}
 
 		public enum HealthOnDeathAction
@@ -24,7 +21,7 @@ namespace VRCSDK2
 
 		public static VRCPlayerMod Create(PlayerModType modType)
 		{
-			//IL_023c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0124: Unknown result type (might be due to invalid IL or missing references)
 			List<VRCPlayerModProperty> list = new List<VRCPlayerModProperty>();
 			switch (modType)
 			{
@@ -40,27 +37,10 @@ namespace VRCSDK2
 				list.Add(new VRCPlayerModProperty("talkDistance", 20f));
 				list.Add(new VRCPlayerModProperty("is3DMode", propValue: true));
 				return new VRCPlayerMod("voice", list, "PlayerModComponentVoice");
-			case PlayerModType.RoomKeys:
-				for (int i = 0; i < 10; i++)
-				{
-					list.Add(new VRCPlayerModProperty("EventHandler:" + i, null));
-					list.Add(new VRCPlayerModProperty("EventName:" + i, "key"));
-					list.Add(new VRCPlayerModProperty("EventKey:" + i, 48 + i));
-					list.Add(new VRCPlayerModProperty("EventBroadcast:" + i, VRC_EventHandler.VrcBroadcastType.Always));
-				}
-				return new VRCPlayerMod("roomKeys", list, "PlayerModComponentRoomKeys");
 			case PlayerModType.Health:
 				list.Add(new VRCPlayerModProperty("totalHealth", 100f));
 				list.Add(new VRCPlayerModProperty("onDeathAction", HealthOnDeathAction.Respawn));
 				return new VRCPlayerMod("health", list, "PlayerModComponentHealth");
-			case PlayerModType.Gun:
-				list.Add(new VRCPlayerModProperty("GunPrefab", null));
-				list.Add(new VRCPlayerModProperty("GunAnimations", null));
-				return new VRCPlayerMod("gun", list, "PlayerModComponentGun");
-			case PlayerModType.Prop:
-				list.Add(new VRCPlayerModProperty("PropPrefab", null));
-				list.Add(new VRCPlayerModProperty("PropAnimations", null));
-				return new VRCPlayerMod("prop", list, "PlayerModComponentProp");
 			default:
 				throw new UnityException("[ERROR] Unknown PlayerModType. Either add the modtype to PlayerModType enum or use PlayerModFactory.Create with the correct params.");
 			}

@@ -45,10 +45,10 @@ public class VRC_SdkBuilder : MonoBehaviour
 		}
 		if (!APIUser.get_IsLoggedInWithCredentials() && ApiCredentials.Load())
 		{
-			APIUser.Login((Action<APIUser>)delegate(APIUser user)
+			APIUser.FetchCurrentUser((Action<ApiModelContainer<APIUser>>)delegate(ApiModelContainer<APIUser> c)
 			{
-				AnalyticsSDK.LoggedInUserChanged(user);
-			}, (Action<string>)null);
+				AnalyticsSDK.LoggedInUserChanged(c.get_Model() as APIUser);
+			}, (Action<ApiModelContainer<APIUser>>)null);
 		}
 		if (!APIUser.get_IsLoggedInWithCredentials())
 		{

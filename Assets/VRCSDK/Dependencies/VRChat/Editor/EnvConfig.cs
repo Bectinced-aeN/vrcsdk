@@ -588,6 +588,8 @@ public class EnvConfig
             PlayerSettings.virtualRealitySupported = true;
 #endif
 
+        PlayerSettings.graphicsJobs = false; // else we get occasional crashing
+
         PlayerSettings.gpuSkinning = true;
 
         PlayerSettings.stereoRenderingPath = StereoRenderingPath.SinglePass;

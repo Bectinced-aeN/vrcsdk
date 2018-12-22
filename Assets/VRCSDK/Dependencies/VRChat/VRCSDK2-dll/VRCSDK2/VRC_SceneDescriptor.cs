@@ -108,7 +108,7 @@ namespace VRCSDK2
 		private static Dictionary<string, Material> sDynamicMaterials;
 
 		[Range(33f, 150f)]
-		public int UpdateTimeInMS = 33;
+		public int UpdateTimeInMS = 66;
 
 		[HideInInspector]
 		public Texture2D[] LightMapsNear;

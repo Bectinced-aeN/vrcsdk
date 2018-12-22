@@ -212,7 +212,7 @@ namespace VRC.Core
 						onError();
 					}
 				}
-			}, null, needsAPIKey: false, authenticationRequired: false, disableCache: true);
+			}, null, authenticationRequired: false, disableCache: true);
 		}
 	}
 }

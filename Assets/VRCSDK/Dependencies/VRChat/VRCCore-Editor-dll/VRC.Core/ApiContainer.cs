@@ -14,6 +14,12 @@ namespace VRC.Core
 
 		public Action<ApiContainer> OnSuccess;
 
+		public Dictionary<string, string> Cookies
+		{
+			get;
+			set;
+		}
+
 		public bool IsValid
 		{
 			get;
@@ -70,7 +76,7 @@ namespace VRC.Core
 				{
 					responseError = value;
 					string text = responseError.Replace("{", "{{").Replace("}", "}}");
-					Debug.Log((object)("<color=red>" + ((Model == null) ? string.Empty : (Model.GetType().Name + ":" + Model.id + ": ")) + "</color>\n" + text + "\n\n" + CreatedAt));
+					Debug.Log((object)(string.Empty + ((Model == null) ? string.Empty : (Model.GetType().Name + ":" + Model.id + ": ")) + "\n" + text + "\n\n" + CreatedAt));
 				}
 			}
 		}
@@ -115,7 +121,7 @@ namespace VRC.Core
 
 		public bool OnComplete(bool success, string endpoint, int responseCode, string responseText, Func<byte[]> readData, Func<string> readTextData, float dataTimestamp = -1f)
 		{
-			Logger.Log("<color=magenta>API response from " + endpoint + ":\n" + readTextData() + "</color>", DebugLevel.API);
+			Logger.Log("API response from " + endpoint + ":\n" + readTextData() + string.Empty, DebugLevel.API);
 			try
 			{
 				if (!success || responseCode < 200 || responseCode >= 400)

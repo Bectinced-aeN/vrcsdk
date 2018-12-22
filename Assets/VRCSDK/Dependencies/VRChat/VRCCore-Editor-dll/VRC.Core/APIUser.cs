@@ -40,6 +40,21 @@ namespace VRC.Core
 			MAX_GROUPS
 		}
 
+		public enum WorldPlaylists
+		{
+			Playlist_1 = 0,
+			Playlist_2 = 1,
+			Playlist_3 = 2,
+			MAX_PLAYLISTS = 3,
+			NOT_IN_A_PLAYLIST = 3
+		}
+
+		public enum AvatarFavorites
+		{
+			Avatars_1,
+			MAX_AVATAR_FAVORITE_GROUPS
+		}
+
 		public const float FriendsListCacheTime = 10f;
 
 		public const float SingleRecordCacheTime = 60f;
@@ -48,17 +63,30 @@ namespace VRC.Core
 
 		private const int MAX_STATUS_DESCRIPTION_LENGTH = 32;
 
+		private List<string> _playlistNames = new List<string>
+		{
+			"worlds1",
+			"worlds2",
+			"worlds3"
+		};
+
+		public bool hasFetchedPlaylistNames;
+
 		public bool hasFetchedFavoriteWorlds;
 
 		private List<string> _favoriteWorldIds;
 
 		public bool hasFetchedFavoriteAvatars;
 
-		private List<string> _favoriteAvatarIds;
+		public List<string> _favoriteAvatarIds;
 
 		public bool[] hasFetchedFavoriteFriendsInGroup = new bool[3];
 
-		private List<string>[] _favoriteFriendIdsInGroup = new List<string>[3];
+		public List<string>[] _favoriteFriendIdsInGroup = new List<string>[3];
+
+		public bool[] hasFetchedWorldsInPlaylist = new bool[3];
+
+		public List<string>[] _worldIdsInPlaylist = new List<string>[3];
 
 		private static Hashtable statusDefaultDescriptions = new Hashtable
 		{
@@ -129,8 +157,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[DefaultValue(DeveloperType.None)]
 		[ApiField]
+		[DefaultValue(DeveloperType.None)]
 		public DeveloperType developerType
 		{
 			get;
@@ -320,10 +348,11 @@ namespace VRC.Core
 		}
 
 		[ApiField(Required = false)]
-		public string networkSessionId
+		[Obsolete("No.")]
+		private string networkSessionId
 		{
 			get;
-			protected set;
+			set;
 		}
 
 		[ApiField(Required = false)]
@@ -355,7 +384,38 @@ namespace VRC.Core
 		}
 
 		[ApiField(Required = false)]
+		public bool allowAvatarCopying
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
 		public List<string> friendGroupNames
+		{
+			get;
+			protected set;
+		}
+
+		public List<string> playlistDisplayNames
+		{
+			get;
+			protected set;
+		}
+
+		private List<string> playlistNames
+		{
+			get
+			{
+				return _playlistNames;
+			}
+			set
+			{
+				_playlistNames = value;
+			}
+		}
+
+		public List<string> playlistPrivacy
 		{
 			get;
 			protected set;
@@ -487,6 +547,49 @@ namespace VRC.Core
 			return 60f;
 		}
 
+		public void FetchPlaylistNames(Action successCallback = null, Action<string> errorCallback = null)
+		{
+			if (!hasFetchedPlaylistNames || successCallback != null)
+			{
+				Dictionary<string, object> dictionary = new Dictionary<string, object>();
+				dictionary["type"] = "world";
+				dictionary["ownerId"] = base.id;
+				hasFetchedPlaylistNames = true;
+				ApiModelListContainer<ApiGroup> apiModelListContainer = new ApiModelListContainer<ApiGroup>();
+				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				{
+					if (c != null)
+					{
+						List<ApiGroup> list = new List<ApiGroup>();
+						foreach (ApiGroup responseModel in (c as ApiModelListContainer<ApiGroup>).ResponseModels)
+						{
+							list.Add(responseModel);
+						}
+						for (int i = 0; i < list.Count; i++)
+						{
+							_playlistNames[i] = list[i].name;
+							playlistDisplayNames[i] = list[i].displayName;
+						}
+					}
+					if (successCallback != null)
+					{
+						successCallback();
+					}
+				};
+				apiModelListContainer.OnError = delegate(ApiContainer c)
+				{
+					Debug.LogError((object)("Could not fetch users groups - " + c.Error));
+					hasFetchedPlaylistNames = false;
+					if (errorCallback != null)
+					{
+						errorCallback(c.Error);
+					}
+				};
+				ApiModelListContainer<ApiGroup> responseContainer = apiModelListContainer;
+				API.SendGetRequest("favorite/groups", responseContainer, dictionary, disableCache: true);
+			}
+		}
+
 		public List<string> GetFavoriteFriendIdsInGroup(FriendGroups group)
 		{
 			return _favoriteFriendIdsInGroup[(int)group];
@@ -524,6 +627,86 @@ namespace VRC.Core
 			return ((_favoriteFriendIdsInGroup[0] != null) ? _favoriteFriendIdsInGroup[0].Count : 0) + ((_favoriteFriendIdsInGroup[1] != null) ? _favoriteFriendIdsInGroup[1].Count : 0) + ((_favoriteFriendIdsInGroup[2] != null) ? _favoriteFriendIdsInGroup[2].Count : 0);
 		}
 
+		public List<string> GetWorldIdsInPlaylist(WorldPlaylists playlist)
+		{
+			return _worldIdsInPlaylist[(int)playlist];
+		}
+
+		public void SetWorldIdsInPlaylist(List<string> worldIds, WorldPlaylists playlist)
+		{
+			_worldIdsInPlaylist[(int)playlist] = worldIds;
+		}
+
+		public void AddWorldToPlaylist(string worldId, WorldPlaylists playlist)
+		{
+			if (_worldIdsInPlaylist[(int)playlist] == null)
+			{
+				_worldIdsInPlaylist[(int)playlist] = new List<string>();
+			}
+			_worldIdsInPlaylist[(int)playlist].Add(worldId);
+		}
+
+		public void RemoveWorldFromPlaylist(string worldId)
+		{
+			if (_worldIdsInPlaylist[0] != null)
+			{
+				_worldIdsInPlaylist[0].Remove(worldId);
+			}
+			if (_worldIdsInPlaylist[1] != null)
+			{
+				_worldIdsInPlaylist[1].Remove(worldId);
+			}
+			if (_worldIdsInPlaylist[2] != null)
+			{
+				_worldIdsInPlaylist[2].Remove(worldId);
+			}
+		}
+
+		public WorldPlaylists FindPlaylistContainingWorld(string worldId)
+		{
+			if (_worldIdsInPlaylist[0] != null && _worldIdsInPlaylist[0].Contains(worldId))
+			{
+				return WorldPlaylists.Playlist_1;
+			}
+			if (_worldIdsInPlaylist[1] != null && _worldIdsInPlaylist[1].Contains(worldId))
+			{
+				return WorldPlaylists.Playlist_1;
+			}
+			if (_worldIdsInPlaylist[2] != null && _worldIdsInPlaylist[2].Contains(worldId))
+			{
+				return WorldPlaylists.Playlist_1;
+			}
+			return WorldPlaylists.MAX_PLAYLISTS;
+		}
+
+		public bool IsWorldInPlaylist(WorldPlaylists playlist, string worldId)
+		{
+			return _worldIdsInPlaylist[(int)playlist] != null && _worldIdsInPlaylist[(int)playlist].Contains(worldId);
+		}
+
+		public bool IsWorldInPlaylists(string worldId)
+		{
+			return IsWorldInPlaylist(WorldPlaylists.Playlist_1, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_2, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_3, worldId);
+		}
+
+		public void ClearPlaylist(WorldPlaylists playlist)
+		{
+			if (_worldIdsInPlaylist[(int)playlist] != null)
+			{
+				_worldIdsInPlaylist[(int)playlist] = null;
+			}
+		}
+
+		public int GetTotalWorldsInPlaylist(WorldPlaylists playlist)
+		{
+			return (_worldIdsInPlaylist[(int)playlist] != null) ? _worldIdsInPlaylist[(int)playlist].Count : 0;
+		}
+
+		public int GetTotalWorldsInAllPlaylists()
+		{
+			return ((_worldIdsInPlaylist[0] != null) ? _worldIdsInPlaylist[0].Count : 0) + ((_worldIdsInPlaylist[1] != null) ? _worldIdsInPlaylist[1].Count : 0) + ((_worldIdsInPlaylist[2] != null) ? _worldIdsInPlaylist[2].Count : 0);
+		}
+
 		public static string truncatedStatusDescription(string statusString)
 		{
 			return string.IsNullOrEmpty(statusString) ? string.Empty : ((statusString.Length <= 32) ? statusString : statusString.Substring(0, 32));
@@ -546,9 +729,9 @@ namespace VRC.Core
 			}
 		}
 
-		public static FriendGroups StringToFriendsGroup(string statusValue)
+		public static FriendGroups StringToFriendsGroup(string groupName)
 		{
-			switch (statusValue)
+			switch (groupName)
 			{
 			case "group_0":
 				return FriendGroups.Group_1;
@@ -557,7 +740,7 @@ namespace VRC.Core
 			case "group_2":
 				return FriendGroups.Group_3;
 			default:
-				throw new Exception("Argument not handled in switch: " + statusValue);
+				throw new Exception("Argument not handled in switch: " + groupName);
 			}
 		}
 
@@ -590,6 +773,144 @@ namespace VRC.Core
 			}
 		}
 
+		public static string truncatedPlaylistName(string playlistName)
+		{
+			return string.IsNullOrEmpty(playlistName) ? string.Empty : ((playlistName.Length <= 24) ? playlistName : playlistName.Substring(0, 24));
+		}
+
+		public string GetPlaylistGroupName(WorldPlaylists value)
+		{
+			switch (value)
+			{
+			case WorldPlaylists.Playlist_1:
+				return playlistNames[0];
+			case WorldPlaylists.Playlist_2:
+				return playlistNames[1];
+			case WorldPlaylists.Playlist_3:
+				return playlistNames[2];
+			case WorldPlaylists.MAX_PLAYLISTS:
+				return null;
+			default:
+				throw new Exception("Argument not handled in switch: " + value);
+			}
+		}
+
+		public WorldPlaylists StringToPlaylistGroup(string playlistName)
+		{
+			if (string.Equals(playlistName, playlistNames[2]))
+			{
+				return WorldPlaylists.Playlist_3;
+			}
+			if (string.Equals(playlistName, playlistNames[1]))
+			{
+				return WorldPlaylists.Playlist_2;
+			}
+			return WorldPlaylists.Playlist_1;
+		}
+
+		public void GetPlaylistDisplayInfoForPlaylist(WorldPlaylists playlistIndex, Action<bool> onFetchedPlaylistInformation = null)
+		{
+			ApiGroup.GetGroupDisplayNameAndPrivacy(base.id, ApiGroup.GroupType.World, GetPlaylistGroupName(playlistIndex), delegate(ApiGroup c)
+			{
+				Debug.Log((object)("PLAYLIST GET id=" + base.id + c.name + " " + c.visibility + " " + c.displayName));
+				SetPlaylistPrivacyLevel(StringToPlaylistGroup(c.name), ApiGroup.StringToPrivacyValue(c.visibility));
+				SetPlaylistDisplayName(StringToPlaylistGroup(c.name), c.displayName);
+				if (onFetchedPlaylistInformation != null)
+				{
+					onFetchedPlaylistInformation(obj: false);
+				}
+			}, delegate(string obj)
+			{
+				if (onFetchedPlaylistInformation != null)
+				{
+					onFetchedPlaylistInformation(obj: true);
+				}
+				Debug.LogError((object)("Error fetching playlist info: " + obj));
+			});
+		}
+
+		public string GetPlaylistDisplayName(WorldPlaylists index)
+		{
+			if (playlistDisplayNames != null && index < WorldPlaylists.MAX_PLAYLISTS && (int)index < playlistDisplayNames.Count && !string.IsNullOrEmpty(playlistDisplayNames[(int)index]))
+			{
+				return playlistDisplayNames[(int)index];
+			}
+			return "Playlist " + (int)(index + 1);
+		}
+
+		public void SetPlaylistDisplayName(WorldPlaylists index, string name)
+		{
+			if (playlistDisplayNames == null)
+			{
+				playlistDisplayNames = new List<string>();
+			}
+			if ((int)index < playlistDisplayNames.Count)
+			{
+				playlistDisplayNames[(int)index] = name;
+			}
+			else
+			{
+				while (playlistDisplayNames.Count < (int)index)
+				{
+					playlistDisplayNames.Add("Playlist " + (playlistDisplayNames.Count + 1));
+				}
+				playlistDisplayNames.Add(name);
+			}
+		}
+
+		public ApiGroup.Privacy GetPlaylistPrivacyLevel(WorldPlaylists index)
+		{
+			if (playlistPrivacy != null && index < WorldPlaylists.MAX_PLAYLISTS && (int)index < playlistPrivacy.Count)
+			{
+				return ApiGroup.StringToPrivacyValue(playlistPrivacy[(int)index]);
+			}
+			return ApiGroup.Privacy.Private;
+		}
+
+		public void SetPlaylistPrivacyLevel(WorldPlaylists index, ApiGroup.Privacy privacyLevel)
+		{
+			if (playlistPrivacy == null)
+			{
+				playlistPrivacy = new List<string>();
+			}
+			if ((int)index < playlistPrivacy.Count)
+			{
+				playlistPrivacy[(int)index] = ApiGroup.PrivacyValueToString(privacyLevel);
+			}
+			else
+			{
+				while (playlistPrivacy.Count < (int)index)
+				{
+					playlistPrivacy.Add(ApiGroup.PrivacyValueToString(ApiGroup.Privacy.Private));
+				}
+				playlistPrivacy.Add(ApiGroup.PrivacyValueToString(privacyLevel));
+			}
+		}
+
+		public static string GetAvatarGroupName(AvatarFavorites value)
+		{
+			switch (value)
+			{
+			case AvatarFavorites.Avatars_1:
+				return "avatars1";
+			case AvatarFavorites.MAX_AVATAR_FAVORITE_GROUPS:
+				return null;
+			default:
+				throw new Exception("Argument not handled in switch: " + value);
+			}
+		}
+
+		public static AvatarFavorites StringToAvatarGroup(string avatarGroupName)
+		{
+			switch (avatarGroupName)
+			{
+			case "avatars1":
+				return AvatarFavorites.Avatars_1;
+			default:
+				throw new Exception("Argument not handled in switch: " + avatarGroupName);
+			}
+		}
+
 		protected override bool ReadField(string fieldName, ref object data)
 		{
 			switch (fieldName)
@@ -613,19 +934,44 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchCurrentUser(Action<APIUser> onSuccess, Action<string> onError)
+		public static void FetchCurrentUser(Action<ApiModelContainer<APIUser>> onSuccess, Action<ApiModelContainer<APIUser>> onError)
 		{
-			if (!IsLoggedIn)
+			if (!ApiCredentials.Load())
 			{
-				onError?.Invoke("Not logged in");
+				if (onError != null)
+				{
+					onError(new ApiModelContainer<APIUser>
+					{
+						Error = "Not logged in."
+					});
+				}
 			}
 			else
 			{
-				Login(onSuccess, onError);
+				Logger.Log("Fetching user", DebugLevel.API);
+				ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
+				apiModelContainer.OnSuccess = delegate(ApiContainer c)
+				{
+					CurrentUser = (c.Model as APIUser);
+					if (onSuccess != null)
+					{
+						onSuccess(c as ApiModelContainer<APIUser>);
+					}
+				};
+				apiModelContainer.OnError = delegate(ApiContainer c)
+				{
+					Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.API);
+					if (onError != null)
+					{
+						onError(c as ApiModelContainer<APIUser>);
+					}
+				};
+				ApiModelContainer<APIUser> responseContainer = apiModelContainer;
+				API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f);
 			}
 		}
 
-		public static void Register(string username, string email, string password, string birthday, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		public static void Register(string username, string email, string password, string birthday, Action<ApiModelContainer<APIUser>> successCallback = null, Action<ApiModelContainer<APIUser>> errorCallback = null)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary.Add("username", username);
@@ -641,20 +987,20 @@ namespace VRC.Core
 					CurrentUser = (c.Model as APIUser);
 					if (successCallback != null)
 					{
-						successCallback(CurrentUser);
+						successCallback(c as ApiModelContainer<APIUser>);
 					}
 				},
 				OnError = delegate(ApiContainer c)
 				{
 					if (errorCallback != null)
 					{
-						errorCallback(c.Error);
+						errorCallback(c as ApiModelContainer<APIUser>);
 					}
 				}
 			}, requestParams);
 		}
 
-		public void UpdateAccountInfo(string email, string birthday, string acceptedTOSVersion, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		public void UpdateAccountInfo(string email, string birthday, string acceptedTOSVersion, Action<ApiModelContainer<APIUser>> successCallback = null, Action<ApiModelContainer<APIUser>> errorCallback = null)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			if (!string.IsNullOrEmpty(email))
@@ -683,97 +1029,78 @@ namespace VRC.Core
 				{
 					if (successCallback != null)
 					{
-						successCallback(c.Model as APIUser);
+						successCallback(c as ApiModelContainer<APIUser>);
 					}
 				},
 				OnError = delegate(ApiContainer c)
 				{
 					if (errorCallback != null)
 					{
-						errorCallback(c.Error);
+						errorCallback(c as ApiModelContainer<APIUser>);
 					}
 				}
 			}, dictionary);
 		}
 
-		public void SetSessionId(string sessionId, Action<APIUser> successCallback = null, Action<string> errorCallback = null)
+		public static void Login(string usernameOrEmail, string password, Action<ApiModelContainer<APIUser>> successCallback = null, Action<ApiModelContainer<APIUser>> errorCallback = null)
 		{
-			if (IsLoggedInWithCredentials)
-			{
-				Dictionary<string, object> dictionary = new Dictionary<string, object>();
-				dictionary.Add("networkSessionId", sessionId);
-				Dictionary<string, object> requestParams = dictionary;
-				API.SendPutRequest("users/" + base.id, new ApiModelContainer<APIUser>(this)
-				{
-					OnSuccess = delegate(ApiContainer c)
-					{
-						if (successCallback != null)
-						{
-							successCallback(c.Model as APIUser);
-						}
-					},
-					OnError = delegate(ApiContainer c)
-					{
-						if (errorCallback != null)
-						{
-							errorCallback(c.Error);
-						}
-					}
-				}, requestParams);
-			}
-		}
-
-		public static void Login(Action<APIUser> successCallback = null, Action<string> errorCallback = null)
-		{
-			Logger.Log("Logging in", DebugLevel.All);
+			Logger.Log("Logging in", DebugLevel.API);
 			ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
 			apiModelContainer.OnSuccess = delegate(ApiContainer c)
 			{
 				CurrentUser = (c.Model as APIUser);
 				if (successCallback != null)
 				{
-					successCallback(CurrentUser);
+					successCallback(c as ApiModelContainer<APIUser>);
 				}
 			};
 			apiModelContainer.OnError = delegate(ApiContainer c)
 			{
-				Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.All);
+				Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.API);
 				if (errorCallback != null)
 				{
-					errorCallback(c.Error);
+					errorCallback(c as ApiModelContainer<APIUser>);
 				}
 			};
 			ApiModelContainer<APIUser> responseContainer = apiModelContainer;
-			API.SendGetRequest("auth/user", responseContainer, null, disableCache: true);
+			API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f, new API.CredentialsBundle
+			{
+				Username = usernameOrEmail,
+				Password = password
+			});
 		}
 
-		public static void ThirdPartyLogin(string endpoint, Dictionary<string, object> parameters, Action<string, APIUser> onFetchSuccess = null, Action<string> onFetchError = null)
+		public static void ThirdPartyLogin(string endpoint, Dictionary<string, object> parameters, Action<string, ApiModelContainer<APIUser>> onFetchSuccess = null, Action<ApiModelContainer<APIUser>> onFetchError = null)
 		{
-			Logger.Log("Third Party Login: " + endpoint, DebugLevel.All);
+			Logger.Log("Third Party Login: " + endpoint, DebugLevel.API);
 			ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
 			apiModelContainer.OnSuccess = delegate(ApiContainer c)
 			{
 				CurrentUser = (c.Model as APIUser);
 				if (onFetchSuccess != null)
 				{
-					onFetchSuccess(CurrentUser.authToken, CurrentUser);
+					onFetchSuccess(CurrentUser.authToken, c as ApiModelContainer<APIUser>);
 				}
 			};
 			apiModelContainer.OnError = delegate(ApiContainer c)
 			{
-				Logger.Log("NOT Authenticated", DebugLevel.All);
+				Logger.Log("NOT Authenticated: " + c.Error.Replace("{", "{{").Replace("}", "}}"), DebugLevel.API);
 				if (onFetchError != null)
 				{
-					onFetchError(c.Error);
+					onFetchError(c as ApiModelContainer<APIUser>);
 				}
 			};
 			ApiModelContainer<APIUser> responseContainer = apiModelContainer;
 			int retryCount = 0;
-			API.SendRequest("auth/" + endpoint, HTTPMethods.Post, responseContainer, parameters, needsAPIKey: true, authenticationRequired: true, disableCache: false, 3600f, retryCount);
+			API.SendRequest("auth/" + endpoint, HTTPMethods.Post, responseContainer, parameters, authenticationRequired: false, disableCache: false, 3600f, retryCount);
 		}
 
 		public static void Logout()
 		{
+			if (IsLoggedInWithCredentials)
+			{
+				API.SendPutRequest("logout");
+			}
 			CurrentUser = null;
 		}
 
@@ -822,6 +1149,27 @@ namespace VRC.Core
 			};
 			ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
 			API.SendGetRequest("users?search=" + searchQuery, responseContainer, null, disableCache: false, 60f);
+		}
+
+		public static void FetchUser(string userId, Action<APIUser> successCallback, Action<string> errorCallback)
+		{
+			ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
+			apiModelContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback(c.Model as APIUser);
+				}
+			};
+			apiModelContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelContainer<APIUser> responseContainer = apiModelContainer;
+			API.SendGetRequest("users/" + userId, responseContainer, null, disableCache: true);
 		}
 
 		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, bool useCache = true)
@@ -920,16 +1268,55 @@ namespace VRC.Core
 				if (!hasFetchedFavoriteFriendsInGroup[j])
 				{
 					int i = j;
-					ApiFavorite.FetchFavoriteIds(ApiFavorite.FavoriteType.Friend, delegate(List<string> userIds)
+					ApiGroup.FetchGroupMemberIds(CurrentUser.id, ApiGroup.GroupType.Friend, delegate(List<string> userIds)
 					{
 						SetFavoriteFriendIdsInGroup(userIds, (FriendGroups)i);
 						hasFetchedFavoriteFriendsInGroup[i] = true;
 					}, delegate(string obj)
 					{
-						Debug.LogError((object)("Error fetching favorite friends: " + obj));
+						Debug.LogError((object)("Error fetching favorite friends : " + obj));
 					}, GetFriendsGroupName((FriendGroups)i));
 				}
 			}
+		}
+
+		public static void FetchFavoriteWorlds(Action successCallback = null, Action<string> errorCallback = null)
+		{
+			ApiGroup.FetchGroupMemberIds(CurrentUser.id, ApiGroup.GroupType.World, delegate(List<string> worldIds)
+			{
+				CurrentUser.favoriteWorldIds = worldIds;
+				if (successCallback != null)
+				{
+					successCallback();
+				}
+			}, delegate(string obj)
+			{
+				Debug.LogError((object)("Error fetching favorite worlds: " + obj));
+				if (errorCallback != null)
+				{
+					errorCallback(obj);
+				}
+			});
+		}
+
+		public static void FetchFavoriteAvatars(Action successCallback = null, Action<string> errorCallback = null)
+		{
+			ApiGroup.FetchGroupMemberIds(CurrentUser.id, ApiGroup.GroupType.Avatar, delegate(List<string> avatarIds)
+			{
+				CurrentUser.favoriteAvatarIds = avatarIds;
+				CurrentUser.hasFetchedFavoriteAvatars = true;
+				if (successCallback != null)
+				{
+					successCallback();
+				}
+			}, delegate(string obj)
+			{
+				Debug.LogError((object)("Error fetching favorite avatars: " + obj));
+				if (errorCallback != null)
+				{
+					errorCallback(obj);
+				}
+			});
 		}
 
 		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)

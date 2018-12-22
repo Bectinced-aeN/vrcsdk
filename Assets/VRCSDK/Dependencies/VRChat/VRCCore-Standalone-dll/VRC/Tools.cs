@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using VRC.Core;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Caching;
@@ -228,7 +229,28 @@ namespace VRC
 
 		public static T[] FindSceneObjectsOfTypeAll<T>() where T : Component
 		{
-			return Resources.FindObjectsOfTypeAll<T>();
+			//IL_002c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0032: Invalid comparison between Unknown and I4
+			//IL_0044: Unknown result type (might be due to invalid IL or missing references)
+			//IL_004b: Invalid comparison between Unknown and I4
+			//IL_0062: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0067: Unknown result type (might be due to invalid IL or missing references)
+			List<T> list = new List<T>();
+			T[] array = Resources.FindObjectsOfTypeAll<T>();
+			T[] array2 = array;
+			for (int i = 0; i < array2.Length; i++)
+			{
+				T item = array2[i];
+				if ((int)item.get_gameObject().get_hideFlags() != 8 && (int)item.get_gameObject().get_hideFlags() != 61)
+				{
+					Scene scene = item.get_gameObject().get_scene();
+					if (scene.get_name() != null)
+					{
+						list.Add(item);
+					}
+				}
+			}
+			return list.ToArray();
 		}
 
 		public static T[] TwoDArrayToOneDArray<T>(T[,] twoDArr)
