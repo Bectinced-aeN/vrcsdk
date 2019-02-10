@@ -439,7 +439,8 @@ namespace VRC.Core
 						hTTPRequest.AddHeader("Origin", "vrchat.com");
 						hTTPRequest.MethodType = method;
 						hTTPRequest.ConnectTimeout = TimeSpan.FromSeconds(20.0);
-						hTTPRequest.Timeout = TimeSpan.FromSeconds(20.0);
+						hTTPRequest.Timeout = TimeSpan.FromSeconds(60.0);
+						hTTPRequest.EnableTimoutForStreaming = true;
 						if (!string.IsNullOrEmpty(text))
 						{
 							hTTPRequest.RawData = Encoding.UTF8.GetBytes(text);

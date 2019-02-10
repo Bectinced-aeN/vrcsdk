@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace VRC.Core
@@ -32,38 +33,39 @@ namespace VRC.Core
 				authToken = SecurePlayerPrefs.GetString("authToken", "vl9u1grTnvXA");
 				humanName = SecurePlayerPrefs.GetString("humanName", "vl9u1grTnvXA");
 			}
-			catch
+			catch (Exception ex)
 			{
+				Debug.LogError((object)("Exception loading credentials: " + ex.Message + "\n" + ex.StackTrace));
 			}
 			return !string.IsNullOrEmpty(authToken);
 		}
 
-		public static void Set(string humanName, string providerid, string provider, string token)
+		public static void Set(string _humanName, string _providerId, string _provider, string _token)
 		{
-			if (provider == null)
+			if (_provider == null)
 			{
-				provider = string.Empty;
+				_provider = string.Empty;
 			}
-			if (providerid == null)
+			if (_providerId == null)
 			{
-				providerid = string.Empty;
+				_providerId = string.Empty;
 			}
-			if (token == null)
+			if (_token == null)
 			{
-				token = string.Empty;
+				_token = string.Empty;
 			}
-			if (humanName == null)
+			if (_humanName == null)
 			{
-				humanName = string.Empty;
+				_humanName = string.Empty;
 			}
-			SecurePlayerPrefs.SetString("authTokenProvider", "vrchat", "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("authTokenProviderUserId", providerid, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("authToken", token, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("humanName", humanName, "vl9u1grTnvXA");
-			humanName = humanName;
-			authToken = token;
-			providerid = providerid;
-			provider = provider;
+			SecurePlayerPrefs.SetString("authTokenProvider", _provider, "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("authTokenProviderUserId", _providerId, "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("authToken", _token, "vl9u1grTnvXA");
+			SecurePlayerPrefs.SetString("humanName", _humanName, "vl9u1grTnvXA");
+			humanName = _humanName;
+			authToken = _token;
+			providerUserId = _providerId;
+			provider = _provider;
 			PlayerPrefs.Save();
 		}
 

@@ -163,6 +163,7 @@ public class ImageDownloader : MonoBehaviour
 		if (Instance == null)
 		{
 			GameObject val = new GameObject("ImageDownloader");
+			val.set_tag("VRCGlobalRoot");
 			return val.AddComponent<ImageDownloader>();
 		}
 		return Instance;

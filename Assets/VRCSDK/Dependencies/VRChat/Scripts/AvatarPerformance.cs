@@ -199,7 +199,7 @@ namespace VRCSDK2
             ClothMaxVertices = 500,
             PhysicsColliderCount = 8,
             PhysicsRigidbodyCount = 8,
-            AudioSourceCount = 8
+            AudioSourceCount = 32
         };
 
         private PerformanceRating[] _performanceRatingCache;
@@ -1098,6 +1098,9 @@ namespace VRCSDK2
         static System.Reflection.FieldInfo _dynamicBoneCollidersFieldInfo = null;
         static bool _searchedOptionalTypes = false;
 
+        public delegate bool IgnoreDelegate(Component comp);
+        public static IgnoreDelegate ShouldIgnoreComponent;
+
         private readonly static object initLock = new object();
 
         public static AvatarPerformanceStats CalculatePerformanceStats(string avatarName, GameObject avatarObject)
@@ -1125,6 +1128,8 @@ namespace VRCSDK2
 
             List<Renderer> _rendererBuffer = new List<Renderer>(16);
             avatarObject.GetComponentsInChildren<Renderer>(_rendererBuffer);
+            if (ShouldIgnoreComponent != null)
+                _rendererBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
 
             // polys / bounds
             int polycount;
@@ -1147,12 +1152,16 @@ namespace VRCSDK2
 
                 List<Animator> _animatorBuffer = new List<Animator>(16);
                 avatarObject.GetComponentsInChildren<Animator>(_animatorBuffer);
+                if (ShouldIgnoreComponent != null)
+                    _animatorBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
                 animatorCount += _animatorBuffer.Count;
 
                 yield return null;
 
                 List<Animation> _animationBuffer = new List<Animation>(16);
                 avatarObject.GetComponentsInChildren<Animation>(_animationBuffer);
+                if (ShouldIgnoreComponent != null)
+                    _animationBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
                 animatorCount += _animationBuffer.Count;
 
                 perfStats.AnimatorCount = animatorCount;
@@ -1164,6 +1173,8 @@ namespace VRCSDK2
             {
                 List<Light> _lightBuffer = new List<Light>(16);
                 avatarObject.GetComponentsInChildren<Light>(_lightBuffer);
+                if (ShouldIgnoreComponent != null)
+                    _lightBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
                 perfStats.LightCount = _lightBuffer.Count;
             }
 
@@ -1184,6 +1195,8 @@ namespace VRCSDK2
 
                 List<Cloth> _clothBuffer = new List<Cloth>(16);
                 avatarObject.GetComponentsInChildren<Cloth>(_clothBuffer);
+                if (ShouldIgnoreComponent != null)
+                    _clothBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
                 perfStats.ClothCount = _clothBuffer.Count;
 
                 foreach (var c in _clothBuffer)
@@ -1207,12 +1220,14 @@ namespace VRCSDK2
             {
                 List<Collider> _colliderBuffer = new List<Collider>(16);
                 avatarObject.GetComponentsInChildren<Collider>(_colliderBuffer);
+                _colliderBuffer.RemoveAll(c => ShouldIgnorePhysicsComponent(c));
                 perfStats.PhysicsColliderCount = _colliderBuffer.Count;
 
                 yield return null;
 
                 List<Rigidbody> _rigidbodyBuffer = new List<Rigidbody>(16);
                 avatarObject.GetComponentsInChildren<Rigidbody>(_rigidbodyBuffer);
+                _rigidbodyBuffer.RemoveAll(c => ShouldIgnorePhysicsComponent(c));
                 perfStats.PhysicsRigidbodyCount = _rigidbodyBuffer.Count;
             }
 
@@ -1222,6 +1237,8 @@ namespace VRCSDK2
             {
                 List<AudioSource> _audioSourceBuffer = new List<AudioSource>(16);
                 avatarObject.GetComponentsInChildren<AudioSource>(_audioSourceBuffer);
+                if (ShouldIgnoreComponent != null)
+                    _audioSourceBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
                 perfStats.AudioSourceCount = _audioSourceBuffer.Count;
             }
 
@@ -1231,6 +1248,17 @@ namespace VRCSDK2
             perfStats.CalculateAllPerformanceRatings();
 
             onDone(perfStats);
+        }
+
+        static bool ShouldIgnorePhysicsComponent(Component c)
+        {
+            if (ShouldIgnoreComponent != null && ShouldIgnoreComponent(c))
+                return true;
+
+            if (c.GetComponent<VRCSDK2.VRC_Station>() != null)
+                return true;
+
+            return false;
         }
 
         static int CountPolygons(Renderer r)
@@ -1478,12 +1506,14 @@ namespace VRCSDK2
 
             if (_dynamicBoneType != null)
             {
-                Component[] dynamicBones = avatarObject.GetComponentsInChildren(_dynamicBoneType, false);
-                dynamicBoneComponentCount = dynamicBones.Length;
+                List<Component> dynamicBones = avatarObject.GetComponentsInChildren(_dynamicBoneType, false).ToList();
+                if (ShouldIgnoreComponent != null)
+                    dynamicBones.RemoveAll(c => ShouldIgnoreComponent(c));
+                dynamicBoneComponentCount = dynamicBones.Count;
 
                 List<object> colliders = new List<object>();
 
-                for (int i = 0; i < dynamicBones.Length; i++)
+                for (int i = 0; i < dynamicBones.Count; i++)
                 {
                     var dynamicBone = dynamicBones[i];
 

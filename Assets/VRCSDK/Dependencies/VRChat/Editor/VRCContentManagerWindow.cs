@@ -23,6 +23,29 @@ public class VRCContentManagerWindow : EditorWindow
 
     static VRCContentManagerWindow window;
 
+    const int SCROLLBAR_RESERVED_REGION_WIDTH = 50;
+
+    const int WORLD_DESCRIPTION_FIELD_WIDTH = 200;
+    const int WORLD_IMAGE_BUTTON_WIDTH = 100;
+    const int WORLD_RELEASE_STATUS_FIELD_WIDTH = 100;
+    const int COPY_WORLD_ID_BUTTON_WIDTH = 75;
+    const int DELETE_WORLD_BUTTON_WIDTH = 75;
+    const int WORLD_ALL_INFORMATION_MAX_WIDTH = WORLD_DESCRIPTION_FIELD_WIDTH + WORLD_IMAGE_BUTTON_WIDTH + WORLD_RELEASE_STATUS_FIELD_WIDTH + COPY_WORLD_ID_BUTTON_WIDTH + DELETE_WORLD_BUTTON_WIDTH + SCROLLBAR_RESERVED_REGION_WIDTH;
+    const int WORLD_REDUCED_INFORMATION_MAX_WIDTH = WORLD_DESCRIPTION_FIELD_WIDTH + WORLD_IMAGE_BUTTON_WIDTH + WORLD_RELEASE_STATUS_FIELD_WIDTH + SCROLLBAR_RESERVED_REGION_WIDTH;
+
+    const int AVATAR_DESCRIPTION_FIELD_WIDTH = 200;
+    const int AVATAR_IMAGE_BUTTON_WIDTH = WORLD_IMAGE_BUTTON_WIDTH;
+    const int AVATAR_RELEASE_STATUS_FIELD_WIDTH = 100;
+    const int SET_AVATAR_STATUS_BUTTON_WIDTH = 100;
+    const int COPY_AVATAR_ID_BUTTON_WIDTH = COPY_WORLD_ID_BUTTON_WIDTH;
+    const int DELETE_AVATAR_BUTTON_WIDTH = DELETE_WORLD_BUTTON_WIDTH;
+    const int AVATAR_ALL_INFORMATION_MAX_WIDTH = AVATAR_DESCRIPTION_FIELD_WIDTH + AVATAR_IMAGE_BUTTON_WIDTH + AVATAR_RELEASE_STATUS_FIELD_WIDTH + SET_AVATAR_STATUS_BUTTON_WIDTH + COPY_AVATAR_ID_BUTTON_WIDTH + DELETE_AVATAR_BUTTON_WIDTH + SCROLLBAR_RESERVED_REGION_WIDTH;
+    const int AVATAR_REDUCED_INFORMATION_MAX_WIDTH = AVATAR_DESCRIPTION_FIELD_WIDTH + AVATAR_IMAGE_BUTTON_WIDTH + AVATAR_RELEASE_STATUS_FIELD_WIDTH + SCROLLBAR_RESERVED_REGION_WIDTH;
+
+    const int MAX_ALL_INFORMATION_WIDTH = WORLD_ALL_INFORMATION_MAX_WIDTH > AVATAR_ALL_INFORMATION_MAX_WIDTH ? WORLD_ALL_INFORMATION_MAX_WIDTH : AVATAR_ALL_INFORMATION_MAX_WIDTH;
+    const int MAX_REDUCED_INFORMATION_WIDTH = WORLD_REDUCED_INFORMATION_MAX_WIDTH > AVATAR_REDUCED_INFORMATION_MAX_WIDTH ? WORLD_REDUCED_INFORMATION_MAX_WIDTH : AVATAR_REDUCED_INFORMATION_MAX_WIDTH;
+
+
     void Update()
     {
         if (APIUser.IsLoggedInWithCredentials && (uploadedWorlds == null || uploadedAvatars == null))
@@ -225,19 +248,21 @@ public class VRCContentManagerWindow : EditorWindow
             EditorGUILayout.LabelField(string.Format(fetchingAvatars != null ? "Fetching Avatars... {0}" : "{0} Avatars", uploadedAvatars.Count.ToString()), EditorStyles.helpBox);
 
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+            GUIStyle descriptionStyle = new GUIStyle(EditorStyles.wordWrappedLabel);
+            descriptionStyle.wordWrap = true;
+
+            int divideDescriptionWidth = (position.width > MAX_REDUCED_INFORMATION_WIDTH) ? 1 : 2;
 
             if (uploadedWorlds.Count > 0)
             {
                 EditorGUILayout.Space();
 
-                EditorGUILayout.LabelField("Worlds", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("WORLDS", EditorStyles.boldLabel);
                 EditorGUILayout.Space();
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Name", EditorStyles.boldLabel, GUILayout.Width(200));
-                EditorGUILayout.LabelField("Image", EditorStyles.boldLabel, GUILayout.Width(75));
-                EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
-                //EditorGUILayout.LabelField("Version", EditorStyles.boldLabel, GUILayout.Width (75));
-                EditorGUILayout.LabelField("Release Status", EditorStyles.boldLabel, GUILayout.Width(100));
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("Name", EditorStyles.boldLabel, GUILayout.Width(WORLD_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
+                EditorGUILayout.LabelField("Image", EditorStyles.boldLabel, GUILayout.Width(WORLD_IMAGE_BUTTON_WIDTH));
+                EditorGUILayout.LabelField("Release Status", EditorStyles.boldLabel, GUILayout.Width(WORLD_RELEASE_STATUS_FIELD_WIDTH));
                 EditorGUILayout.EndHorizontal();
 
                 List<ApiWorld> tmpWorlds = new List<ApiWorld>();
@@ -253,33 +278,39 @@ public class VRCContentManagerWindow : EditorWindow
                         continue;
                     }
 
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(w.name, GUILayout.Width(200));
+                    EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                    EditorGUILayout.BeginHorizontal(GUILayout.Width(WORLD_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
+
+                    EditorGUILayout.LabelField(w.name, descriptionStyle, GUILayout.Width(WORLD_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
                     if (ImageCache.ContainsKey(w.id))
                     {
-                        if (GUILayout.Button(ImageCache[w.id], GUILayout.Height(100), GUILayout.Width(100)))
+                        if (GUILayout.Button(ImageCache[w.id], GUILayout.Height(100), GUILayout.Width(WORLD_IMAGE_BUTTON_WIDTH)))
                         {
                             Application.OpenURL(w.imageUrl);
                         }
                     }
                     else
                     {
-                        if (GUILayout.Button("", GUILayout.Height(100), GUILayout.Width(100)))
+                        if (GUILayout.Button("", GUILayout.Height(100), GUILayout.Width(WORLD_IMAGE_BUTTON_WIDTH)))
                         {
                             Application.OpenURL(w.imageUrl);
                         }
                     }
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
-                    EditorGUILayout.LabelField(w.releaseStatus, GUILayout.Width(100));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
-                    if (GUILayout.Button("Copy ID", GUILayout.Width(75)))
+
+                    if (position.width > MAX_ALL_INFORMATION_WIDTH)
+                        EditorGUILayout.BeginHorizontal();
+                    else
+                        EditorGUILayout.BeginVertical();
+
+                    EditorGUILayout.LabelField(w.releaseStatus, GUILayout.Width(WORLD_RELEASE_STATUS_FIELD_WIDTH));
+                    if (GUILayout.Button("Copy ID", GUILayout.Width(COPY_WORLD_ID_BUTTON_WIDTH)))
                     {
                         TextEditor te = new TextEditor();
                         te.text = w.id;
                         te.SelectAll();
                         te.Copy();
                     }
-                    if (GUILayout.Button("Delete", GUILayout.Width(75)))
+                    if (GUILayout.Button("Delete", GUILayout.Width(DELETE_WORLD_BUTTON_WIDTH)))
                     {
                         if (EditorUtility.DisplayDialog("Delete " + w.name + "?", "Are you sure you want to delete " + w.name + "? This cannot be undone.", "Delete", "Cancel"))
                         {
@@ -302,7 +333,13 @@ public class VRCContentManagerWindow : EditorWindow
                             justDeletedContents.Add(w.id);
                         }
                     }
+                    if (position.width > MAX_ALL_INFORMATION_WIDTH)
+                        EditorGUILayout.EndHorizontal();
+                    else
+                        EditorGUILayout.EndVertical();
                     EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.Space();
                 }
 
             }
@@ -310,12 +347,13 @@ public class VRCContentManagerWindow : EditorWindow
             if (uploadedAvatars.Count > 0)
             {
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Avatars", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("AVATARS", EditorStyles.boldLabel);
                 EditorGUILayout.Space();
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Name", EditorStyles.boldLabel, GUILayout.Width(200));
-                EditorGUILayout.LabelField("Image", EditorStyles.boldLabel, GUILayout.Width(75));
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("Name", EditorStyles.boldLabel, GUILayout.Width(AVATAR_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
+                EditorGUILayout.LabelField("Image", EditorStyles.boldLabel, GUILayout.Width(AVATAR_IMAGE_BUTTON_WIDTH));
+                EditorGUILayout.LabelField("Release Status", EditorStyles.boldLabel, GUILayout.Width(AVATAR_RELEASE_STATUS_FIELD_WIDTH));
                 EditorGUILayout.EndHorizontal();
 
                 List<ApiAvatar> tmpAvatars = new List<ApiAvatar>();
@@ -341,28 +379,32 @@ public class VRCContentManagerWindow : EditorWindow
                         continue;
                     }
 
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(a.name, GUILayout.Width(200));
+                    EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                    EditorGUILayout.BeginHorizontal(GUILayout.Width(AVATAR_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
+                    EditorGUILayout.LabelField(a.name, descriptionStyle, GUILayout.Width(AVATAR_DESCRIPTION_FIELD_WIDTH / divideDescriptionWidth));
                     if (ImageCache.ContainsKey(a.id))
                     {
-                        if (GUILayout.Button(ImageCache[a.id], GUILayout.Height(100), GUILayout.Width(100)))
+                        if (GUILayout.Button(ImageCache[a.id], GUILayout.Height(100), GUILayout.Width(AVATAR_IMAGE_BUTTON_WIDTH)))
                         {
                             Application.OpenURL(a.imageUrl);
                         }
                     }
                     else
                     {
-                        if (GUILayout.Button("", GUILayout.Height(100), GUILayout.Width(100)))
+                        if (GUILayout.Button("", GUILayout.Height(100), GUILayout.Width(AVATAR_IMAGE_BUTTON_WIDTH)))
                         {
                             Application.OpenURL(a.imageUrl);
                         }
                     }
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
-                    EditorGUILayout.LabelField(a.releaseStatus, GUILayout.Width(100));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(50));
+                    if (position.width > MAX_ALL_INFORMATION_WIDTH)
+                        EditorGUILayout.BeginHorizontal();
+                    else
+                        EditorGUILayout.BeginVertical();
+
+                    EditorGUILayout.LabelField(a.releaseStatus, GUILayout.Width(AVATAR_RELEASE_STATUS_FIELD_WIDTH));
 
                     string oppositeReleaseStatus = a.releaseStatus == "public" ? "private" : "public";
-                    if (GUILayout.Button("Make " + oppositeReleaseStatus, GUILayout.Width(100)))
+                    if (GUILayout.Button("Make " + oppositeReleaseStatus, GUILayout.Width(SET_AVATAR_STATUS_BUTTON_WIDTH)))
                     {
                         a.releaseStatus = oppositeReleaseStatus;
 
@@ -381,7 +423,7 @@ public class VRCContentManagerWindow : EditorWindow
                         });
                     }
 
-                    if (GUILayout.Button("Copy ID", GUILayout.Width(75)))
+                    if (GUILayout.Button("Copy ID", GUILayout.Width(COPY_AVATAR_ID_BUTTON_WIDTH)))
                     {
                         TextEditor te = new TextEditor();
                         te.text = a.id;
@@ -389,7 +431,7 @@ public class VRCContentManagerWindow : EditorWindow
                         te.Copy();
                     }
 
-                    if (GUILayout.Button("Delete", GUILayout.Width(75)))
+                    if (GUILayout.Button("Delete", GUILayout.Width(DELETE_AVATAR_BUTTON_WIDTH)))
                     {
                         if (EditorUtility.DisplayDialog("Delete " + a.name + "?", "Are you sure you want to delete " + a.name + "? This cannot be undone.", "Delete", "Cancel"))
                         {
@@ -412,7 +454,14 @@ public class VRCContentManagerWindow : EditorWindow
                             justDeletedContents.Add(a.id);
                         }
                     }
+
+                    if (position.width > MAX_ALL_INFORMATION_WIDTH)
+                        EditorGUILayout.EndHorizontal();
+                    else
+                        EditorGUILayout.EndVertical();
                     EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.Space();
                 }
             }
 

@@ -223,8 +223,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[DefaultValue("standalonewindows")]
 		[ApiField(Required = false)]
+		[DefaultValue("standalonewindows")]
 		public string platform
 		{
 			get;
@@ -316,6 +316,13 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public string instanceId
+		{
+			get;
+			set;
+		}
+
+		[ApiField(Required = false)]
+		public string favoriteId
 		{
 			get;
 			set;
@@ -529,7 +536,7 @@ namespace VRC.Core
 					};
 					apiDictContainer.OnError = onFailure;
 					ApiDictContainer responseContainer = apiDictContainer;
-					API.SendRequest("worlds/" + base.id + "/" + instanceID, HTTPMethods.Get, responseContainer, parameters);
+					API.SendRequest("worlds/" + base.id + "/" + instanceID, HTTPMethods.Get, responseContainer, parameters, authenticationRequired: true, disableCache: true);
 				}
 				else
 				{
@@ -537,7 +544,7 @@ namespace VRC.Core
 					apiModelContainer.OnSuccess = onSuccess;
 					apiModelContainer.OnError = onFailure;
 					ApiModelContainer<ApiWorld> responseContainer2 = apiModelContainer;
-					API.SendRequest("worlds/" + base.id, HTTPMethods.Get, responseContainer2, parameters);
+					API.SendRequest("worlds/" + base.id, HTTPMethods.Get, responseContainer2, parameters, authenticationRequired: true, disableCache: true);
 				}
 			}
 		}

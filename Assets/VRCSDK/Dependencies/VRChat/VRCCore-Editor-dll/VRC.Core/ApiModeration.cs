@@ -158,7 +158,7 @@ namespace VRC.Core
 			return apiContainer;
 		}
 
-		public static void SendModeration(string targetUserId, ModerationType mType, string reason, ModerationTimeRange expires, string worldId = "", string worldInstanceId = "", Action successCallback = null, Action<string> errorCallback = null)
+		public static void SendModeration(string targetUserId, ModerationType mType, string reason, ModerationTimeRange expires, string worldId = "", string worldInstanceId = "", Action<ApiModelContainer<ApiModeration>> successCallback = null, Action<ApiModelContainer<ApiModeration>> errorCallback = null)
 		{
 			ApiModeration apiModeration = new ApiModeration(targetUserId);
 			apiModeration.moderationType = mType;
@@ -167,17 +167,17 @@ namespace VRC.Core
 			apiModeration.instanceId = worldInstanceId;
 			apiModeration.expiresRange = expires;
 			ApiModeration apiModeration2 = apiModeration;
-			apiModeration2.Save(delegate
+			apiModeration2.Save(delegate(ApiContainer c)
 			{
 				if (successCallback != null)
 				{
-					successCallback();
+					successCallback(c as ApiModelContainer<ApiModeration>);
 				}
 			}, delegate(ApiContainer c)
 			{
 				if (errorCallback != null)
 				{
-					errorCallback(c.Error);
+					errorCallback(c as ApiModelContainer<ApiModeration>);
 				}
 			});
 		}

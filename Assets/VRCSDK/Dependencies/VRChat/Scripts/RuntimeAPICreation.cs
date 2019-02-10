@@ -197,31 +197,6 @@ namespace VRCSDK2
             return cancelRequested;
         }
 
-        protected IEnumerator Upload(InputField name, string uploadFolderName)
-        {
-            bool caughtInvalidInput = false;
-            if (!ValidateNameInput(name))
-                caughtInvalidInput = true;
-
-            if (!caughtInvalidInput)
-            {
-                if (!string.IsNullOrEmpty(uploadUnityPackagePath))
-                    yield return StartCoroutine(UploadUnityPackage());
-
-                if (!string.IsNullOrEmpty(uploadPluginPath))
-                    yield return StartCoroutine(UploadDLL());
-
-                yield return StartCoroutine(UploadVRCFile(uploadFolderName));
-
-                if (isUpdate)
-                    yield return StartCoroutine(UpdateBlueprint());
-                else
-                    yield return StartCoroutine(CreateBlueprint());
-
-                OnSDKPipelineComplete();
-            }
-        }
-
         protected void PrepareUnityPackageForS3(string packagePath, string blueprintId, int version, AssetVersion assetVersion)
         {
             uploadUnityPackagePath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + API.GetAssetPlatformString() +
@@ -257,85 +232,6 @@ namespace VRCSDK2
                 System.IO.File.Delete(uploadPluginPath);
 
             System.IO.File.Copy(pluginPath, uploadPluginPath);
-        }
-
-        protected IEnumerator UploadUnityPackage()
-        {
-            Debug.Log("Uploading Unity Package...");
-            SetUploadProgress("Uploading Unity Package...", "Future proofing your content!", 0.0f);
-            bool doneUploading = false;
-
-            string filePath = uploadUnityPackagePath;
-            string s3FolderName = "unitypackages";
-            var s3 = Uploader.UploadFile(filePath, s3FolderName, delegate (string obj) {
-                string fileName = s3FolderName + "/" + System.IO.Path.GetFileName(filePath);
-                cloudFrontUnityPackageUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-                doneUploading = true;
-            });
-
-            s3.StreamTransferProgress += OnUploadProgess;
-            while (!doneUploading)
-                yield return null;
-            s3.StreamTransferProgress -= OnUploadProgess;
-        }
-
-        protected IEnumerator UploadDLL()
-        {
-            Debug.Log("Uploading Plugin...");
-            SetUploadProgress("Uploading plugin...", "Pushing those upload speeds!!", 0.0f);
-            bool doneUploading = false;
-
-            string filePath = uploadPluginPath;
-            string s3FolderName = "plugins";
-            var s3 = Uploader.UploadFile(filePath, s3FolderName, delegate (string obj) {
-                string fileName = s3FolderName + "/" + System.IO.Path.GetFileName(filePath);
-                cloudFrontPluginUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-                doneUploading = true;
-            });
-
-            s3.StreamTransferProgress += OnUploadProgess;
-            while (!doneUploading)
-                yield return null;
-            s3.StreamTransferProgress -= OnUploadProgess;
-        }
-
-        protected IEnumerator UploadVRCFile(string folderName)
-        {
-            Debug.Log("Uploading VRC File...");
-            SetUploadProgress("Uploading asset...", "Pushing those upload speeds!!", 0.0f);
-            bool doneUploading = false;
-
-            string filePath = uploadVrcPath;
-            var s3 = Uploader.UploadFile(filePath, folderName, delegate (string obj) {
-                string fileName = folderName + "/" + System.IO.Path.GetFileName(filePath);
-                cloudFrontAssetUrl = "http://dbinj8iahsbec.cloudfront.net/" + fileName;
-                doneUploading = true;
-            });
-
-            s3.StreamTransferProgress += OnUploadProgess;
-            while (!doneUploading)
-                yield return null;
-            s3.StreamTransferProgress -= OnUploadProgess;
-        }
-
-        protected IEnumerator UploadImage()
-        {
-            Debug.Log("Uploading Image...");
-
-            bool doneUploading = false;
-            SetUploadProgress("Uploading Image...", "That's a nice looking preview image ;)", 0.0f);
-            string imagePath = imageCapture.TakePicture();
-            var s3 = Uploader.UploadFile(imagePath, "images", delegate (string imageUrl)
-            {
-                cloudFrontImageUrl = imageUrl;
-                doneUploading = true;
-                VRC.Core.Logger.Log("Successfully uploaded image.", DebugLevel.All);
-            });
-
-            s3.StreamTransferProgress += OnUploadProgess;
-            while (!doneUploading)
-                yield return null;
-            s3.StreamTransferProgress -= OnUploadProgess;
         }
 
         protected IEnumerator UploadFile(string filename, string existingFileUrl, string friendlyFilename, string fileType, Action<string> onSuccess)

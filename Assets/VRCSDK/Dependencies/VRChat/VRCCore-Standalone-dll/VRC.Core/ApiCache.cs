@@ -77,7 +77,7 @@ namespace VRC.Core
 
 		public static void CacheResponse(string apiRequestPathAndQuery, byte[] data)
 		{
-			Logger.Log("<color=magenta>Caching API response for: " + apiRequestPathAndQuery + ": \n" + Encoding.UTF8.GetString(data, 0, data.Length) + "</color>", DebugLevel.API);
+			Logger.Log("<color=magenta>Caching API response for: " + apiRequestPathAndQuery + ": \n" + Encoding.UTF8.GetString(data, 0, data.Length).Replace("{", "{{").Replace("}", "}}") + "</color>", DebugLevel.API);
 			int hashCode = apiRequestPathAndQuery.GetHashCode();
 			apiResponseCache[hashCode] = new CachedResponse(data, Time.get_realtimeSinceStartup(), 3600f);
 		}
@@ -119,7 +119,7 @@ namespace VRC.Core
 			}
 			Logger.Log("<color=cyan>Fetched " + t.Name + " with id " + id + " from cache.</color>", DebugLevel.API);
 			target = (cache[t][id].obj as T);
-			Logger.Log("<color=cyan>" + Json.Encode((target as ApiModel).ExtractApiFields()) + "</color>", DebugLevel.API);
+			Logger.Log("<color=cyan>" + Json.Encode((target as ApiModel).ExtractApiFields()).Replace("{", "{{").Replace("}", "}}") + "</color>", DebugLevel.API);
 			return true;
 		}
 

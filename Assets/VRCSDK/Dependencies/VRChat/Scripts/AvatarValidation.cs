@@ -73,9 +73,11 @@ namespace VRCSDK2
             "VRCSDK2.VRC_IKFollower",
             "VRC_IKFollowerInternal",
             "RealisticEyeMovements.EyeAndHeadAnimator",
+            "RealisticEyeMovements.LookTargetController",
             "AvatarAudioSourceFilter",
             "VRCSDK2.VRC_Station",
             "VRC_StationInternal",
+            "VRC.AvatarPerformanceComponentSettings",
         };
 
         public static bool ps_limiter_enabled = false;
@@ -90,7 +92,7 @@ namespace VRCSDK2
         public static int ps_collision_penalty_low = 10;
         public static int ps_trails_penalty = 10;
         public static int ps_max_particle_force = 0; // can not be disabled
-
+        
         const int MAX_STATIONS_PER_AVATAR = 6;
         const float MAX_STATION_ACTIVATE_DISTANCE = 0f;
         const float MAX_STATION_LOCATION_DISTANCE = 2f;
@@ -446,6 +448,21 @@ namespace VRCSDK2
             }
         }
 
+        public static void StripAnimations(GameObject currentAvatar)
+        {
+            foreach (Animator anim in currentAvatar.GetComponentsInChildren<Animator>(true))
+            {
+                if (anim == null || anim.runtimeAnimatorController == null || anim.runtimeAnimatorController.animationClips == null)
+                    continue;
+                foreach(AnimationClip clip in anim.runtimeAnimatorController.animationClips)
+                {
+                    if (clip == null)
+                        continue;
+                    clip.events = null;
+                }
+            }
+        }
+
         public static void RemoveExtraAnimationComponents(GameObject currentAvatar)
         {
             if (currentAvatar == null)
@@ -485,7 +502,7 @@ namespace VRCSDK2
             }
 
             Validation.RemoveComponentsOfType<Animation>(currentAvatar);
-        }
+                }
 
         static Color32 GetTrustLevelColor(VRC.Core.APIUser user)
         {

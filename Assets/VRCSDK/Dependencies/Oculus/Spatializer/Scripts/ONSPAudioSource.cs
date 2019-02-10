@@ -171,6 +171,12 @@ public class ONSPAudioSource : MonoBehaviour
 	/// </summary>
     void Start()
     {
+#if VRC_CLIENT
+        var source = GetComponent<AudioSource>();
+        
+        if(source != null && source.outputAudioMixerGroup != VRCAudioManager.GetAvatarGroup())
+            VRCAudioManager.ApplyGameAudioMixerSettings(source);
+#endif
     }
 
 	/// <summary>
@@ -180,9 +186,7 @@ public class ONSPAudioSource : MonoBehaviour
     {
 		// We might iterate through multiple sources / game object
 		var source = GetComponent<AudioSource>();
-        if (source == null)
-            return;
-
+        
         if(source == null)
         {
             enabled = false;

@@ -16,7 +16,7 @@ namespace VRC.Core
 
 			public static GroupType World => new GroupType("world");
 
-			public static GroupType Friend => new GroupType("user");
+			public static GroupType Friend => new GroupType("friend");
 
 			public static GroupType Avatar => new GroupType("avatar");
 
@@ -39,9 +39,13 @@ namespace VRC.Core
 
 		public const int MAX_FRIENDS_IN_GROUP = 32;
 
+		public const int MAX_AVATARS_IN_GROUP = 16;
+
 		public const int MAX_FAVORITE_FRIEND_GROUPS = 3;
 
 		public const int MAX_WORLD_PLAYLIST_GROUPS = 3;
+
+		public const int MAX_FAVORITE_AVATAR_GROUPS = 1;
 
 		[ApiField]
 		public new string id
@@ -129,24 +133,24 @@ namespace VRC.Core
 			}
 		}
 
-		public static void AddToGroup(string objectId, GroupType groupType, Action successCallback, Action<string> errorCallback, List<string> tags = null)
+		public static void AddToGroup(string objectId, GroupType groupType, Action<ApiModelContainer<ApiFavorite>> successCallback, Action<string> errorCallback, List<string> tags = null)
 		{
-			ApiDictContainer apiDictContainer = new ApiDictContainer();
-			apiDictContainer.OnSuccess = delegate
+			ApiModelContainer<ApiFavorite> apiModelContainer = new ApiModelContainer<ApiFavorite>();
+			apiModelContainer.OnSuccess = delegate(ApiContainer c)
 			{
 				if (successCallback != null)
 				{
-					successCallback();
+					successCallback(c as ApiModelContainer<ApiFavorite>);
 				}
 			};
-			apiDictContainer.OnError = delegate
+			apiModelContainer.OnError = delegate
 			{
 				if (errorCallback != null)
 				{
 					errorCallback("Error");
 				}
 			};
-			ApiContainer responseContainer = apiDictContainer;
+			ApiModelContainer<ApiFavorite> responseContainer = apiModelContainer;
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary["type"] = groupType.value;
 			dictionary["favoriteId"] = objectId;
@@ -284,11 +288,12 @@ namespace VRC.Core
 
 		public static void FetchGroupMembers(string userId, GroupType groupType, Action<List<ApiFavorite>> successCallback = null, Action<string> errorCallback = null, string tag = null)
 		{
-			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "user")
+			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "friend")
 			{
 				ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
 				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 				{
+					List<ApiFavorite> responseModels = (c as ApiModelListContainer<ApiFavorite>).ResponseModels;
 					if (successCallback != null)
 					{
 						successCallback((c as ApiModelListContainer<ApiFavorite>).ResponseModels);
@@ -322,7 +327,7 @@ namespace VRC.Core
 
 		public static void FetchGroupMemberIds(string userId, GroupType groupType, Action<List<string>> successCallback = null, Action<string> errorCallback = null, string tag = null)
 		{
-			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "user")
+			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "friend")
 			{
 				ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
 				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
