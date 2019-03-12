@@ -6,6 +6,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using VRC.Core;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VRCSDK2
 {
@@ -33,6 +36,8 @@ namespace VRCSDK2
         protected CameraImageCapture imageCapture;
 
         private bool cancelRequested = false;
+
+        public static bool publishingToCommunityLabs = false;
 
         private Dictionary<string, string> mRetryState = new Dictionary<string, string>();
 
@@ -147,6 +152,17 @@ namespace VRCSDK2
             return val;
         }
 
+        protected virtual void DisplayUpdateCompletedDialog(string contentUrl=null)
+        {
+            if (UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Update Complete! Launch VRChat to see your uploaded content." + (null==contentUrl ? "" : "\n\nManage content at: " + contentUrl ), (null == contentUrl) ? "Okay" : CommunityLabsConstants.MANAGE_WORLD_IN_BROWSER_STRING, (null == contentUrl) ? "" : "Done" ))
+            {
+                if (null!=contentUrl)
+                {
+                    Application.OpenURL(contentUrl);
+                }
+            }
+        }
+
         protected void OnSDKPipelineComplete(string contentUrl=null)
         {
             VRC.Core.Logger.Log("OnSDKPipelineComplete", DebugLevel.All);
@@ -157,13 +173,7 @@ namespace VRCSDK2
             UnityEditor.EditorApplication.isPaused = false;
             UnityEditor.EditorApplication.isPlaying = false;
             UnityEditor.EditorUtility.ClearProgressBar();
-            if (UnityEditor.EditorUtility.DisplayDialog("VRChat SDK", "Update Complete! Launch VRChat to see your uploaded content." + (null==contentUrl ? "" : "\n\nManage content at: " + contentUrl ), (null == contentUrl) ? "Okay" : "Open URL", (null == contentUrl) ? "" : "Done" ))
-            {
-                if (null!=contentUrl)
-                {
-                    Application.OpenURL(contentUrl);
-                }
-            }
+            DisplayUpdateCompletedDialog(contentUrl);
         }
 
         protected void OnSDKPipelineError(string error, string details)
@@ -323,5 +333,5 @@ namespace VRCSDK2
             return !string.IsNullOrEmpty(lastBuiltID) && lastBuiltID == blueprintID;
         }
 #endif
-    }
+        }
 }

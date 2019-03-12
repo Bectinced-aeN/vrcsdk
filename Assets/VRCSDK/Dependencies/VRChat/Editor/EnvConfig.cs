@@ -125,6 +125,8 @@ public class EnvConfig
         "Unlit/Transparent Cutout",
         "Unlit/Texture",
         "MatCap/Vertex/Textured Lit",
+        "Hidden/VRChat/SelectionHighlight",
+        "Hidden/VRChat/SelectionHighlightBlur",
 #endif
     };
 

@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: MirrorReflection
-  m_Shader: {fileID: 4800000, guid: 5e167f7c73977a04aa369085ce69a167, type: 3}
+  m_Shader: {fileID: 4800000, guid: c046f247bc2188042bc6121fd0e678a5, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0

@@ -92,7 +92,7 @@ namespace VRCSDK2
         public static int ps_collision_penalty_low = 10;
         public static int ps_trails_penalty = 10;
         public static int ps_max_particle_force = 0; // can not be disabled
-        
+
         const int MAX_STATIONS_PER_AVATAR = 6;
         const float MAX_STATION_ACTIVATE_DISTANCE = 0f;
         const float MAX_STATION_LOCATION_DISTANCE = 2f;
@@ -123,7 +123,7 @@ namespace VRCSDK2
                 yield break;
 
             Queue<GameObject> children = new Queue<GameObject>();
-            if( currentAvatar != null )
+            if (currentAvatar != null)
                 children.Enqueue(currentAvatar.gameObject);
             while (children.Count > 0)
             {
@@ -174,7 +174,7 @@ namespace VRCSDK2
                     float range = au.maxDistance - au.minDistance;
                     float min = au.minDistance;
                     float max = au.maxDistance;
-                    float mult = 50.0f/range;
+                    float mult = 50.0f / range;
 
                     // setup a custom rolloff curve
                     Keyframe[] keys = new Keyframe[7];
@@ -217,8 +217,8 @@ namespace VRCSDK2
 
                     if (sources.Length > 1)
                     {
-                        Debug.LogError("Disabling extra AudioSources on GameObject("+ child.name +"). Only one is allowed per GameObject.");
-                        for (int i=1; i<sources.Length; i++)
+                        Debug.LogError("Disabling extra AudioSources on GameObject(" + child.name + "). Only one is allowed per GameObject.");
+                        for (int i = 1; i < sources.Length; i++)
                         {
                             if (sources[i] == null)
                                 continue;
@@ -347,7 +347,7 @@ namespace VRCSDK2
 
                 if (stations != null && stations.Length > 0)
                 {
-                    for (int i=0; i < stations.Length; i++)
+                    for (int i = 0; i < stations.Length; i++)
                     {
                         VRCSDK2.VRC_Station station = stations[i];
                         if (station == null)
@@ -362,7 +362,7 @@ namespace VRCSDK2
                             // keep this station, but limit it
                             if (station.disableStationExit)
                             {
-                                Debug.LogError("["+currentAvatar.name+"]==> Stations on avatars cannot disable station exit. Re-enabled.");
+                                Debug.LogError("[" + currentAvatar.name + "]==> Stations on avatars cannot disable station exit. Re-enabled.");
                                 station.disableStationExit = false;
                             }
                             if (station.stationEnterPlayerLocation != null)
@@ -371,7 +371,7 @@ namespace VRCSDK2
                                 {
 #if VRC_CLIENT
                                     marked_for_destruction = true;
-                                    Debug.LogError("["+currentAvatar.name+"]==> Station enter location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station disabled.");
+                                    Debug.LogError("[" + currentAvatar.name + "]==> Station enter location is too far from station (max dist=" + MAX_STATION_LOCATION_DISTANCE + "). Station disabled.");
 #else
                                     Debug.LogError("Station enter location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station will be disabled at runtime.");
 #endif
@@ -380,7 +380,7 @@ namespace VRCSDK2
                                 {
 #if VRC_CLIENT
                                     marked_for_destruction = true;
-                                    Debug.LogError("["+currentAvatar.name+"]==> Station exit location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station disabled.");
+                                    Debug.LogError("[" + currentAvatar.name + "]==> Station exit location is too far from station (max dist=" + MAX_STATION_LOCATION_DISTANCE + "). Station disabled.");
 #else
                                     Debug.LogError("Station exit location is too far from station (max dist="+MAX_STATION_LOCATION_DISTANCE+"). Station will be disabled at runtime.");
 #endif
@@ -405,7 +405,7 @@ namespace VRCSDK2
                         else
                         {
 #if VRC_CLIENT
-                            Debug.LogError("["+currentAvatar.name+"]==> Removing station over limit of "+MAX_STATIONS_PER_AVATAR);
+                            Debug.LogError("[" + currentAvatar.name + "]==> Removing station over limit of " + MAX_STATIONS_PER_AVATAR);
                             Validation.RemoveComponent(station);
                             if (station_internal != null)
                                 Validation.RemoveComponent(station_internal);
@@ -452,14 +452,27 @@ namespace VRCSDK2
         {
             foreach (Animator anim in currentAvatar.GetComponentsInChildren<Animator>(true))
             {
-                if (anim == null || anim.runtimeAnimatorController == null || anim.runtimeAnimatorController.animationClips == null)
+                if (anim == null)
                     continue;
-                foreach(AnimationClip clip in anim.runtimeAnimatorController.animationClips)
-                {
-                    if (clip == null)
-                        continue;
-                    clip.events = null;
-                }
+                StripRuntimeAnimatorController(anim.runtimeAnimatorController);
+            }
+            foreach (VRC_Station station in currentAvatar.GetComponentsInChildren<VRC_Station>(true))
+            {
+                if (station == null)
+                    continue;
+                StripRuntimeAnimatorController(station.animatorController);
+            }
+        }
+
+        private static void StripRuntimeAnimatorController(RuntimeAnimatorController rc)
+        {
+            if (rc == null || rc.animationClips == null)
+                return;
+            foreach (AnimationClip clip in rc.animationClips)
+            {
+                if (clip == null)
+                    continue;
+                clip.events = null;
             }
         }
 
@@ -498,17 +511,20 @@ namespace VRCSDK2
 
                     anim.enabled = false;
                     Validation.RemoveComponent(anim);
-                } 
+                }
             }
 
             Validation.RemoveComponentsOfType<Animation>(currentAvatar);
-                }
+        }
 
-        static Color32 GetTrustLevelColor(VRC.Core.APIUser user)
+        private static Color32 GetTrustLevelColor(VRC.Core.APIUser user)
         {
 #if VRC_CLIENT
             Color32 color = new Color32(255,255,255,255);
-            if (user==null) return color;
+            if (user==null)
+            {
+                return color;
+            }
 
             if (user == VRC.Core.APIUser.CurrentUser)
             {
@@ -523,119 +539,106 @@ namespace VRCSDK2
             // we are in sdk, this is not meaningful anyway
             return (Color32)Color.grey;
 #endif
-		}
+        }
 
-        static Material CreateFallbackMaterial(Material mtl, VRC.Core.APIUser user)
+        private static Material CreateFallbackMaterial(Material originalMaterial, VRC.Core.APIUser user)
         {
 #if VRC_CLIENT
-            Material newMtl;
-            Color trustCol = (Color)GetTrustLevelColor(user);
+            Material fallbackMaterial;
+            Color trustCol = GetTrustLevelColor(user);
 
-            if (mtl != null)
+            if (originalMaterial == null || originalMaterial.shader == null)
             {
-                var safeShader = VRC.Core.AssetManagement.GetSafeShader(mtl.shader.name);
+                fallbackMaterial = VRC.Core.AssetManagement.CreateMatCap(trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
+                fallbackMaterial.name = string.Format("MC_{0}_{1}", fallbackMaterial.shader.name, user.displayName);
+            }
+            else
+            {
+                var safeShader = VRC.Core.AssetManagement.GetSafeShader(originalMaterial.shader.name);
                 if (safeShader == null)
                 {
-                    newMtl = VRC.Core.AssetManagement.CreateSafeFallbackMaterial(mtl, trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
-                    newMtl.name = "FB_"+mtl.shader.name;
+                    fallbackMaterial = VRC.Core.AssetManagement.CreateSafeFallbackMaterial(originalMaterial, trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
+                    fallbackMaterial.name = string.Format("FB_{0}_{1}_{2}", fallbackMaterial.shader.name, user.displayName, originalMaterial.name);
                 }
                 else
                 {
                     //Debug.Log("<color=cyan>*** using safe internal fallback for shader:"+ safeShader.name + "</color>");
-                    newMtl = new Material(safeShader);
-                    if (safeShader.name=="Standard" || safeShader.name=="Standard (Specular setup)")
-                        VRC.Core.AssetManagement.SetupBlendMode(newMtl);
-                    newMtl.CopyPropertiesFromMaterial(mtl);
-                    newMtl.name = "INT_"+mtl.shader.name;
+                    fallbackMaterial = new Material(safeShader);
+                    if (safeShader.name == "Standard" || safeShader.name == "Standard (Specular setup)")
+                    {
+                        VRC.Core.AssetManagement.SetupBlendMode(fallbackMaterial);
+                    }
+
+                    fallbackMaterial.CopyPropertiesFromMaterial(originalMaterial);
+                    fallbackMaterial.name = string.Format("INT_{0}_{1}_{2}", fallbackMaterial.shader.name, user.displayName, originalMaterial.name);
                 }
             }
-            else
-            {
-                newMtl = VRC.Core.AssetManagement.CreateMatCap(trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
-                newMtl.name = "FB?_";
-            }
 
-            return newMtl;
+            return fallbackMaterial;
 #else
             // we are in sdk, this is not meaningful anyway
             return new Material(Shader.Find("Standard"));
 #endif
         }
 
-        public static void SetupShaderReplace(VRC.Core.APIUser user, GameObject currentAvatar, out HashSet<Renderer> avatarRenderers, out Dictionary<Material, Material> materialSwaps)
+        public static void SetupShaderReplace(VRC.Core.APIUser user, GameObject currentAvatar, HashSet<Renderer> avatarRenderers)
         {
-            materialSwaps = new Dictionary<Material, Material>();
-            avatarRenderers = new HashSet<Renderer>(currentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>(true));
+            avatarRenderers.Clear();
+            avatarRenderers.UnionWith(currentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>(true));
             avatarRenderers.UnionWith(currentAvatar.GetComponentsInChildren<MeshRenderer>(true));
-
-            // find any material with custom shader and add to set
-            // we don't actually replace the running shaders here
-            foreach (Renderer r in avatarRenderers)
-            {
-                for (int i = 0; i < r.sharedMaterials.Length; ++i)
-                {
-                    if (r.sharedMaterials[i] == null || r.sharedMaterials[i].shader == null)
-                        continue;
-                    Material newMtl = CreateFallbackMaterial(r.sharedMaterials[i], user);
-                    materialSwaps[newMtl] = r.sharedMaterials[i];
-                }
-            }
         }
-
-        public static void ReplaceShaders(VRC.Core.APIUser user, HashSet<Renderer> avatarRenderers, ref Dictionary<Material, Material> materialSwaps, bool debug=true)
+        
+        public static void ReplaceShaders(VRC.Core.APIUser user, IEnumerable<Renderer> avatarRenderers, FallbackMaterialCache fallbackMaterialCache, bool debug = true)
         {
-            foreach (Renderer r in avatarRenderers)
+            foreach(Renderer avatarRenderer in avatarRenderers)
             {
-                Material[] materials = new Material[r.sharedMaterials.Length];
-                for (int i = 0; i < r.sharedMaterials.Length; ++i)
+                //TODO 2018.4 LTS: Replace this with avatarRenderer.GetSharedMaterials(List<Material> sharedMaterials);
+                Material[] avatarRendererSharedMaterials = avatarRenderer.sharedMaterials;
+                for(int i = 0; i < avatarRendererSharedMaterials.Length; ++i)
                 {
-                    if (r.sharedMaterials[i] == null)
-                        materials[i] = CreateFallbackMaterial(null, user);
-                    else if (materialSwaps.ContainsKey(r.sharedMaterials[i]))
+                    Material currentMaterial = avatarRendererSharedMaterials[i];
+                    if(currentMaterial == null)
+                    {
+                        continue;
+                    }
+
+                    Material fallbackMaterial;
+                    if(fallbackMaterialCache.HasFallbackMaterial(currentMaterial))
                     {
                         // material is in our swap list, so its already a fallback
-                        materials[i] = r.sharedMaterials[i];
-                        if (debug)
-                            Debug.Log("<color=cyan>*** using fallback :'" + materials[i].shader.name + "' </color>");
+                        fallbackMaterial = fallbackMaterialCache.GetFallBackMaterial(currentMaterial);
+
+                        if(debug)
+                        {
+                            Debug.Log(string.Format("<color=cyan>*** Using existing fallback: '{0}' </color>", fallbackMaterial.shader.name));
+                        }
                     }
                     else
                     {
-                        // material is not in our safe list, create a fallback and store it in dictionary
-                        Material newMtl = CreateFallbackMaterial(r.sharedMaterials[i], user);
-                        materialSwaps[newMtl] = materials[i];
-                        materials[i] = newMtl;
-                        if (debug)
-                            Debug.Log("<color=cyan>*** new fallback :'" + materials[i].shader.name + "' </color>");
+                        // The current material is not in our safe list so create a fallback.
+                        fallbackMaterial = CreateFallbackMaterial(currentMaterial, user);
+
+                        // Map the current material to the fallback and the fallback to itself.
+                        fallbackMaterialCache.AddFallbackMaterial(currentMaterial, fallbackMaterial);
+
+                        fallbackMaterialCache.AddFallbackMaterial(fallbackMaterial, fallbackMaterial);
+
+                        if(debug)
+                        {
+                            Debug.Log(string.Format("<color=cyan>*** Creating new fallback: '{0}' </color>", fallbackMaterial.shader.name));
+                        }
                     }
+
+                    avatarRendererSharedMaterials[i] = fallbackMaterial;
                 }
-                r.sharedMaterials = materials;
+
+                avatarRenderer.sharedMaterials = avatarRendererSharedMaterials;
             }
         }
 
-        public static void ReplaceShadersRealtime(VRC.Core.APIUser user, HashSet<Renderer> avatarRenderers, ref Dictionary<Material, Material> materialSwaps)
+        public static void ReplaceShadersRealtime(VRC.Core.APIUser user, IEnumerable<Renderer> avatarRenderers, FallbackMaterialCache fallbackMaterialCache, bool debug = false)
         {
-            ReplaceShaders(user, avatarRenderers, ref materialSwaps, false);
-        }
-
-        public static void RestoreShaders(VRC.Core.APIUser user, HashSet<Renderer> avatarRenderers, Dictionary<Material, Material> materialSwaps)
-        {
-            foreach (Renderer r in avatarRenderers)
-            {
-                Material[] materials = new Material[r.sharedMaterials.Length];
-                for (int i = 0; i < r.sharedMaterials.Length; ++i)
-                {
-                    if (r.sharedMaterials[i] == null)
-                    {
-                        // create a temporary shader while loading
-                        materials[i] = CreateFallbackMaterial(null, user);
-                    }
-                    else if (materialSwaps.ContainsKey(r.sharedMaterials[i]))
-                        materials[i] = materialSwaps[r.sharedMaterials[i]];
-                    else
-                        materials[i] = r.sharedMaterials[i];
-                }
-                r.sharedMaterials = materials;
-            }
+            ReplaceShaders(user, avatarRenderers, fallbackMaterialCache, debug);
         }
 
         public static void SetupParticleLimits()
@@ -668,8 +671,8 @@ namespace VRCSDK2
         public static Dictionary<ParticleSystem, int> EnforceParticleSystemLimits(GameObject currentAvatar)
         {
             Dictionary<ParticleSystem, int> particleSystems = new Dictionary<ParticleSystem, int>();
-            
-            foreach(ParticleSystem ps in currentAvatar.transform.GetComponentsInChildren<ParticleSystem>(true))
+
+            foreach (ParticleSystem ps in currentAvatar.transform.GetComponentsInChildren<ParticleSystem>(true))
             {
                 int realtime_max = ps_max_particles;
 
@@ -678,7 +681,7 @@ namespace VRCSDK2
                 if (collision.colliderForce > ps_max_particle_force)
                 {
                     collision.colliderForce = ps_max_particle_force;
-                    Debug.LogError("Collision force is restricted on avatars, particle system named " + ps.gameObject.name + " collision force restricted to " + ps_max_particle_force );
+                    Debug.LogError("Collision force is restricted on avatars, particle system named " + ps.gameObject.name + " collision force restricted to " + ps_max_particle_force);
                 }
 
                 if (ps_limiter_enabled)
@@ -782,7 +785,7 @@ namespace VRCSDK2
 
                         //Disable collision with PlayerLocal layer
                         collision.collidesWith &= ~(1 << 10);
-                    } 
+                    }
                 }
 
                 particleSystems.Add(ps, realtime_max);
@@ -796,17 +799,17 @@ namespace VRCSDK2
         public static bool ClearLegacyAnimations(GameObject currentAvatar)
         {
             bool hasLegacyAnims = false;
-			foreach(var ani in currentAvatar.GetComponentsInChildren<Animation>(true))
+            foreach (var ani in currentAvatar.GetComponentsInChildren<Animation>(true))
             {
-                if(ani.clip != null)
-                    if(ani.clip.legacy)
+                if (ani.clip != null)
+                    if (ani.clip.legacy)
                     {
                         Debug.LogWarningFormat("Legacy animation found named '{0}' on '{1}', removing", ani.clip.name, ani.gameObject.name);
                         ani.clip = null;
                         hasLegacyAnims = true;
                     }
-                foreach(AnimationState anistate in ani)
-                    if(anistate.clip.legacy)
+                foreach (AnimationState anistate in ani)
+                    if (anistate.clip.legacy)
                     {
                         Debug.LogWarningFormat("Legacy animation found named '{0}' on '{1}', removing", anistate.clip.name, ani.gameObject.name);
                         ani.RemoveClip(anistate.clip);
@@ -818,7 +821,7 @@ namespace VRCSDK2
 
         private static float GetCurveMax(ParticleSystem.MinMaxCurve minMaxCurve)
         {
-            switch(minMaxCurve.mode)
+            switch (minMaxCurve.mode)
             {
                 case ParticleSystemCurveMode.Constant:
                     return minMaxCurve.constant;

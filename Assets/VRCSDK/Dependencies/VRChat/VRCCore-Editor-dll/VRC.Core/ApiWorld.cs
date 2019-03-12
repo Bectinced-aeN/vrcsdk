@@ -254,9 +254,11 @@ namespace VRC.Core
 			set;
 		}
 
-		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("admin_approved"));
+		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("system_approved"));
 
 		public bool IsCommunityLabsWorld => tags != null && tags.Contains("system_labs");
+
+		public bool IsPublicPublishedWorld => releaseStatus.Equals("public");
 
 		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public bool unityPackageUpdated
@@ -916,6 +918,50 @@ namespace VRC.Core
 			};
 			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendPutRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, dictionary);
+		}
+
+		public static void FetchUploadedWorlds(Action<List<ApiWorld>> successCallback, Action<string> errorCallback)
+		{
+			ApiModelListContainer<ApiWorld> apiModelListContainer = new ApiModelListContainer<ApiWorld>();
+			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback((c as ApiModelListContainer<ApiWorld>).ResponseModels);
+				}
+			};
+			apiModelListContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelListContainer<ApiWorld> responseContainer = apiModelListContainer;
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			dictionary["user"] = "me";
+			API.SendGetRequest("worlds/", responseContainer, dictionary, disableCache: true);
+		}
+
+		public static void PublishWorldToCommunityLabs(string worldId, Action<ApiModelContainer<ApiWorld>> successCallback, Action<string> errorCallback)
+		{
+			ApiModelContainer<ApiWorld> apiModelContainer = new ApiModelContainer<ApiWorld>();
+			apiModelContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback(c as ApiModelContainer<ApiWorld>);
+				}
+			};
+			apiModelContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiModelContainer<ApiWorld> responseContainer = apiModelContainer;
+			API.SendPutRequest("worlds/" + worldId + "/publish", responseContainer);
 		}
 
 		private void UpdateVersionAndPlatform()

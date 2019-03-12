@@ -10,25 +10,22 @@ namespace VRCSDK2
 	{
 		private class ReflectionData
 		{
-			public RenderTexture[] texture = (RenderTexture[])new RenderTexture[2];
+			public readonly RenderTexture[] texture = (RenderTexture[])new RenderTexture[2];
 
 			public MaterialPropertyBlock propertyBlock;
 		}
 
-		private const int MaxResolutionWidth = 2048;
+		private const int MAX_RESOLUTION_WIDTH = 2048;
 
-		private const int MaxResolutionHeight = 2048;
+		private const int MAX_RESOLUTION_HEIGHT = 2048;
 
 		public bool m_DisablePixelLights = true;
-
-		[Tooltip("Mirror will use up to the anti-aliasing level specified in QualitySettings, without exceeding this value (1, 2, 4, or 8)")]
-		public int m_MaxAntiAliasing = 1;
 
 		public bool TurnOffMirrorOcclusion = true;
 
 		public LayerMask m_ReflectLayers = LayerMask.op_Implicit(-1);
 
-		private Dictionary<Camera, ReflectionData> m_Reflections = new Dictionary<Camera, ReflectionData>();
+		private Dictionary<Camera, ReflectionData> _mReflections = new Dictionary<Camera, ReflectionData>();
 
 		private Camera mirrorCamera;
 
@@ -40,24 +37,20 @@ namespace VRCSDK2
 
 		private int _playerLocalLayer = 10;
 
-		private static bool s_InsideRendering = false;
+		private static bool _sInsideRendering = false;
 
-		private static int[] TexturePropertyID = new int[2];
+		private static readonly int[] _texturePropertyId = new int[2];
 
 		public VRC_MirrorReflection()
 			: this()
 		{
-		}//IL_0017: Unknown result type (might be due to invalid IL or missing references)
-		//IL_001c: Unknown result type (might be due to invalid IL or missing references)
+		}//IL_0010: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
 
 
 		private void OnValidate()
 		{
-			s_InsideRendering = false;
-			if (m_MaxAntiAliasing != 1 && m_MaxAntiAliasing != 2 && m_MaxAntiAliasing != 4 && m_MaxAntiAliasing != 8)
-			{
-				m_MaxAntiAliasing = 1;
-			}
+			_sInsideRendering = false;
 		}
 
 		private void Start()
@@ -65,8 +58,8 @@ namespace VRCSDK2
 			Renderer component = this.GetComponent<Renderer>();
 			Material sharedMaterial = component.get_sharedMaterial();
 			sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
-			TexturePropertyID[0] = Shader.PropertyToID("_ReflectionTex0");
-			TexturePropertyID[1] = Shader.PropertyToID("_ReflectionTex1");
+			_texturePropertyId[0] = Shader.PropertyToID("_ReflectionTex0");
+			_texturePropertyId[1] = Shader.PropertyToID("_ReflectionTex1");
 			_playerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
 		}
 
@@ -97,9 +90,9 @@ namespace VRCSDK2
 			if (this.get_enabled() && Object.op_Implicit(component) && component.get_enabled())
 			{
 				Camera current = Camera.get_current();
-				if (Object.op_Implicit(current) && !(current == mirrorCamera) && !s_InsideRendering)
+				if (Object.op_Implicit(current) && !(current == mirrorCamera) && !_sInsideRendering)
 				{
-					s_InsideRendering = true;
+					_sInsideRendering = true;
 					ReflectionData reflectionData = GetReflectionData(current);
 					int pixelLightCount = QualitySettings.get_pixelLightCount();
 					if (m_DisablePixelLights)
@@ -134,23 +127,61 @@ namespace VRCSDK2
 					{
 						QualitySettings.set_pixelLightCount(pixelLightCount);
 					}
-					s_InsideRendering = false;
+					_sInsideRendering = false;
 				}
 			}
+		}
+
+		private void OnDestroy()
+		{
+			if (mirrorCamera != null)
+			{
+				if (!Application.get_isEditor())
+				{
+					Object.Destroy(mirrorCamera.get_gameObject());
+				}
+				else
+				{
+					Object.DestroyImmediate(mirrorCamera.get_gameObject());
+				}
+				mirrorCamera = null;
+				mirrorSkybox = null;
+			}
+			foreach (ReflectionData value in _mReflections.Values)
+			{
+				if (!Application.get_isEditor())
+				{
+					Object.Destroy(value.texture[0]);
+					Object.Destroy(value.texture[1]);
+				}
+				else
+				{
+					Object.DestroyImmediate(value.texture[0]);
+					Object.DestroyImmediate(value.texture[1]);
+				}
+			}
+			_mReflections.Clear();
 		}
 
 		private bool ShouldRenderLeftEye(Camera cam)
 		{
 			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0007: Invalid comparison between Unknown and I4
-			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0013: Invalid comparison between Unknown and I4
-			//IL_0022: Unknown result type (might be due to invalid IL or missing references)
-			//IL_002d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0038: Unknown result type (might be due to invalid IL or missing references)
-			bool flag = (int)cam.get_stereoTargetEye() == 3 || (int)cam.get_stereoTargetEye() == 1;
-			if (flag && Vector3.Dot(GetWorldEyePos(cam, 0) - this.get_transform().get_position(), GetNormalDirection()) <= 0f)
+			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0007: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0009: Invalid comparison between Unknown and I4
+			//IL_000e: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0010: Invalid comparison between Unknown and I4
+			//IL_0021: Unknown result type (might be due to invalid IL or missing references)
+			//IL_002c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0031: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0037: Unknown result type (might be due to invalid IL or missing references)
+			StereoTargetEyeMask stereoTargetEye = cam.get_stereoTargetEye();
+			bool flag = (int)stereoTargetEye == 3 || (int)stereoTargetEye == 1;
+			if (!flag)
+			{
+				return false;
+			}
+			if (Vector3.Dot(GetWorldEyePos(cam, 0) - this.get_transform().get_position(), GetNormalDirection()) <= 0f)
 			{
 				flag = false;
 			}
@@ -160,15 +191,22 @@ namespace VRCSDK2
 		private bool ShouldRenderRightEye(Camera cam)
 		{
 			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0007: Invalid comparison between Unknown and I4
-			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0013: Invalid comparison between Unknown and I4
-			//IL_0022: Unknown result type (might be due to invalid IL or missing references)
-			//IL_002d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0038: Unknown result type (might be due to invalid IL or missing references)
-			bool flag = (int)cam.get_stereoTargetEye() == 3 || (int)cam.get_stereoTargetEye() == 2;
-			if (flag && Vector3.Dot(GetWorldEyePos(cam, 1) - this.get_transform().get_position(), GetNormalDirection()) <= 0f)
+			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0007: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0009: Invalid comparison between Unknown and I4
+			//IL_000e: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0010: Invalid comparison between Unknown and I4
+			//IL_0021: Unknown result type (might be due to invalid IL or missing references)
+			//IL_002c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0031: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0037: Unknown result type (might be due to invalid IL or missing references)
+			StereoTargetEyeMask stereoTargetEye = cam.get_stereoTargetEye();
+			bool flag = (int)stereoTargetEye == 3 || (int)stereoTargetEye == 2;
+			if (!flag)
+			{
+				return false;
+			}
+			if (Vector3.Dot(GetWorldEyePos(cam, 1) - this.get_transform().get_position(), GetNormalDirection()) <= 0f)
 			{
 				flag = false;
 			}
@@ -272,30 +310,14 @@ namespace VRCSDK2
 			GL.set_invertCulling(invertCulling);
 		}
 
-		private void OnDisable()
-		{
-			if (Object.op_Implicit(mirrorCamera))
-			{
-				Object.DestroyImmediate(mirrorCamera.get_gameObject());
-				mirrorCamera = null;
-				mirrorSkybox = null;
-			}
-			foreach (ReflectionData value in m_Reflections.Values)
-			{
-				Object.DestroyImmediate(value.texture[0]);
-				Object.DestroyImmediate(value.texture[1]);
-			}
-			m_Reflections.Clear();
-		}
-
 		private void UpdateCameraModes(Camera src)
 		{
 			//IL_005f: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0065: Expected O, but got Unknown
-			//IL_0098: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00a9: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00b4: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00ba: Invalid comparison between Unknown and I4
+			//IL_009a: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00ab: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00b6: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00bc: Invalid comparison between Unknown and I4
 			if (!Object.op_Implicit(mirrorCamera))
 			{
 				GameObject val = new GameObject("MirrorCam" + this.get_gameObject().get_name(), new Type[4]
@@ -306,23 +328,24 @@ namespace VRCSDK2
 					typeof(FlareLayer)
 				});
 				val.set_hideFlags(61);
-				mirrorSkybox = val.GetComponent<Skybox>();
-				mirrorCamera = val.GetComponent<Camera>();
+				GameObject val2 = val;
+				mirrorSkybox = val2.GetComponent<Skybox>();
+				mirrorCamera = val2.GetComponent<Camera>();
 				mirrorCamera.set_enabled(false);
 			}
 			mirrorCamera.set_clearFlags(src.get_clearFlags());
 			mirrorCamera.set_backgroundColor(src.get_backgroundColor());
 			if ((int)src.get_clearFlags() == 1)
 			{
-				Skybox val2 = src.GetComponent(typeof(Skybox)) as Skybox;
-				if (!Object.op_Implicit(val2) || !Object.op_Implicit(val2.get_material()))
+				Skybox val3 = src.GetComponent(typeof(Skybox)) as Skybox;
+				if (!Object.op_Implicit(val3) || !Object.op_Implicit(val3.get_material()))
 				{
 					mirrorSkybox.set_enabled(false);
 				}
 				else
 				{
 					mirrorSkybox.set_enabled(true);
-					mirrorSkybox.set_material(val2.get_material());
+					mirrorSkybox.set_material(val3.get_material());
 				}
 			}
 			mirrorCamera.set_farClipPlane(src.get_farClipPlane());
@@ -332,6 +355,7 @@ namespace VRCSDK2
 			mirrorCamera.set_aspect(src.get_aspect());
 			mirrorCamera.set_orthographicSize(src.get_orthographicSize());
 			mirrorCamera.set_useOcclusionCulling(!TurnOffMirrorOcclusion);
+			mirrorCamera.set_allowMSAA(src.get_allowMSAA());
 		}
 
 		private void UpdateParentTransform(Camera cam)
@@ -372,37 +396,48 @@ namespace VRCSDK2
 
 		private ReflectionData GetReflectionData(Camera currentCamera)
 		{
-			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
-			//IL_003c: Expected O, but got Unknown
-			//IL_0120: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0126: Expected O, but got Unknown
+			//IL_0034: Unknown result type (might be due to invalid IL or missing references)
+			//IL_003e: Expected O, but got Unknown
+			//IL_013d: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0144: Expected O, but got Unknown
 			ReflectionData value = null;
-			if (m_Reflections == null)
+			if (_mReflections == null)
 			{
-				m_Reflections = new Dictionary<Camera, ReflectionData>();
+				_mReflections = new Dictionary<Camera, ReflectionData>();
 			}
-			if (!m_Reflections.TryGetValue(currentCamera, out value))
+			if (!_mReflections.TryGetValue(currentCamera, out value))
 			{
-				value = new ReflectionData();
-				value.propertyBlock = new MaterialPropertyBlock();
-				m_Reflections[currentCamera] = value;
+				ReflectionData reflectionData = new ReflectionData();
+				reflectionData.propertyBlock = new MaterialPropertyBlock();
+				value = reflectionData;
+				_mReflections[currentCamera] = value;
 			}
 			int num = Mathf.Min(currentCamera.get_pixelWidth(), 2048);
 			int num2 = Mathf.Min(currentCamera.get_pixelHeight(), 2048);
-			int num3 = Mathf.Min(QualitySettings.get_antiAliasing(), m_MaxAntiAliasing);
-			num3 = Mathf.Max(1, num3);
+			int antiAliasing = QualitySettings.get_antiAliasing();
+			antiAliasing = Mathf.Max(1, antiAliasing);
 			for (int i = 0; i < 2 && (i <= 0 || currentCamera.get_stereoEnabled()); i++)
 			{
-				if (!Object.op_Implicit(value.texture[i]) || value.texture[i].get_width() != num || value.texture[i].get_height() != num2 || value.texture[i].get_antiAliasing() != num3)
+				if (!Object.op_Implicit(value.texture[i]) || value.texture[i].get_width() != num || value.texture[i].get_height() != num2 || value.texture[i].get_antiAliasing() != antiAliasing)
 				{
 					if (Object.op_Implicit(value.texture[i]))
 					{
-						Object.DestroyImmediate(value.texture[i]);
+						if (!Application.get_isEditor())
+						{
+							Object.Destroy(value.texture[i]);
+						}
+						else
+						{
+							Object.DestroyImmediate(value.texture[i]);
+						}
 					}
-					value.texture[i] = new RenderTexture(num, num2, 24);
-					value.texture[i].set_antiAliasing(num3);
-					value.texture[i].set_hideFlags(52);
-					value.propertyBlock.SetTexture(TexturePropertyID[i], value.texture[i]);
+					RenderTexture[] texture = value.texture;
+					int num3 = i;
+					RenderTexture val = new RenderTexture(num, num2, 24, 2);
+					val.set_antiAliasing(antiAliasing);
+					val.set_hideFlags(52);
+					texture[num3] = val;
+					value.propertyBlock.SetTexture(_texturePropertyId[i], value.texture[i]);
 				}
 			}
 			return value;
@@ -471,16 +506,22 @@ namespace VRCSDK2
 		private static Quaternion GetRotation(Matrix4x4 matrix)
 		{
 			//IL_0002: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0152: Unknown result type (might be due to invalid IL or missing references)
-			Quaternion result = default(Quaternion);
-			result.w = Mathf.Sqrt(Mathf.Max(0f, 1f + matrix.m00 + matrix.m11 + matrix.m22)) / 2f;
-			result.x = Mathf.Sqrt(Mathf.Max(0f, 1f + matrix.m00 - matrix.m11 - matrix.m22)) / 2f;
-			result.y = Mathf.Sqrt(Mathf.Max(0f, 1f - matrix.m00 + matrix.m11 - matrix.m22)) / 2f;
-			result.z = Mathf.Sqrt(Mathf.Max(0f, 1f - matrix.m00 - matrix.m11 + matrix.m22)) / 2f;
-			result.x = _copysign(result.x, matrix.m21 - matrix.m12);
-			result.y = _copysign(result.y, matrix.m02 - matrix.m20);
-			result.z = _copysign(result.z, matrix.m10 - matrix.m01);
-			return result;
+			//IL_0008: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0009: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00ee: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00ef: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0156: Unknown result type (might be due to invalid IL or missing references)
+			Quaternion val = default(Quaternion);
+			Quaternion val2 = val;
+			val2.w = Mathf.Sqrt(Mathf.Max(0f, 1f + matrix.m00 + matrix.m11 + matrix.m22)) / 2f;
+			val2.x = Mathf.Sqrt(Mathf.Max(0f, 1f + matrix.m00 - matrix.m11 - matrix.m22)) / 2f;
+			val2.y = Mathf.Sqrt(Mathf.Max(0f, 1f - matrix.m00 + matrix.m11 - matrix.m22)) / 2f;
+			val2.z = Mathf.Sqrt(Mathf.Max(0f, 1f - matrix.m00 - matrix.m11 + matrix.m22)) / 2f;
+			val = val2;
+			val.x = _copysign(val.x, matrix.m21 - matrix.m12);
+			val.y = _copysign(val.y, matrix.m02 - matrix.m20);
+			val.z = _copysign(val.z, matrix.m10 - matrix.m01);
+			return val;
 		}
 
 		private static Vector3 GetPosition(Matrix4x4 matrix)

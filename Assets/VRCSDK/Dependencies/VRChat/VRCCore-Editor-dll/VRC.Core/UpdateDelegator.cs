@@ -7,8 +7,8 @@ using UnityEngine;
 
 namespace VRC.Core
 {
-	[InitializeOnLoad]
 	[ExecuteInEditMode]
+	[InitializeOnLoad]
 	public sealed class UpdateDelegator : MonoBehaviour
 	{
 		private static int? spawnedThreadID;

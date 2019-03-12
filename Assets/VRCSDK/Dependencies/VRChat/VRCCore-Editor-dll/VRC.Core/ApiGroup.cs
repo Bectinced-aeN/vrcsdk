@@ -43,7 +43,7 @@ namespace VRC.Core
 
 		public const int MAX_FAVORITE_FRIEND_GROUPS = 3;
 
-		public const int MAX_WORLD_PLAYLIST_GROUPS = 3;
+		public const int MAX_WORLD_PLAYLIST_GROUPS = 4;
 
 		public const int MAX_FAVORITE_AVATAR_GROUPS = 1;
 
@@ -290,34 +290,77 @@ namespace VRC.Core
 		{
 			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "friend")
 			{
-				ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
-				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				int totalGroupsToFetch = 1;
+				if (string.IsNullOrEmpty(tag))
 				{
-					List<ApiFavorite> responseModels = (c as ApiModelListContainer<ApiFavorite>).ResponseModels;
-					if (successCallback != null)
+					switch (groupType.value)
 					{
-						successCallback((c as ApiModelListContainer<ApiFavorite>).ResponseModels);
+					case "world":
+						totalGroupsToFetch = 4;
+						break;
+					case "avatar":
+						totalGroupsToFetch = 1;
+						break;
+					case "friend":
+						totalGroupsToFetch = 3;
+						break;
 					}
-				};
-				apiModelListContainer.OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				};
-				ApiModelListContainer<ApiFavorite> responseContainer = apiModelListContainer;
-				string target = "favorites";
-				Dictionary<string, object> dictionary = null;
-				dictionary = new Dictionary<string, object>();
-				dictionary["ownerId"] = userId;
-				if (tag != null)
-				{
-					dictionary["tag"] = tag;
 				}
-				dictionary["type"] = groupType.value;
-				dictionary["n"] = 96;
-				API.SendGetRequest(target, responseContainer, dictionary, disableCache: true);
+				List<ApiFavorite> totalFaves = new List<ApiFavorite>();
+				int groupsFetched = 0;
+				bool locked = false;
+				for (int i = 0; i < totalGroupsToFetch; i++)
+				{
+					ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
+					apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+					{
+						while (locked)
+						{
+						}
+						locked = true;
+						List<ApiFavorite> responseModels = (c as ApiModelListContainer<ApiFavorite>).ResponseModels;
+						totalFaves.AddRange(responseModels);
+						locked = false;
+						groupsFetched++;
+						if (successCallback != null && groupsFetched == totalGroupsToFetch)
+						{
+							successCallback(totalFaves);
+						}
+					};
+					apiModelListContainer.OnError = delegate(ApiContainer c)
+					{
+						if (errorCallback != null)
+						{
+							errorCallback(c.Error);
+						}
+					};
+					ApiModelListContainer<ApiFavorite> responseContainer = apiModelListContainer;
+					string target = "favorites";
+					Dictionary<string, object> dictionary = null;
+					dictionary = new Dictionary<string, object>();
+					dictionary["ownerId"] = userId;
+					dictionary["type"] = groupType.value;
+					int num = 0;
+					switch (groupType.value)
+					{
+					case "world":
+						num = 32;
+						break;
+					case "avatar":
+						num = 16;
+						break;
+					case "friend":
+						num = 32;
+						break;
+					}
+					if (!string.IsNullOrEmpty(tag))
+					{
+						dictionary["tag"] = tag;
+					}
+					dictionary["n"] = num;
+					dictionary["offset"] = i * num;
+					API.SendGetRequest(target, responseContainer, dictionary, disableCache: true);
+				}
 			}
 			else
 			{
@@ -329,38 +372,84 @@ namespace VRC.Core
 		{
 			if (groupType.value == "world" || groupType.value == "avatar" || groupType.value == "friend")
 			{
-				ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
-				apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+				int totalGroupsToFetch = 1;
+				if (string.IsNullOrEmpty(tag))
 				{
-					List<string> list = new List<string>();
-					foreach (ApiFavorite responseModel in (c as ApiModelListContainer<ApiFavorite>).ResponseModels)
+					switch (groupType.value)
 					{
-						list.Add(responseModel.favoriteId);
+					case "world":
+						totalGroupsToFetch = 4;
+						break;
+					case "avatar":
+						totalGroupsToFetch = 1;
+						break;
+					case "friend":
+						totalGroupsToFetch = 3;
+						break;
 					}
-					if (successCallback != null)
-					{
-						successCallback(list);
-					}
-				};
-				apiModelListContainer.OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				};
-				ApiModelListContainer<ApiFavorite> responseContainer = apiModelListContainer;
-				string target = "favorites";
-				Dictionary<string, object> dictionary = null;
-				dictionary = new Dictionary<string, object>();
-				dictionary["ownerId"] = userId;
-				if (tag != null)
-				{
-					dictionary["tag"] = tag;
 				}
-				dictionary["type"] = groupType.value;
-				dictionary["n"] = 96;
-				API.SendGetRequest(target, responseContainer, dictionary, disableCache: true);
+				List<string> totalGroupMemberIds = new List<string>();
+				int groupsFetched = 0;
+				bool locked = false;
+				for (int i = 0; i < totalGroupsToFetch; i++)
+				{
+					ApiModelListContainer<ApiFavorite> apiModelListContainer = new ApiModelListContainer<ApiFavorite>();
+					apiModelListContainer.OnSuccess = delegate(ApiContainer c)
+					{
+						while (locked)
+						{
+						}
+						locked = true;
+						List<string> list = new List<string>();
+						foreach (ApiFavorite responseModel in (c as ApiModelListContainer<ApiFavorite>).ResponseModels)
+						{
+							if (!list.Contains(responseModel.favoriteId))
+							{
+								list.Add(responseModel.favoriteId);
+							}
+						}
+						totalGroupMemberIds.AddRange(list);
+						locked = false;
+						groupsFetched++;
+						if (successCallback != null && groupsFetched == totalGroupsToFetch)
+						{
+							successCallback(totalGroupMemberIds);
+						}
+					};
+					apiModelListContainer.OnError = delegate(ApiContainer c)
+					{
+						if (errorCallback != null)
+						{
+							errorCallback(c.Error);
+						}
+					};
+					ApiModelListContainer<ApiFavorite> responseContainer = apiModelListContainer;
+					string target = "favorites";
+					Dictionary<string, object> dictionary = null;
+					dictionary = new Dictionary<string, object>();
+					dictionary["ownerId"] = userId;
+					dictionary["type"] = groupType.value;
+					int num = 0;
+					switch (groupType.value)
+					{
+					case "world":
+						num = 32;
+						break;
+					case "avatar":
+						num = 16;
+						break;
+					case "friend":
+						num = 32;
+						break;
+					}
+					if (!string.IsNullOrEmpty(tag))
+					{
+						dictionary["tag"] = tag;
+					}
+					dictionary["n"] = num;
+					dictionary["offset"] = i * num;
+					API.SendGetRequest(target, responseContainer, dictionary, disableCache: true);
+				}
 			}
 			else
 			{

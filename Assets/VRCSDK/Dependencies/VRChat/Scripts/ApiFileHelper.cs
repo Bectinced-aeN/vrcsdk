@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,6 @@ using VRC.Core.BestHTTP.JSON;
 using Debug = UnityEngine.Debug;
 using System.Text.RegularExpressions;
 
-#if UNITY_EDITOR
 namespace VRC.Core
 {
     public class ApiFileHelper : MonoBehaviour
@@ -2080,4 +2080,4 @@ namespace VRC.Core
     }
 }
 
-#endif // UNITY_EDITOR
+#endif

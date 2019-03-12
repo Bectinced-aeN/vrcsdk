@@ -1,3 +1,4 @@
+#define COMMUNITY_LABS_SDK
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -8,6 +9,9 @@ using System.Resources;
 using VRC.Core;
 using System;
 using System.IO;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VRCSDK2
 {
@@ -44,11 +48,22 @@ namespace VRCSDK2
 
         public UnityEngine.UI.Button uploadButton;
 
+        public UnityEngine.UI.Button openCommunityLabsDocsButton;
+
+        public GameObject publishToCommunityLabsPanel;
+
+        private Toggle publishToCommLabsToggle;
+
         private ApiWorld worldRecord;
 
         private const int MAX_USER_TAGS_FOR_WORLD = 5;
         private const int MAX_CHARACTERS_ALLOWED_IN_USER_TAG = 20;
         List<String> customTags;
+
+        public static bool IsCurrentWorldInCommunityLabs = false;
+        public static bool IsCurrentWorldUploaded = false;
+        public static bool IsCurrentWorldPubliclyPublished = false;
+        public static bool HasExceededPublishLimit = false;
 
 #if UNITY_EDITOR
         new void Start()
@@ -58,6 +73,11 @@ namespace VRCSDK2
 
             base.Start();
 
+            IsCurrentWorldInCommunityLabs = false;
+            IsCurrentWorldUploaded = false;
+            IsCurrentWorldPubliclyPublished = false;
+
+
             var desc = pipelineManager.GetComponent<VRC_SceneDescriptor>();
             desc.PositionPortraitCamera(imageCapture.shotCamera.transform);
 
@@ -65,6 +85,8 @@ namespace VRCSDK2
             UnityEngine.XR.XRSettings.enabled = false;
 
             uploadButton.onClick.AddListener(SetupUpload);
+
+            openCommunityLabsDocsButton.onClick.AddListener(OpenCommunityLabsDocumentation);
 
             shouldUpdateImageToggle.onValueChanged.AddListener(ToggleUpdateImage);
 
@@ -89,6 +111,10 @@ namespace VRCSDK2
                         onError(c.Error);
                     }
                 );
+
+#if !COMMUNITY_LABS_SDK
+            publishToCommunityLabsPanel.gameObject.SetActive(false);
+#endif
         }
 
         void UserLoggedInCallback(APIUser user)
@@ -103,7 +129,7 @@ namespace VRCSDK2
                     Debug.Log("<color=magenta>Updating an existing world.</color>");
                     worldRecord = c.Model as ApiWorld;
                     pipelineManager.completedSDKPipeline = !string.IsNullOrEmpty(worldRecord.authorId);
-                    SetupUI();
+                    GetUserUploadInformationAndSetupUI(model.id);
                 },
                 (c) =>
                 {
@@ -111,12 +137,78 @@ namespace VRCSDK2
                     worldRecord = new ApiWorld { capacity = 8 };
                     pipelineManager.completedSDKPipeline = false;
                     worldRecord.id = pipelineManager.blueprintId;
-                    SetupUI();
+                    GetUserUploadInformationAndSetupUI(model.id);
                 });
         }
 
-        void SetupUI()
+        void CheckWorldStatus(string worldId, Action onCheckComplete)
         {
+            // check if world has been previously uploaded, and if world is in community labs
+            ApiWorld.FetchUploadedWorlds(
+                delegate (List<ApiWorld> worlds)
+                {
+                    ApiWorld selectedWorld = worlds.Find(w => w.id == worldId);
+                    if (null!=selectedWorld)
+                    {
+                        IsCurrentWorldInCommunityLabs = selectedWorld.IsCommunityLabsWorld;
+                        IsCurrentWorldPubliclyPublished = selectedWorld.IsPublicPublishedWorld;
+                        IsCurrentWorldUploaded = true;
+                    }
+                    if (onCheckComplete != null) onCheckComplete();
+
+                },
+                delegate (string err)
+                {
+                    IsCurrentWorldInCommunityLabs = false;
+                    IsCurrentWorldUploaded = false;
+                    IsCurrentWorldPubliclyPublished = false;
+                    Debug.Log("CheckWorldStatus error:" + err);
+                    if (onCheckComplete != null) onCheckComplete();
+                }
+                );
+        }
+
+
+        void GetUserUploadInformationAndSetupUI(string worldId)
+        {
+            CheckWorldStatus(worldId, delegate()
+                {
+                    bool hasSufficientTrustLevelToPublishToCommunityLabs = APIUser.CurrentUser.hasKnownTrustLevel;
+                    APIUser.FetchPublishWorldsInformation(
+                        (c) =>
+                        {
+                            try
+                            {
+                                Dictionary<string, object> publish = c as Dictionary<string, object>;
+                                if (publish["canPublish"] is bool)
+                                {
+                                    HasExceededPublishLimit = !(bool)(publish["canPublish"]);
+                                }
+                                else
+                                    HasExceededPublishLimit = true;
+                            }
+                            catch (Exception)
+                            {
+                                HasExceededPublishLimit = true;
+                            }
+                            SetupUI(hasSufficientTrustLevelToPublishToCommunityLabs, HasExceededPublishLimit);
+                        },
+                        (c) =>
+                        {
+                            SetupUI(hasSufficientTrustLevelToPublishToCommunityLabs, HasExceededPublishLimit);
+                        }
+                    );
+                }
+            );
+        }
+
+        void SetupUI(bool hasEnoughTrustToPublishToCL = false, bool hasExceededWeeklyPublishLimit = false)
+        {
+#if COMMUNITY_LABS_SDK
+            // do not display community labs panel if updating an existing CL world or updating a public world
+            publishToCommunityLabsPanel.gameObject.SetActive(!IsCurrentWorldUploaded);
+#endif
+
             if (!ValidateAssetBundleBlueprintID(worldRecord.id))
             {
                 blueprintPanel.SetActive(false);
@@ -160,8 +252,12 @@ namespace VRCSDK2
                     {
                         contentFeatured.isOn = worldRecord.tags.Contains("content_featured");
                         contentSDKExample.isOn = worldRecord.tags.Contains("content_sdk_example");
+#if COMMUNITY_LABS_SDK
+                        releasePublic.gameObject.SetActive(false);
+#else
                         releasePublic.isOn = worldRecord.releaseStatus == "public";
                         releasePublic.gameObject.SetActive(true);
+#endif
                     }
 
                     // "show in worlds menu"
@@ -211,8 +307,43 @@ namespace VRCSDK2
                 }
                 else
                 {
+#if COMMUNITY_LABS_SDK
+                    releasePublic.gameObject.SetActive(false);
+#else
                     releasePublic.gameObject.SetActive(true);
                     releasePublic.isOn = false;
+#endif
+                }
+            }
+
+            // set up publish to Community Labs checkbox and text
+            int worldsPublishedThisWeek = hasExceededWeeklyPublishLimit ? 1 : 0;
+            int maximumWorldsAllowedToPublishPerWeek = 1;
+            publishToCommLabsToggle = publishToCommunityLabsPanel.GetComponentInChildren<Toggle>();
+
+            if (null != publishToCommLabsToggle)
+            {
+                // disable publishing to CL checkbox if not enough trust or exceeded publish limit 
+                publishToCommLabsToggle.interactable = hasEnoughTrustToPublishToCL && !hasExceededWeeklyPublishLimit;
+
+                Text publishText = publishToCommLabsToggle.gameObject.GetComponentInChildren<Text>();
+                if (null != publishText)
+                {
+                    if (!hasEnoughTrustToPublishToCL)
+                    {
+                        publishText.text = "Not enough Trust to Publish to Community Labs";
+                    }
+                    else
+                    {
+                        if (hasExceededWeeklyPublishLimit)
+                        {
+                            publishText.text = "Publish limit for Community Labs Exceeded\n" + "(" + worldsPublishedThisWeek + "/" + maximumWorldsAllowedToPublishPerWeek + " Published this week)";
+                        }
+                        else
+                        {
+                            publishText.text = "Publish to Community Labs\n" + "(" + worldsPublishedThisWeek + "/" + maximumWorldsAllowedToPublishPerWeek + " Published this week)";
+                        }
+                    }
                 }
             }
         }
@@ -221,6 +352,8 @@ namespace VRCSDK2
         {
             if (!ParseUserTags())
                 return;
+
+            publishingToCommunityLabs = (publishToCommLabsToggle != null) && (publishToCommLabsToggle.isActiveAndEnabled) && (publishToCommLabsToggle.isOn);
 
             uploadTitle = "Preparing For Upload";
             isUploading = true;
@@ -273,6 +406,12 @@ namespace VRCSDK2
             StartCoroutine(UploadNew());
         }
 
+        void OnUploadedWorld()
+        {
+            string uploadedWorldURL = "https://vrchat.com/home/world/" + pipelineManager.blueprintId;
+            OnSDKPipelineComplete(uploadedWorldURL);
+        }
+
         IEnumerator UploadNew()
         {
             bool caughtInvalidInput = false;
@@ -320,8 +459,21 @@ namespace VRCSDK2
             else
                 yield return StartCoroutine(CreateBlueprint());
 
-            string uploadedWorldURL = "https://vrchat.com/home/world/" + pipelineManager.blueprintId;
-            OnSDKPipelineComplete(uploadedWorldURL);
+            if (publishingToCommunityLabs)
+            {
+                ApiWorld.PublishWorldToCommunityLabs(pipelineManager.blueprintId,
+                    (world) => OnUploadedWorld(),
+                    (err) =>
+                    {
+                        Debug.LogError("PublishWorldToCommunityLabs error:" + err);
+                        OnUploadedWorld();
+                    }
+                );
+            }
+            else
+            {
+                OnUploadedWorld();
+            }
         }
 
         private string GetFriendlyWorldFileName(string type)
@@ -519,6 +671,33 @@ namespace VRCSDK2
             }
         }
 
+        protected override void DisplayUpdateCompletedDialog(string contentUrl = null)
+        {
+#if UNITY_EDITOR
+#if COMMUNITY_LABS_SDK
+            if (null != contentUrl)
+            {
+                CheckWorldStatus(pipelineManager.blueprintId, delegate ()
+                {
+                    ContentUploadedDialog window = (ContentUploadedDialog)EditorWindow.GetWindow(typeof(ContentUploadedDialog), true, "VRCSDK", true);
+                    window.setContentURL(contentUrl);
+                    window.Show();
+                    // refresh UI based on uploaded world
+                    GetUserUploadInformationAndSetupUI(pipelineManager.blueprintId);
+                }
+                );
+            }
+            else
+#endif
+                base.DisplayUpdateCompletedDialog(contentUrl);
+#endif
+        }
+
+        private void OpenCommunityLabsDocumentation()
+        {
+            Application.OpenURL(CommunityLabsConstants.COMMUNITY_LABS_DOCUMENTATION_URL);
+        }
+
         void OnDestroy()
         {
             UnityEditor.EditorUtility.ClearProgressBar();
@@ -526,7 +705,7 @@ namespace VRCSDK2
             UnityEditor.EditorPrefs.DeleteKey("externalPluginPath");
         }
 #endif
-    }
-}
+                }
+            }
 
 

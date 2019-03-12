@@ -26,6 +26,13 @@ namespace VRC.Core
 		}
 
 		[ApiField]
+		public string favoriteReleaseStatus
+		{
+			get;
+			set;
+		}
+
+		[ApiField]
 		public List<string> tags
 		{
 			get;

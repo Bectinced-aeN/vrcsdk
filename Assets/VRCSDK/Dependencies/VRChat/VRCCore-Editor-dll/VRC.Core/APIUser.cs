@@ -45,8 +45,9 @@ namespace VRC.Core
 			Playlist_1 = 0,
 			Playlist_2 = 1,
 			Playlist_3 = 2,
-			MAX_PLAYLISTS = 3,
-			NOT_IN_A_PLAYLIST = 3
+			Playlist_4 = 3,
+			MAX_PLAYLISTS = 4,
+			NOT_IN_A_PLAYLIST = 4
 		}
 
 		public enum AvatarFavorites
@@ -77,11 +78,14 @@ namespace VRC.Core
 			"group_2"
 		};
 
+		private List<string> _playlistFetchedNames = new List<string>();
+
 		private List<string> _playlistNames = new List<string>
 		{
 			"worlds1",
 			"worlds2",
-			"worlds3"
+			"worlds3",
+			"worlds4"
 		};
 
 		private List<string> _avatarGroupsNames = new List<string>
@@ -101,7 +105,7 @@ namespace VRC.Core
 
 		public List<string>[] _favoriteFriendIdsInGroup = new List<string>[3];
 
-		public List<KeyValuePair<string, string>>[] _worldIdsInPlaylist = new List<KeyValuePair<string, string>>[3];
+		public List<KeyValuePair<string, string>>[] _worldIdsInPlaylist = new List<KeyValuePair<string, string>>[4];
 
 		private static Hashtable statusDefaultDescriptions = new Hashtable
 		{
@@ -169,6 +173,20 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public bool hasBirthday
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public bool isFriend
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public string friendKey
 		{
 			get;
 			protected set;
@@ -592,6 +610,7 @@ namespace VRC.Core
 				{
 					_currentUser.hasFetchedGroupNames = false;
 					_currentUser.FetchGroupNames();
+					_currentUser.ClearFetchedFavorites();
 				}
 			}
 		}
@@ -609,6 +628,11 @@ namespace VRC.Core
 		public override float GetLifeSpan()
 		{
 			return 60f;
+		}
+
+		public void ClearFetchedFavorites()
+		{
+			hasFetchedFavoriteFriendsInGroup = new bool[3];
 		}
 
 		public void FetchGroupNames(Action successCallback = null, Action<string> errorCallback = null)
@@ -645,7 +669,8 @@ namespace VRC.Core
 							Debug.LogError((object)("Playlist groups overflow count: " + list.Count));
 						}
 						bool[] array = new bool[_playlistNames.Count];
-						for (int i = 0; i < list.Count; i++)
+						_playlistFetchedNames = new List<string>();
+						for (int i = 0; i < ((list.Count > 4) ? 4 : list.Count); i++)
 						{
 							if (_playlistNames.Contains(list[i].name))
 							{
@@ -653,8 +678,9 @@ namespace VRC.Core
 								SetPlaylistDisplayName((WorldPlaylists)num, list[i].displayName);
 								array[num] = true;
 							}
+							_playlistFetchedNames.Add(list[i].name);
 						}
-						for (int j = 0; j < list.Count; j++)
+						for (int j = 0; j < ((list.Count > 4) ? 4 : list.Count); j++)
 						{
 							if (!_playlistNames.Contains(list[j].name))
 							{
@@ -672,7 +698,7 @@ namespace VRC.Core
 						{
 							Debug.LogError((object)("Friend groups overflow count: " + list2.Count));
 						}
-						for (int l = 0; l < list2.Count; l++)
+						for (int l = 0; l < ((list2.Count > 3) ? 3 : list2.Count); l++)
 						{
 							if (_friendGroupsNames.Contains(list2[l].name))
 							{
@@ -681,7 +707,7 @@ namespace VRC.Core
 								array2[num2] = true;
 							}
 						}
-						for (int m = 0; m < list2.Count; m++)
+						for (int m = 0; m < ((list2.Count > 3) ? 3 : list2.Count); m++)
 						{
 							if (!_friendGroupsNames.Contains(list2[m].name))
 							{
@@ -699,7 +725,7 @@ namespace VRC.Core
 						{
 							Debug.LogError((object)("Avatar groups overflow count: " + list3.Count));
 						}
-						for (int num3 = 0; num3 < list3.Count; num3++)
+						for (int num3 = 0; num3 < ((list3.Count > 1) ? 1 : list3.Count); num3++)
 						{
 							if (_avatarGroupsNames.Contains(list3[num3].name))
 							{
@@ -708,7 +734,7 @@ namespace VRC.Core
 								array3[num4] = true;
 							}
 						}
-						for (int num5 = 0; num5 < list3.Count; num5++)
+						for (int num5 = 0; num5 < ((list3.Count > 1) ? 1 : list3.Count); num5++)
 						{
 							if (!_avatarGroupsNames.Contains(list3[num5].name))
 							{
@@ -818,6 +844,10 @@ namespace VRC.Core
 			{
 				_worldIdsInPlaylist[2].RemoveAll((KeyValuePair<string, string> w) => w.Value == worldId);
 			}
+			if (_worldIdsInPlaylist[3] != null)
+			{
+				_worldIdsInPlaylist[3].RemoveAll((KeyValuePair<string, string> w) => w.Value == worldId);
+			}
 		}
 
 		public WorldPlaylists FindPlaylistContainingWorld(string worldId)
@@ -833,6 +863,10 @@ namespace VRC.Core
 			if (_worldIdsInPlaylist[2] != null && _worldIdsInPlaylist[2].FindIndex((KeyValuePair<string, string> w) => w.Value == worldId) >= 0)
 			{
 				return WorldPlaylists.Playlist_3;
+			}
+			if (_worldIdsInPlaylist[3] != null && _worldIdsInPlaylist[3].FindIndex((KeyValuePair<string, string> w) => w.Value == worldId) >= 0)
+			{
+				return WorldPlaylists.Playlist_4;
 			}
 			return WorldPlaylists.MAX_PLAYLISTS;
 		}
@@ -852,6 +886,10 @@ namespace VRC.Core
 				if (_worldIdsInPlaylist[2] != null)
 				{
 					_worldIdsInPlaylist[2].RemoveAll((KeyValuePair<string, string> w) => w.Key == favoriteId);
+				}
+				if (_worldIdsInPlaylist[3] != null)
+				{
+					_worldIdsInPlaylist[3].RemoveAll((KeyValuePair<string, string> w) => w.Key == favoriteId);
 				}
 			}
 		}
@@ -874,6 +912,10 @@ namespace VRC.Core
 			{
 				return WorldPlaylists.Playlist_3;
 			}
+			if (_worldIdsInPlaylist[3] != null && _worldIdsInPlaylist[3].FindIndex((KeyValuePair<string, string> w) => w.Key == favoriteId) >= 0)
+			{
+				return WorldPlaylists.Playlist_4;
+			}
 			return WorldPlaylists.MAX_PLAYLISTS;
 		}
 
@@ -892,7 +934,7 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			return IsWorldInPlaylist(WorldPlaylists.Playlist_1, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_2, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_3, worldId);
+			return IsWorldInPlaylist(WorldPlaylists.Playlist_1, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_2, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_3, worldId) || IsWorldInPlaylist(WorldPlaylists.Playlist_4, worldId);
 		}
 
 		public bool IsFavoriteInPlaylist(WorldPlaylists playlist, string favoriteId)
@@ -910,7 +952,7 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			return IsFavoriteInPlaylist(WorldPlaylists.Playlist_1, favoriteId) || IsFavoriteInPlaylist(WorldPlaylists.Playlist_2, favoriteId) || IsFavoriteInPlaylist(WorldPlaylists.Playlist_3, favoriteId);
+			return IsFavoriteInPlaylist(WorldPlaylists.Playlist_1, favoriteId) || IsFavoriteInPlaylist(WorldPlaylists.Playlist_2, favoriteId) || IsFavoriteInPlaylist(WorldPlaylists.Playlist_3, favoriteId) || IsFavoriteInPlaylist(WorldPlaylists.Playlist_4, favoriteId);
 		}
 
 		public void ClearPlaylist(WorldPlaylists playlist)
@@ -928,7 +970,7 @@ namespace VRC.Core
 
 		public int GetTotalWorldsInAllPlaylists()
 		{
-			return GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_1) + GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_2) + GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_3);
+			return GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_1) + GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_2) + GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_3) + GetTotalWorldsInPlaylist(WorldPlaylists.Playlist_4);
 		}
 
 		public void FetchPlaylists()
@@ -941,8 +983,8 @@ namespace VRC.Core
 					list.Add(favoriteWorld.favoriteId);
 				}
 				CurrentUser.favoriteWorldIds = list;
-				List<KeyValuePair<string, string>>[] array = new List<KeyValuePair<string, string>>[3];
-				for (int i = 0; i < 3; i++)
+				List<KeyValuePair<string, string>>[] array = new List<KeyValuePair<string, string>>[4];
+				for (int i = 0; i < 4; i++)
 				{
 					array[i] = new List<KeyValuePair<string, string>>();
 				}
@@ -964,6 +1006,7 @@ namespace VRC.Core
 				CurrentUser.SetWorldIdsInPlaylist(array[0], WorldPlaylists.Playlist_1);
 				CurrentUser.SetWorldIdsInPlaylist(array[1], WorldPlaylists.Playlist_2);
 				CurrentUser.SetWorldIdsInPlaylist(array[2], WorldPlaylists.Playlist_3);
+				CurrentUser.SetWorldIdsInPlaylist(array[3], WorldPlaylists.Playlist_4);
 			}, delegate(string obj)
 			{
 				Debug.LogError((object)("Error fetching favorite worlds: " + obj));
@@ -1078,6 +1121,8 @@ namespace VRC.Core
 				return playlistNames[1];
 			case WorldPlaylists.Playlist_3:
 				return playlistNames[2];
+			case WorldPlaylists.Playlist_4:
+				return playlistNames[3];
 			case WorldPlaylists.MAX_PLAYLISTS:
 				return null;
 			default:
@@ -1087,6 +1132,10 @@ namespace VRC.Core
 
 		public WorldPlaylists StringToPlaylistGroup(string playlistName)
 		{
+			if (string.Equals(playlistName, playlistNames[3]))
+			{
+				return WorldPlaylists.Playlist_4;
+			}
 			if (string.Equals(playlistName, playlistNames[2]))
 			{
 				return WorldPlaylists.Playlist_3;
@@ -1100,23 +1149,31 @@ namespace VRC.Core
 
 		public void GetPlaylistDisplayInfoForPlaylist(WorldPlaylists playlistIndex, Action<bool> onFetchedPlaylistInformation = null)
 		{
-			ApiGroup.GetGroupDisplayNameAndPrivacy(base.id, ApiGroup.GroupType.World, GetPlaylistGroupName(playlistIndex), delegate(ApiGroup c)
+			if (!_playlistFetchedNames.Contains(GetPlaylistGroupName(playlistIndex)))
 			{
-				Debug.Log((object)("PLAYLIST GET id=" + base.id + c.name + " " + c.visibility + " " + c.displayName));
-				SetPlaylistPrivacyLevel(StringToPlaylistGroup(c.name), ApiGroup.StringToPrivacyValue(c.visibility));
-				SetPlaylistDisplayName(StringToPlaylistGroup(c.name), c.displayName);
-				if (onFetchedPlaylistInformation != null)
-				{
-					onFetchedPlaylistInformation(obj: false);
-				}
-			}, delegate(string obj)
+				SetPlaylistPrivacyLevel(playlistIndex, ApiGroup.Privacy.Private);
+				SetPlaylistDisplayName(playlistIndex, GetPlaylistDisplayName(playlistIndex));
+			}
+			else
 			{
-				if (onFetchedPlaylistInformation != null)
+				ApiGroup.GetGroupDisplayNameAndPrivacy(base.id, ApiGroup.GroupType.World, GetPlaylistGroupName(playlistIndex), delegate(ApiGroup c)
 				{
-					onFetchedPlaylistInformation(obj: true);
-				}
-				Debug.LogError((object)("Error fetching playlist info: " + obj));
-			});
+					Debug.Log((object)("PLAYLIST GET id=" + base.id + c.name + " " + c.visibility + " " + c.displayName));
+					SetPlaylistPrivacyLevel(StringToPlaylistGroup(c.name), ApiGroup.StringToPrivacyValue(c.visibility));
+					SetPlaylistDisplayName(StringToPlaylistGroup(c.name), c.displayName);
+					if (onFetchedPlaylistInformation != null)
+					{
+						onFetchedPlaylistInformation(obj: false);
+					}
+				}, delegate(string obj)
+				{
+					if (onFetchedPlaylistInformation != null)
+					{
+						onFetchedPlaylistInformation(obj: true);
+					}
+					Debug.LogError((object)("Error fetching playlist info: " + obj));
+				});
+			}
 		}
 
 		public string GetPlaylistDisplayName(WorldPlaylists index)
@@ -1419,6 +1476,27 @@ namespace VRC.Core
 					errorCallback(c.Error);
 				}
 			});
+		}
+
+		public static void FetchPublishWorldsInformation(Action<Dictionary<string, object>> successCallback, Action<string> errorCallback)
+		{
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback((c as ApiDictContainer).ResponseDictionary);
+				}
+			};
+			apiDictContainer.OnError = delegate(ApiContainer c)
+			{
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiDictContainer responseContainer = apiDictContainer;
+			API.SendGetRequest("worlds/" + CurrentUser.id + "/publish", responseContainer, null, disableCache: true);
 		}
 
 		public static void FetchUsers(string searchQuery, Action<List<APIUser>> successCallback, Action<string> errorCallback)

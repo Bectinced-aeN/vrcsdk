@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿#define COMMUNITY_LABS_SDK
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.UI;
 
 namespace VRCSDK2
 {
@@ -27,7 +29,7 @@ namespace VRCSDK2
         }
 
         private static GUIStyle vrcSdkHeader;
-        //private static GUIStyle vrcLinkButton;
+        private static GUIStyle vrcHeaderLearnMoreButton;
         private static Vector2 changeLogScroll;
         [MenuItem("VRChat SDK/Splash Screen", false, 500)]
         public static void OpenSplashScreen()
@@ -42,8 +44,6 @@ namespace VRCSDK2
 
         public void OnEnable()
         {
-
-
             titleContent = new GUIContent("VRChat SDK");
 
             maxSize = new Vector2(400, 500);
@@ -53,20 +53,33 @@ namespace VRCSDK2
             {
                 normal =
                     {
+#if COMMUNITY_LABS_SDK
+                        background = Resources.Load("vrcSdkHeaderWithCommunityLabs") as Texture2D,
+#else
                         background = Resources.Load("vrcSdkHeader") as Texture2D,
+#endif
                         textColor = Color.white
                     },
                 fixedHeight = 200
             };
-
-            //vrcLinkButton = EditorStyles.miniButton;
-            //vrcLinkButton.normal.textColor = new Color(0, 42f/255f,1);
         }
 
         public void OnGUI()
         {
             GUILayout.Box("", vrcSdkHeader);
-
+#if COMMUNITY_LABS_SDK
+            vrcHeaderLearnMoreButton = EditorStyles.miniButton;
+            vrcHeaderLearnMoreButton.normal.textColor = Color.black;
+            vrcHeaderLearnMoreButton.fontSize = 12;
+            vrcHeaderLearnMoreButton.border = new RectOffset(10, 10, 10, 10);
+            Texture2D texture = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Texture2D>("UI/Skin/UISprite.psd");
+            vrcHeaderLearnMoreButton.normal.background = texture;
+            vrcHeaderLearnMoreButton.active.background = texture;
+            if (GUI.Button(new Rect(20, 140, 180, 40), "Please Read", vrcHeaderLearnMoreButton))
+            {
+                Application.OpenURL(CommunityLabsConstants.COMMUNITY_LABS_DOCUMENTATION_URL);
+            }
+#endif
             GUILayout.Space(4);
             GUILayout.BeginHorizontal();
             GUI.backgroundColor = Color.gray;
