@@ -8,6 +8,14 @@ namespace VRCSDK2
 	[ExecuteInEditMode]
 	public class VRC_MirrorReflection : MonoBehaviour
 	{
+		private enum Dimension
+		{
+			Auto = 0,
+			X256 = 0x100,
+			X512 = 0x200,
+			X1024 = 0x400
+		}
+
 		private class ReflectionData
 		{
 			public readonly RenderTexture[] texture = (RenderTexture[])new RenderTexture[2];
@@ -15,15 +23,30 @@ namespace VRCSDK2
 			public MaterialPropertyBlock propertyBlock;
 		}
 
-		private const int MAX_RESOLUTION_WIDTH = 2048;
+		private const int MAX_AUTO_VR_RESOLUTION_WIDTH = 1512;
 
-		private const int MAX_RESOLUTION_HEIGHT = 2048;
+		private const int MAX_AUTO_VR_RESOLUTION_HEIGHT = 1680;
 
+		private const int MAX_AUTO_DESKTOP_RESOLUTION_WIDTH = 1920;
+
+		private const int MAX_AUTO_DESKTOP_RESOLUTION_HEIGHT = 1080;
+
+		[Tooltip("Disables real-time pixel shaded point and spot lighting. Pixel shaded lights will fall-back to vertex lighting when this is enabled.")]
 		public bool m_DisablePixelLights = true;
 
+		[Tooltip("Disables occlusion culling on the mirror. Enable this if you see objects flickering in the mirror.")]
 		public bool TurnOffMirrorOcclusion = true;
 
+		[Tooltip("Only objects on the selected layers will be rendered in the mirror. Objects on the Water layer are never rendered in mirrors.")]
 		public LayerMask m_ReflectLayers = LayerMask.op_Implicit(-1);
+
+		[Tooltip("Rendering resolution of the mirror (per eye in VR). Auto renders at the same resolution as the user's HMD or monitor up to the maximum.")]
+		[SerializeField]
+		private Dimension mirrorResolution;
+
+		[Tooltip("The mirror will use this shader instead of the default shader if one is provided.")]
+		[SerializeField]
+		private Shader customShader;
 
 		private Dictionary<Camera, ReflectionData> _mReflections = new Dictionary<Camera, ReflectionData>();
 
@@ -51,16 +74,38 @@ namespace VRCSDK2
 		private void OnValidate()
 		{
 			_sInsideRendering = false;
-		}
-
-		private void Start()
-		{
 			Renderer component = this.GetComponent<Renderer>();
 			Material sharedMaterial = component.get_sharedMaterial();
-			sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
+			if (customShader != null)
+			{
+				sharedMaterial.set_shader(customShader);
+			}
+			else
+			{
+				sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
+			}
+		}
+
+		private unsafe void Start()
+		{
+			//IL_007e: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0088: Expected O, but got Unknown
+			//IL_0088: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0092: Expected O, but got Unknown
+			Renderer component = this.GetComponent<Renderer>();
+			Material sharedMaterial = component.get_sharedMaterial();
+			if (customShader != null)
+			{
+				sharedMaterial.set_shader(customShader);
+			}
+			else
+			{
+				sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
+			}
 			_texturePropertyId[0] = Shader.PropertyToID("_ReflectionTex0");
 			_texturePropertyId[1] = Shader.PropertyToID("_ReflectionTex1");
 			_playerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
+			Camera.onPostRender = Delegate.Combine((Delegate)Camera.onPostRender, (Delegate)new CameraCallback((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 		}
 
 		public void OnWillRenderObject()
@@ -132,6 +177,42 @@ namespace VRCSDK2
 			}
 		}
 
+		public void CameraPostRender(Camera cam)
+		{
+			if (_mReflections.ContainsKey(cam))
+			{
+				ReflectionData reflectionData = _mReflections[cam];
+				if (reflectionData.texture[0] != null)
+				{
+					RenderTexture.ReleaseTemporary(reflectionData.texture[0]);
+					reflectionData.texture[0] = null;
+				}
+				if (reflectionData.texture[1] != null)
+				{
+					RenderTexture.ReleaseTemporary(reflectionData.texture[1]);
+					reflectionData.texture[1] = null;
+				}
+			}
+		}
+
+		private void OnDisable()
+		{
+			foreach (ReflectionData value in _mReflections.Values)
+			{
+				if (value.texture[0] != null)
+				{
+					RenderTexture.ReleaseTemporary(value.texture[0]);
+					value.texture[0] = null;
+				}
+				if (value.texture[1] != null)
+				{
+					RenderTexture.ReleaseTemporary(value.texture[1]);
+					value.texture[1] = null;
+				}
+			}
+			_mReflections.Clear();
+		}
+
 		private void OnDestroy()
 		{
 			if (mirrorCamera != null)
@@ -147,20 +228,6 @@ namespace VRCSDK2
 				mirrorCamera = null;
 				mirrorSkybox = null;
 			}
-			foreach (ReflectionData value in _mReflections.Values)
-			{
-				if (!Application.get_isEditor())
-				{
-					Object.Destroy(value.texture[0]);
-					Object.Destroy(value.texture[1]);
-				}
-				else
-				{
-					Object.DestroyImmediate(value.texture[0]);
-					Object.DestroyImmediate(value.texture[1]);
-				}
-			}
-			_mReflections.Clear();
 		}
 
 		private bool ShouldRenderLeftEye(Camera cam)
@@ -398,8 +465,6 @@ namespace VRCSDK2
 		{
 			//IL_0034: Unknown result type (might be due to invalid IL or missing references)
 			//IL_003e: Expected O, but got Unknown
-			//IL_013d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0144: Expected O, but got Unknown
 			ReflectionData value = null;
 			if (_mReflections == null)
 			{
@@ -412,35 +477,43 @@ namespace VRCSDK2
 				value = reflectionData;
 				_mReflections[currentCamera] = value;
 			}
-			int num = Mathf.Min(currentCamera.get_pixelWidth(), 2048);
-			int num2 = Mathf.Min(currentCamera.get_pixelHeight(), 2048);
+			int width;
+			int height;
+			if (mirrorResolution == Dimension.Auto)
+			{
+				GetAutoResolution(currentCamera, out width, out height);
+			}
+			else
+			{
+				width = (int)mirrorResolution;
+				height = (int)mirrorResolution;
+			}
 			int antiAliasing = QualitySettings.get_antiAliasing();
 			antiAliasing = Mathf.Max(1, antiAliasing);
 			for (int i = 0; i < 2 && (i <= 0 || currentCamera.get_stereoEnabled()); i++)
 			{
-				if (!Object.op_Implicit(value.texture[i]) || value.texture[i].get_width() != num || value.texture[i].get_height() != num2 || value.texture[i].get_antiAliasing() != antiAliasing)
+				if (Object.op_Implicit(value.texture[i]))
 				{
-					if (Object.op_Implicit(value.texture[i]))
-					{
-						if (!Application.get_isEditor())
-						{
-							Object.Destroy(value.texture[i]);
-						}
-						else
-						{
-							Object.DestroyImmediate(value.texture[i]);
-						}
-					}
-					RenderTexture[] texture = value.texture;
-					int num3 = i;
-					RenderTexture val = new RenderTexture(num, num2, 24, 2);
-					val.set_antiAliasing(antiAliasing);
-					val.set_hideFlags(52);
-					texture[num3] = val;
-					value.propertyBlock.SetTexture(_texturePropertyId[i], value.texture[i]);
+					RenderTexture.ReleaseTemporary(value.texture[i]);
 				}
+				value.texture[i] = RenderTexture.GetTemporary(width, height, 24, 2, 0, antiAliasing);
+				value.propertyBlock.SetTexture(_texturePropertyId[i], value.texture[i]);
 			}
 			return value;
+		}
+
+		private static void GetAutoResolution(Camera currentCamera, out int width, out int height)
+		{
+			if (currentCamera.get_stereoEnabled())
+			{
+				width = Mathf.Min(currentCamera.get_pixelWidth(), 1512);
+				height = Mathf.Min(currentCamera.get_pixelHeight(), 1680);
+			}
+			else
+			{
+				width = Mathf.Min(currentCamera.get_pixelWidth(), 1920);
+				height = Mathf.Min(currentCamera.get_pixelHeight(), 1080);
+			}
 		}
 
 		private static Vector4 Plane(Vector3 pos, Vector3 normal)

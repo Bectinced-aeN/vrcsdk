@@ -31,7 +31,7 @@ public class EnvConfig
 
     static System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]> allowedGraphicsAPIs = new System.Collections.Generic.Dictionary<BuildTarget, UnityEngine.Rendering.GraphicsDeviceType[]>()
     {
-        { BuildTarget.Android, new [] { GraphicsDeviceType.OpenGLES3, GraphicsDeviceType.Vulkan }},
+        { BuildTarget.Android, new [] { GraphicsDeviceType.OpenGLES3, /* GraphicsDeviceType.Vulkan */ }},
         { BuildTarget.iOS, null },
         { BuildTarget.StandaloneLinux, null },
         { BuildTarget.StandaloneLinux64, null },
@@ -125,8 +125,6 @@ public class EnvConfig
         "Unlit/Transparent Cutout",
         "Unlit/Texture",
         "MatCap/Vertex/Textured Lit",
-        "Hidden/VRChat/SelectionHighlight",
-        "Hidden/VRChat/SelectionHighlightBlur",
 #endif
     };
 
@@ -577,7 +575,7 @@ public class EnvConfig
         graphicsManager.ApplyModifiedProperties();
     }
 
-    static void SetPlayerSettings() 
+    static void SetPlayerSettings()
     {
         // asset bundles MUST be built with settings that are compatible with VRC client
         #if VRC_OVERRIDE_COLORSPACE_GAMMA

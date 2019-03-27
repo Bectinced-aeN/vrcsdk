@@ -108,9 +108,13 @@ namespace VRC.Core
 				}
 				catch (Exception ex)
 				{
-					Debug.LogError((object)("Exception in UpdateDelegator.CheckInstance: " + ex.ToString()));
+					Debug.LogErrorFormat("Caught {0} in UpdateDelegator.CheckInstance: {1}", new object[2]
+					{
+						ex.GetType().Name,
+						ex.Message
+					});
 					throw;
-					IL_0062:;
+					IL_0074:;
 				}
 			}
 		}
@@ -148,8 +152,12 @@ namespace VRC.Core
 			}
 			catch (Exception ex)
 			{
-				Debug.LogError((object)"Exception in UpdateDelegator job:");
-				Debug.LogException(ex);
+				Debug.LogErrorFormat("Caught {0} in UpdateDelegator Job: {1}\n{2}", new object[3]
+				{
+					ex.GetType().Name,
+					ex.Message,
+					ex.StackTrace
+				});
 			}
 		}
 	}

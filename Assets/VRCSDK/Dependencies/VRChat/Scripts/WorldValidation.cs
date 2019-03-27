@@ -118,9 +118,12 @@ namespace VRCSDK2
             "UnityEngine.UI.Outline",
             "UnityEngine.UI.PositionAsUV1",
             "UnityEngine.UI.Shadow",
+#if UNITY_STANDALONE
             "UnityEngine.Rendering.PostProcessing.PostProcessDebug",
             "UnityEngine.Rendering.PostProcessing.PostProcessLayer",
             "UnityEngine.Rendering.PostProcessing.PostProcessVolume",
+            "UnityEngine.PostProcessing.PostProcessingBehaviour",
+#endif
             "VolumetricFogAndMist.FogVolumeExtensions",
             "DynamicFogAndMist.FogVolumeExtensions",
             "RenderHeads.Media.AVProVideo.ApplyToMaterial",
@@ -140,7 +143,6 @@ namespace VRCSDK2
             "PhysSound.PhysSoundTempAudio",
             "PhysSound.PhysSoundTempAudioPool",
             "PhysSound.PhysSoundTerrain",
-            "UnityEngine.PostProcessing.PostProcessingBehaviour",
             "RealisticEyeMovements.EyeAndHeadAnimator",
             "RealisticEyeMovements.LookTargetController",
             "DynamicFogAndMist.DynamicFog",

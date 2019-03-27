@@ -1091,6 +1091,9 @@ namespace VRCSDK2
 
     public static class AvatarPerformance
     {
+        public const int DEFAULT_DYNAMIC_BONE_MAX_AFFECTED_TRANSFORM_LIMIT = 32;
+        public const int DEFAULT_DYNAMIC_BONE_MAX_COLLIDER_CHECK_LIMIT = 8;
+
         static System.Type _dynamicBoneType = null;
         static System.Type _dynamicBoneColliderType = null;
         static System.Reflection.FieldInfo _dynamicBoneRootFieldInfo = null;

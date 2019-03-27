@@ -192,6 +192,13 @@ namespace VRC.Core
 			protected set;
 		}
 
+		[ApiField(Required = false)]
+		public string last_login
+		{
+			get;
+			protected set;
+		}
+
 		[DefaultValue(DeveloperType.None)]
 		[ApiField]
 		public DeveloperType developerType

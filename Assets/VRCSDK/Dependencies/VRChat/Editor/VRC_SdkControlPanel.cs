@@ -462,6 +462,31 @@ public class VRC_SdkControlPanel : EditorWindow
 
         if (scene.UpdateTimeInMS < (int)(1000f / 90f * 3f))
             OnGUIWarning(scene, "Room has a very fast update rate; experience may suffer with many users.");
+
+        foreach (GameObject go in FindObjectsOfType<GameObject>())
+        {
+            if (go.transform.parent != null)
+            {
+                for (int idx = 0; idx < go.transform.parent.childCount; ++idx)
+                {
+                    Transform t = go.transform.parent.GetChild(idx);
+                    if (t == go.transform)
+                        continue;
+                    else if (t.name == go.transform.name)
+                    {
+                        string path = t.name;
+                        Transform p = t.parent;
+                        while (p != null)
+                        {
+                            path = p.name + "/" + path;
+                            p = p.parent;
+                        }
+
+                        OnGUIWarning(scene, "Sibling objects share the same path, which may break network events: " + path);
+                    }
+                }
+            }
+        }
     }
 
     void OnGUIScene(VRCSDK2.VRC_SceneDescriptor scene)

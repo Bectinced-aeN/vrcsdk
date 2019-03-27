@@ -213,5 +213,19 @@ namespace VRCSDK2
                 RemoveComponent(comp);
             }
         }
+
+        public static void ForEachComponentOfType<T>(GameObject target, System.Action<T> action) where T : Component
+        {
+            if (target == null || action == null)
+                return;
+
+            foreach (T comp in target.GetComponentsInChildren<T>(true))
+            {
+                if (comp == null || comp.gameObject == null)
+                    continue;
+
+                action(comp);
+            }
+        }
     }
 }

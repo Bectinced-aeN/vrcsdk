@@ -419,6 +419,39 @@ namespace VRC.Core
 					pluginUrl = (data as string);
 				}
 				return true;
+			case "unityPackages":
+			{
+				object[] array = data as object[];
+				if (array != null)
+				{
+					object[] array2 = array;
+					foreach (object obj in array2)
+					{
+						Dictionary<string, object> dictionary = obj as Dictionary<string, object>;
+						if (!(dictionary["platform"].ToString() != API.GetAssetPlatformString()))
+						{
+							assetUrl = dictionary["assetUrl"].ToString();
+							pluginUrl = dictionary["pluginUrl"].ToString();
+						}
+					}
+					return true;
+				}
+				List<object> list = data as List<object>;
+				if (list != null)
+				{
+					foreach (object item in list)
+					{
+						Dictionary<string, object> dictionary2 = item as Dictionary<string, object>;
+						if (!(dictionary2["platform"].ToString() != API.GetAssetPlatformString()))
+						{
+							assetUrl = dictionary2["assetUrl"].ToString();
+							pluginUrl = dictionary2["pluginUrl"].ToString();
+						}
+					}
+					return true;
+				}
+				return true;
+			}
 			default:
 				return base.WriteField(fieldName, data);
 			}
@@ -589,6 +622,9 @@ namespace VRC.Core
 				break;
 			case SortHeading.Favorite:
 				endpoint = "worlds/favorites";
+				break;
+			case SortHeading.Labs:
+				dictionary.Add("sort", "labsPublicationDate");
 				break;
 			}
 			switch (owner)

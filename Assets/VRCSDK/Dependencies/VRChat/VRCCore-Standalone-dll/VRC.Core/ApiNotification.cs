@@ -18,7 +18,8 @@ namespace VRC.Core
 			Requestinvite,
 			VoteToKick,
 			Halp,
-			Hidden
+			Hidden,
+			Broadcast
 		}
 
 		public DateTime? localCeationTime;

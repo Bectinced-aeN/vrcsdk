@@ -310,17 +310,6 @@ namespace VRC
                         return false;
                     }
                 }
-                else
-                {
-                    EditorGUILayout.Separator();
-                    EditorGUILayout.LabelField("API", EditorStyles.boldLabel);
-
-                    ApiServerEnvironment newEnv = (EditorGUILayout.Popup("Use API", serverEnvironment != ApiServerEnvironment.Beta ? 1 : 0, new string[] { "Beta", "Release" }) == 0 ? ApiServerEnvironment.Beta : ApiServerEnvironment.Release);
-                    if (serverEnvironment != newEnv)
-                    {
-                        serverEnvironment = newEnv;
-                    }
-                }
             }
 
             // Future proof upload

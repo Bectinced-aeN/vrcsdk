@@ -1202,8 +1202,13 @@ namespace VRC.Core
                 onSuccess(FileOpResult.Success);
 #else
             yield return null;
-            if (onError != null)
-                onError("Not supported on ANDROID platform.");
+            //if (onError != null)
+            //    onError("Not supported on ANDROID platform.");
+
+            Debug.Log("CreateOptimizedFile: Android unsupported");
+            if (onSuccess != null)
+                onSuccess(FileOpResult.Unchanged);
+            yield break;
 #endif
         }
 
