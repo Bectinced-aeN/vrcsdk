@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -108,8 +109,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public byte[] ParameterBytes;
 
-			[SerializeField]
 			[HideInInspector]
+			[SerializeField]
 			public int? ParameterBytesVersion;
 		}
 
@@ -119,40 +120,44 @@ namespace VRCSDK2
 
 			public VrcBroadcastType broadcast;
 
-			public int instagatorId;
+			public GameObject instagator;
 
 			public float fastForward;
 		}
 
-		public delegate long AssignNetworkIdDelegate(VRC_EventHandler obj);
-
 		public delegate int GetNetworkIdDelegate(GameObject obj);
 
-		public delegate void LogEventDelegate(VRC_EventHandler eventHandler, VrcEvent vrcEvent, long combinedNetworkId, VrcBroadcastType broadcast, int instagatorId, float fastForward);
+		public delegate void LogEventDelegate(VRC_EventHandler eventHandler, VrcEvent vrcEvent, VrcBroadcastType broadcast, int instagatorId, float fastForward);
 
 		[SerializeField]
 		public List<VrcEvent> Events = new List<VrcEvent>();
 
-		public long CombinedNetworkId = -1L;
-
-		public VRC_EventDispatcher _dispatcher;
-
-		public bool _registered;
-
-		public static AssignNetworkIdDelegate AssignCombinedNetworkId;
+		private VRC_EventDispatcher _dispatcher;
 
 		public static GetNetworkIdDelegate GetInstigatorId;
 
 		public static LogEventDelegate LogEvent;
 
-		private bool _readyForEvents;
-
 		public List<EventInfo> deferredEvents = new List<EventInfo>();
+
+		private Coroutine DeferredEventProcessor;
 
 		public int NetworkID
 		{
 			get;
 			set;
+		}
+
+		private VRC_EventDispatcher Dispatcher
+		{
+			get
+			{
+				if (_dispatcher == null)
+				{
+					_dispatcher = Networking.GetEventDispatcher();
+				}
+				return _dispatcher;
+			}
 		}
 
 		public static GetNetworkIdDelegate GetInsitgatorId
@@ -207,58 +212,48 @@ namespace VRCSDK2
 			}
 		}
 
-		private void Start()
-		{
-			if (Application.get_isPlaying())
-			{
-				if (AssignCombinedNetworkId != null)
-				{
-					CombinedNetworkId = AssignCombinedNetworkId(this);
-				}
-				if (_dispatcher == null)
-				{
-					_dispatcher = this.get_gameObject().GetComponent<VRC_EventDispatcherLocal>();
-					if (_dispatcher == null)
-					{
-						_dispatcher = this.get_gameObject().AddComponent<VRC_EventDispatcherLocal>();
-					}
-				}
-			}
-		}
-
 		public void VrcAnimationEvent(AnimationEvent aEvent)
 		{
 			foreach (VrcEvent @event in Events)
 			{
-				if (!(@event.Name != aEvent.get_stringParameter()) && !(_dispatcher == null))
+				if (!(@event.Name != aEvent.get_stringParameter()))
 				{
-					TriggerEvent(@event, VrcBroadcastType.Local, 0, 0f);
+					TriggerEvent(@event, VrcBroadcastType.Local);
 				}
 			}
 		}
 
 		public void TriggerEvent(VrcEvent e, VrcBroadcastType broadcast, GameObject instagator = null, float fastForward = 0f)
 		{
-			int instagatorId = 0;
-			if (GetInstigatorId != null && instagator != null)
+			if (e == null)
 			{
-				instagatorId = GetInstigatorId(instagator);
+				throw new ArgumentException("Event was null");
 			}
-			TriggerEvent(e, broadcast, instagatorId, fastForward);
-		}
-
-		public void TriggerEvent(VrcEvent e, VrcBroadcastType broadcast, int instagatorId, float fastForward)
-		{
-			if (e != null && !(this.get_gameObject() == null))
+			if (instagator == null)
 			{
-				if (_dispatcher == null)
+				throw new ArgumentException("Instagator was null");
+			}
+			int num = GetInstigatorId(this.get_gameObject());
+			if (num <= 0)
+			{
+				Debug.LogFormat("Deferring event {0} of type {1} because instigator is invalid.", new object[2]
+				{
+					e.Name,
+					e.EventType
+				});
+				DeferEvent(e, broadcast, instagator, fastForward);
+			}
+			else
+			{
+				VRC_EventDispatcher dispatcher = Dispatcher;
+				if (dispatcher == null)
 				{
 					Debug.LogFormat("Deferring event {0} of type {1} because dispatcher is unavailable.", new object[2]
 					{
 						e.Name,
 						e.EventType
 					});
-					DeferEvent(e, broadcast, instagatorId, fastForward);
+					DeferEvent(e, broadcast, instagator, fastForward);
 				}
 				else if (!Networking.IsNetworkSettled)
 				{
@@ -267,7 +262,7 @@ namespace VRCSDK2
 						e.Name,
 						e.EventType
 					});
-					DeferEvent(e, broadcast, instagatorId, fastForward);
+					DeferEvent(e, broadcast, instagator, fastForward);
 				}
 				else if ((e.ParameterObjects == null || e.ParameterObjects.Length == 0) && e.ParameterObject == null)
 				{
@@ -282,13 +277,13 @@ namespace VRCSDK2
 						{
 							GameObject parameterObject2 = e.ParameterObject;
 							e.ParameterObject = parameterObject;
-							InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
+							InternalTriggerEvent(e, broadcast, num, fastForward);
 							e.ParameterObject = parameterObject2;
 						}
 					}
 					if (e.ParameterObject != null)
 					{
-						InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
+						InternalTriggerEvent(e, broadcast, num, fastForward);
 					}
 				}
 			}
@@ -298,26 +293,46 @@ namespace VRCSDK2
 		{
 			if (LogEvent != null)
 			{
-				LogEvent(this, e, CombinedNetworkId, broadcast, instagatorId, fastForward);
+				LogEvent(this, e, broadcast, instagatorId, fastForward);
 			}
 			else
 			{
-				_dispatcher.TriggerEvent(this, e, broadcast, instagatorId, fastForward);
+				Dispatcher.TriggerEvent(this, e, broadcast, instagatorId, fastForward);
+			}
+		}
+
+		[Obsolete("Use the player object as the instigator", false)]
+		public void TriggerEvent(VrcEvent e, VrcBroadcastType broadcast, int instagatorId, float fastForward)
+		{
+			if (e == null)
+			{
+				Debug.LogErrorFormat("Cancelling event because it was not valid", new object[0]);
+			}
+			else
+			{
+				VRC_PlayerApi playerById = VRC_PlayerApi.GetPlayerById(instagatorId);
+				if (playerById == null)
+				{
+					Debug.LogErrorFormat("Cancelling event {0} because instagator was not valid", new object[1]
+					{
+						e.Name
+					});
+				}
+				else
+				{
+					TriggerEvent(e, broadcast, playerById.get_gameObject(), fastForward);
+				}
 			}
 		}
 
 		[Obsolete("Do not trigger events by name", false)]
 		public void TriggerEvent(string eventName, VrcBroadcastType broadcast, GameObject instagator = null, int instagatorId = 0)
 		{
-			if (instagator != null && instagatorId <= 0 && GetInstigatorId != null)
-			{
-				instagatorId = GetInstigatorId(instagator);
-			}
 			foreach (VrcEvent @event in Events)
 			{
-				if (!(@event.Name != eventName) && !(_dispatcher == null))
+				if (!(@event.Name != eventName))
 				{
-					TriggerEvent(@event, broadcast, instagatorId, 0f);
+					TriggerEvent(@event, broadcast, instagator);
 				}
 			}
 		}
@@ -325,15 +340,11 @@ namespace VRCSDK2
 		[Obsolete("Do not trigger events by name", false)]
 		public void TriggerEvent(string eventName, VrcBroadcastType broadcast, GameObject instagator, int instagatorId, float fastForward)
 		{
-			if (instagator != null && instagatorId <= 0 && GetInstigatorId != null)
-			{
-				instagatorId = GetInstigatorId(instagator);
-			}
 			foreach (VrcEvent @event in Events)
 			{
-				if (!(@event.Name != eventName) && !(_dispatcher == null))
+				if (!(@event.Name != eventName))
 				{
-					TriggerEvent(@event, broadcast, instagatorId, fastForward);
+					TriggerEvent(@event, broadcast, instagator, fastForward);
 				}
 			}
 		}
@@ -356,37 +367,22 @@ namespace VRCSDK2
 			}
 		}
 
-		public void Unregister()
-		{
-			if (_dispatcher != null && _registered)
-			{
-				_dispatcher.UnregisterEventHandler(this);
-			}
-			_registered = false;
-		}
-
 		private void OnDestroy()
 		{
-			ProcessDeferredEvents();
 			if (deferredEvents.Count > 0)
 			{
 				Debug.LogError((object)"Not all events were triggered prior to the handler being destroyed.");
 			}
-			Unregister();
+			if (Dispatcher != null)
+			{
+				Dispatcher.UnregisterEventHandler(this);
+			}
 		}
 
-		private void LateUpdate()
-		{
-			ProcessDeferredEvents();
-		}
-
+		[Obsolete("Event Handler Combined ID is no longer used")]
 		public long GetCombinedNetworkId()
 		{
-			if (CombinedNetworkId <= 0)
-			{
-				Debug.LogError((object)"Combined Network IDs must be initialized by now");
-			}
-			return CombinedNetworkId;
+			return 0L;
 		}
 
 		public static bool HasEventTrigger(GameObject go)
@@ -394,17 +390,13 @@ namespace VRCSDK2
 			return go.GetComponent<VRC_Interactable>() != null;
 		}
 
-		public void SetReady(bool ready)
-		{
-			_readyForEvents = ready;
-		}
-
+		[Obsolete("They will defer.")]
 		public bool IsReadyForEvents()
 		{
-			return _readyForEvents;
+			return true;
 		}
 
-		public void DeferEvent(VrcEvent e, VrcBroadcastType broadcast, int instagatorId, float fastForward)
+		public void DeferEvent(VrcEvent e, VrcBroadcastType broadcast, GameObject instagator, float fastForward)
 		{
 			if (deferredEvents == null)
 			{
@@ -414,25 +406,47 @@ namespace VRCSDK2
 			{
 				evt = e,
 				broadcast = broadcast,
-				instagatorId = instagatorId,
+				instagator = instagator,
 				fastForward = fastForward
 			});
+			if (DeferredEventProcessor == null)
+			{
+				DeferredEventProcessor = Networking.SafeStartCoroutine(ProcessDeferredEvents());
+			}
 		}
 
-		private void ProcessDeferredEvents()
+		private IEnumerator ProcessDeferredEvents()
 		{
-			if (Networking.IsNetworkSettled && _dispatcher != null && deferredEvents != null && deferredEvents.Count > 0 && Networking.IsObjectReady(this.get_gameObject()))
+			yield return (object)null;
+			while (this != null && deferredEvents != null && deferredEvents.Count > 0)
 			{
-				List<EventInfo> list = new List<EventInfo>(deferredEvents);
-				deferredEvents = new List<EventInfo>();
-				foreach (EventInfo item in list)
+				if (!Networking.IsNetworkSettled || Dispatcher == null || !Networking.IsObjectReady(this.get_gameObject()))
 				{
-					if (item != null)
+					yield return (object)null;
+				}
+				else
+				{
+					new List<EventInfo>(deferredEvents);
+					deferredEvents = new List<EventInfo>();
+					foreach (EventInfo deferredEvent in deferredEvents)
 					{
-						TriggerEvent(item.evt, item.broadcast, item.instagatorId, item.fastForward);
+						if (deferredEvent != null)
+						{
+							int instigatorId = GetInstigatorId(deferredEvent.instagator);
+							if (instigatorId <= 0)
+							{
+								deferredEvents.Add(deferredEvent);
+							}
+							else
+							{
+								TriggerEvent(deferredEvent.evt, deferredEvent.broadcast, instigatorId, deferredEvent.fastForward);
+							}
+						}
 					}
+					yield return (object)null;
 				}
 			}
+			DeferredEventProcessor = null;
 		}
 	}
 }

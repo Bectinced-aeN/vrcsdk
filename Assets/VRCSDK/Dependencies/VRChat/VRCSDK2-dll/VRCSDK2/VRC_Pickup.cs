@@ -52,20 +52,20 @@ namespace VRCSDK2
 
 		public string UseText = "Use";
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType useEventBroadcastType;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public string UseDownEventName;
 
 		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseUpEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
 		[Obsolete("Please use a VRC_Trigger", false)]

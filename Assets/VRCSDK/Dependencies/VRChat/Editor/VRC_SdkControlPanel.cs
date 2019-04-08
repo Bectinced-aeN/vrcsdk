@@ -85,7 +85,11 @@ public class VRC_SdkControlPanel : EditorWindow
             subject = this;
         if (!report.ContainsKey(subject))
             report.Add(subject, new List<string>());
-        report[subject].Add(output);
+        if (!report[subject].Contains(output))
+        {
+            report[subject].Add(output);
+            report[subject].Sort();
+        }
     }
 
     void OnGUIError(Object subject, string output)
@@ -472,7 +476,11 @@ public class VRC_SdkControlPanel : EditorWindow
                     Transform t = go.transform.parent.GetChild(idx);
                     if (t == go.transform)
                         continue;
-                    else if (t.name == go.transform.name)
+                    else if (t.name == go.transform.name 
+                            && !(t.GetComponent<VRCSDK2.VRC_ObjectSync>()
+                                || t.GetComponent<VRCSDK2.VRC_SyncAnimation>()
+                                || t.GetComponent<VRCSDK2.VRC_SyncVideoPlayer>()
+                                || t.GetComponent<VRCSDK2.VRC_SyncVideoStream>()))
                     {
                         string path = t.name;
                         Transform p = t.parent;
@@ -483,6 +491,7 @@ public class VRC_SdkControlPanel : EditorWindow
                         }
 
                         OnGUIWarning(scene, "Sibling objects share the same path, which may break network events: " + path);
+                        break;
                     }
                 }
             }

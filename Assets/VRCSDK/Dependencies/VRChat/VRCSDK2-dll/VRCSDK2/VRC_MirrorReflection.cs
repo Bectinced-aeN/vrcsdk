@@ -23,13 +23,13 @@ namespace VRCSDK2
 			public MaterialPropertyBlock propertyBlock;
 		}
 
-		private const int MAX_AUTO_VR_RESOLUTION_WIDTH = 1512;
+		private const int MAX_AUTO_VR_RESOLUTION_WIDTH = 2048;
 
-		private const int MAX_AUTO_VR_RESOLUTION_HEIGHT = 1680;
+		private const int MAX_AUTO_VR_RESOLUTION_HEIGHT = 2048;
 
-		private const int MAX_AUTO_DESKTOP_RESOLUTION_WIDTH = 1920;
+		private const int MAX_AUTO_DESKTOP_RESOLUTION_WIDTH = 2048;
 
-		private const int MAX_AUTO_DESKTOP_RESOLUTION_HEIGHT = 1080;
+		private const int MAX_AUTO_DESKTOP_RESOLUTION_HEIGHT = 2048;
 
 		[Tooltip("Disables real-time pixel shaded point and spot lighting. Pixel shaded lights will fall-back to vertex lighting when this is enabled.")]
 		public bool m_DisablePixelLights = true;
@@ -506,13 +506,13 @@ namespace VRCSDK2
 		{
 			if (currentCamera.get_stereoEnabled())
 			{
-				width = Mathf.Min(currentCamera.get_pixelWidth(), 1512);
-				height = Mathf.Min(currentCamera.get_pixelHeight(), 1680);
+				width = Mathf.Min(currentCamera.get_pixelWidth(), 2048);
+				height = Mathf.Min(currentCamera.get_pixelHeight(), 2048);
 			}
 			else
 			{
-				width = Mathf.Min(currentCamera.get_pixelWidth(), 1920);
-				height = Mathf.Min(currentCamera.get_pixelHeight(), 1080);
+				width = Mathf.Min(currentCamera.get_pixelWidth(), 2048);
+				height = Mathf.Min(currentCamera.get_pixelHeight(), 2048);
 			}
 		}
 

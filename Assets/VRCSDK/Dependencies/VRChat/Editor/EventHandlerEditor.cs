@@ -21,7 +21,6 @@ namespace VRCSDK2
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("ID:");
-            EditorGUILayout.LabelField(myTarget.CombinedNetworkId.ToString("X"));
             EditorGUILayout.EndHorizontal();
 
             if (myTarget.GetComponent<VRCSDK2.VRC_Trigger>() != null)
@@ -253,8 +252,6 @@ namespace VRCSDK2
         {
             foreach (VRCSDK2.VRC_EventHandler.EventInfo entry in entries)
             {
-                EditorGUILayout.LabelField(string.Format("Instigator ID: {0}", entry.instagatorId));
-
                 EditorGUILayout.PrefixLabel("Target");
                 EditorGUILayout.ObjectField(entry.evt.ParameterObject, typeof(GameObject), true);
 

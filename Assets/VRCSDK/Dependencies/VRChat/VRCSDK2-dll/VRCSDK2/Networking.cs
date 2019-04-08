@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace VRCSDK2
@@ -44,6 +45,10 @@ namespace VRCSDK2
 		public static Func<int> _GetServerTimeInMilliseconds;
 
 		public static Func<double, double, double> _CalculateServerDeltaTime;
+
+		public static Func<IEnumerator, Coroutine> _SafeStartCoroutine;
+
+		public static Func<VRC_EventDispatcher> _GetEventDispatcher;
 
 		public static VRC_EventHandler SceneEventHandler => (_SceneEventHandler != null) ? _SceneEventHandler() : null;
 
@@ -189,6 +194,24 @@ namespace VRCSDK2
 				return _CalculateServerDeltaTime(timeInSeconds, previousTimeInSeconds);
 			}
 			return timeInSeconds - previousTimeInSeconds;
+		}
+
+		public static Coroutine SafeStartCoroutine(IEnumerator target)
+		{
+			if (_SafeStartCoroutine != null)
+			{
+				return _SafeStartCoroutine(target);
+			}
+			return null;
+		}
+
+		public static VRC_EventDispatcher GetEventDispatcher()
+		{
+			if (_GetEventDispatcher != null)
+			{
+				return _GetEventDispatcher();
+			}
+			return null;
 		}
 	}
 }
