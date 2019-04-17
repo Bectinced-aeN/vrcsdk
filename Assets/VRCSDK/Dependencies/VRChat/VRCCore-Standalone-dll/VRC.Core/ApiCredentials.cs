@@ -88,5 +88,10 @@ namespace VRC.Core
 		{
 			return providerUserId;
 		}
+
+		public static bool IsLoaded()
+		{
+			return !string.IsNullOrEmpty(authToken);
+		}
 	}
 }

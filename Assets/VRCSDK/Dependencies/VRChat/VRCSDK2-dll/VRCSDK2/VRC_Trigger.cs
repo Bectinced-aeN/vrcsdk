@@ -253,21 +253,17 @@ namespace VRCSDK2
 
 		private void OnEnable()
 		{
-			foreach (TriggerEvent item in from t in Triggers
-			where t.TriggerType == TriggerType.OnTimer && t.ResetOnEnable
-			select t)
-			{
-				ResetClock(item);
-			}
 			ExecuteTriggerType(TriggerType.OnEnable);
+			ResetClocks();
 		}
 
 		private void OnDisable()
 		{
 			ExecuteTriggerType(TriggerType.OnDisable);
+			ResetClocks();
 		}
 
-		private void OnDrawGizmos()
+		private void OnDrawGizmosSelected()
 		{
 			List<VRC_Trigger> list = new List<VRC_Trigger>();
 			List<VRC_Trigger> list2 = new List<VRC_Trigger>();
@@ -347,6 +343,16 @@ namespace VRCSDK2
 			select t)
 			{
 				ExecuteTrigger(item);
+			}
+		}
+
+		private void ResetClocks()
+		{
+			foreach (TriggerEvent item in from t in Triggers
+			where t.TriggerType == TriggerType.OnTimer && t.ResetOnEnable
+			select t)
+			{
+				ResetClock(item);
 			}
 		}
 

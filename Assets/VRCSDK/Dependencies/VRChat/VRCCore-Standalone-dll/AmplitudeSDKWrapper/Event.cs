@@ -4,8 +4,8 @@ namespace AmplitudeSDKWrapper
 {
 	internal class Event
 	{
-		[PrimaryKey]
 		[AutoIncrement]
+		[PrimaryKey]
 		public int Id
 		{
 			get;

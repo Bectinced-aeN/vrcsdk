@@ -428,10 +428,16 @@ namespace VRC.Core
 					foreach (object obj in array2)
 					{
 						Dictionary<string, object> dictionary = obj as Dictionary<string, object>;
-						if (!(dictionary["platform"].ToString() != API.GetAssetPlatformString()))
+						if (dictionary.ContainsKey("platform") && !(dictionary["platform"].ToString() != API.GetAssetPlatformString()))
 						{
-							assetUrl = dictionary["assetUrl"].ToString();
-							pluginUrl = dictionary["pluginUrl"].ToString();
+							if (dictionary.ContainsKey("assetUrl"))
+							{
+								assetUrl = dictionary["assetUrl"].ToString();
+							}
+							if (dictionary.ContainsKey("pluginUrl"))
+							{
+								pluginUrl = dictionary["pluginUrl"].ToString();
+							}
 						}
 					}
 					return true;
@@ -442,10 +448,16 @@ namespace VRC.Core
 					foreach (object item in list)
 					{
 						Dictionary<string, object> dictionary2 = item as Dictionary<string, object>;
-						if (!(dictionary2["platform"].ToString() != API.GetAssetPlatformString()))
+						if (dictionary2.ContainsKey("platform") && !(dictionary2["platform"].ToString() != API.GetAssetPlatformString()))
 						{
-							assetUrl = dictionary2["assetUrl"].ToString();
-							pluginUrl = dictionary2["pluginUrl"].ToString();
+							if (dictionary2.ContainsKey("assetUrl"))
+							{
+								assetUrl = dictionary2["assetUrl"].ToString();
+							}
+							if (dictionary2.ContainsKey("pluginUrl"))
+							{
+								pluginUrl = dictionary2["pluginUrl"].ToString();
+							}
 						}
 					}
 					return true;

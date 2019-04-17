@@ -231,17 +231,10 @@ namespace VRCSDK2
 			}
 			if (instagator == null)
 			{
-				throw new ArgumentException("Instagator was null");
-			}
-			int num = GetInstigatorId(this.get_gameObject());
-			if (num <= 0)
-			{
-				Debug.LogFormat("Deferring event {0} of type {1} because instigator is invalid.", new object[2]
+				Debug.LogErrorFormat("Cancelling event {0} because the Instagator was null.", new object[1]
 				{
-					e.Name,
-					e.EventType
+					e.Name
 				});
-				DeferEvent(e, broadcast, instagator, fastForward);
 			}
 			else
 			{
@@ -255,21 +248,13 @@ namespace VRCSDK2
 					});
 					DeferEvent(e, broadcast, instagator, fastForward);
 				}
-				else if (!Networking.IsNetworkSettled)
-				{
-					Debug.LogFormat("Deferring event {0} of type {1} because the network is not settled.", new object[2]
-					{
-						e.Name,
-						e.EventType
-					});
-					DeferEvent(e, broadcast, instagator, fastForward);
-				}
 				else if ((e.ParameterObjects == null || e.ParameterObjects.Length == 0) && e.ParameterObject == null)
 				{
 					Debug.LogError((object)("No object to receive event " + e.Name + " of type " + e.EventType));
 				}
 				else
 				{
+					int instagatorId = GetInstigatorId(this.get_gameObject());
 					if (e.ParameterObjects != null)
 					{
 						GameObject[] parameterObjects = e.ParameterObjects;
@@ -277,13 +262,13 @@ namespace VRCSDK2
 						{
 							GameObject parameterObject2 = e.ParameterObject;
 							e.ParameterObject = parameterObject;
-							InternalTriggerEvent(e, broadcast, num, fastForward);
+							InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
 							e.ParameterObject = parameterObject2;
 						}
 					}
 					if (e.ParameterObject != null)
 					{
-						InternalTriggerEvent(e, broadcast, num, fastForward);
+						InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
 					}
 				}
 			}
@@ -313,10 +298,7 @@ namespace VRCSDK2
 				VRC_PlayerApi playerById = VRC_PlayerApi.GetPlayerById(instagatorId);
 				if (playerById == null)
 				{
-					Debug.LogErrorFormat("Cancelling event {0} because instagator was not valid", new object[1]
-					{
-						e.Name
-					});
+					Debug.LogErrorFormat("Cancelling event because instagator was not valid", new object[0]);
 				}
 				else
 				{
@@ -420,7 +402,7 @@ namespace VRCSDK2
 			yield return (object)null;
 			while (this != null && deferredEvents != null && deferredEvents.Count > 0)
 			{
-				if (!Networking.IsNetworkSettled || Dispatcher == null || !Networking.IsObjectReady(this.get_gameObject()))
+				if (Dispatcher == null)
 				{
 					yield return (object)null;
 				}

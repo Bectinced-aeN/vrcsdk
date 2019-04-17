@@ -613,12 +613,6 @@ namespace VRC.Core
 			protected set
 			{
 				_currentUser = value;
-				if (_currentUser != null)
-				{
-					_currentUser.hasFetchedGroupNames = false;
-					_currentUser.FetchGroupNames();
-					_currentUser.ClearFetchedFavorites();
-				}
 			}
 		}
 
@@ -644,6 +638,15 @@ namespace VRC.Core
 
 		public void FetchGroupNames(Action successCallback = null, Action<string> errorCallback = null)
 		{
+			FetchGroupNames(force: false);
+		}
+
+		public void FetchGroupNames(bool force, Action successCallback = null, Action<string> errorCallback = null)
+		{
+			if (force)
+			{
+				hasFetchedGroupNames = false;
+			}
 			if (!hasFetchedGroupNames || successCallback != null)
 			{
 				Dictionary<string, object> dictionary = new Dictionary<string, object>();
@@ -1290,7 +1293,7 @@ namespace VRC.Core
 
 		public static void FetchCurrentUser(Action<ApiModelContainer<APIUser>> onSuccess, Action<ApiModelContainer<APIUser>> onError)
 		{
-			if (!ApiCredentials.Load())
+			if (!ApiCredentials.IsLoaded())
 			{
 				if (onError != null)
 				{
@@ -1307,7 +1310,6 @@ namespace VRC.Core
 				apiModelContainer.OnSuccess = delegate(ApiContainer c)
 				{
 					CurrentUser = (c.Model as APIUser);
-					CurrentUser.FetchPlaylists();
 					if (onSuccess != null)
 					{
 						onSuccess(c as ApiModelContainer<APIUser>);
