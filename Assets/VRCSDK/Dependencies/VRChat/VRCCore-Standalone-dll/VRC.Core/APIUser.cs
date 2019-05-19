@@ -64,6 +64,8 @@ namespace VRC.Core
 
 		private const int MAX_STATUS_DESCRIPTION_LENGTH = 32;
 
+		private string _last_platform;
+
 		private List<string> _defaultFriendGroupsNames = new List<string>
 		{
 			"group_0",
@@ -389,8 +391,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[Obsolete("No.")]
 		[ApiField(Required = false)]
+		[Obsolete("No.")]
 		private string networkSessionId
 		{
 			get;
@@ -430,6 +432,28 @@ namespace VRC.Core
 		{
 			get;
 			set;
+		}
+
+		[ApiField(Required = false)]
+		public string last_platform
+		{
+			get
+			{
+				return _last_platform;
+			}
+			protected set
+			{
+				_last_platform = value;
+				switch (_last_platform)
+				{
+				case "android":
+					supportedPlatforms = SupportedPlatforms.Android;
+					break;
+				default:
+					supportedPlatforms = SupportedPlatforms.StandaloneWindows;
+					break;
+				}
+			}
 		}
 
 		[ApiField(Required = false)]
@@ -492,6 +516,8 @@ namespace VRC.Core
 				_avatarGroupsNames = value;
 			}
 		}
+
+		public bool IsOnMobile => supportedPlatforms == SupportedPlatforms.Android;
 
 		public List<string> playlistPrivacy
 		{
@@ -1464,7 +1490,7 @@ namespace VRC.Core
 		public static void FetchUsersInWorldInstance(string worldId, string instanceId, Action<List<APIUser>> successCallback, Action<string> errorCallback)
 		{
 			ApiWorld w = API.FromCacheOrNew<ApiWorld>(worldId);
-			w.Fetch(instanceId, compatibleVersionsOnly: false, delegate
+			w.Fetch(instanceId, null, delegate
 			{
 				if (successCallback != null)
 				{
@@ -1508,7 +1534,7 @@ namespace VRC.Core
 			API.SendGetRequest("worlds/" + CurrentUser.id + "/publish", responseContainer, null, disableCache: true);
 		}
 
-		public static void FetchUsers(string searchQuery, Action<List<APIUser>> successCallback, Action<string> errorCallback)
+		public static void FetchUsers(string searchQuery, Action<IEnumerable<APIUser>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
@@ -1550,7 +1576,7 @@ namespace VRC.Core
 			API.SendGetRequest("users/" + userId, responseContainer, null, disableCache: true);
 		}
 
-		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, bool useCache = true)
+		public static void FetchFriends(FriendLocation location, int offset = 0, int count = 100, Action<IEnumerable<APIUser>> successCallback = null, Action<string> errorCallback = null, bool useCache = true)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary.Add("offset", offset);
@@ -1596,7 +1622,7 @@ namespace VRC.Core
 			API.SendGetRequest("auth/user/friends" + ((location != FriendLocation.Offline) ? string.Empty : "?offline=true"), responseContainer, requestParams, disableCache: false, 10f);
 		}
 
-		public static void FetchFavoriteFriends(int offset = 0, int count = 100, Action<List<APIUser>> successCallback = null, Action<string> errorCallback = null, string tag = null, bool bUseCache = true)
+		public static void FetchFavoriteFriends(int offset = 0, int count = 100, Action<IEnumerable<APIUser>> successCallback = null, Action<string> errorCallback = null, string tag = null, bool bUseCache = true)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary.Add("offset", offset);
@@ -1889,7 +1915,7 @@ namespace VRC.Core
 			return CurrentUser.IsFavorite(userId);
 		}
 
-		public static void FetchOnlineModerators(bool onCallOnly, Action<List<APIUser>> successCallback, Action<string> errorCallback)
+		public static void FetchOnlineModerators(bool onCallOnly, Action<IEnumerable<APIUser>> successCallback, Action<string> errorCallback)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			dictionary.Add("developerType", "internal");

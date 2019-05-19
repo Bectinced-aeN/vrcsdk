@@ -70,15 +70,23 @@ public class VRC_SdkBuilder : MonoBehaviour
 
 	private static void UploadAvatarResource()
 	{
-		//IL_0014: Unknown result type (might be due to invalid IL or missing references)
-		//IL_002d: Unknown result type (might be due to invalid IL or missing references)
+		//IL_004f: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0068: Unknown result type (might be due to invalid IL or missing references)
 		if (!string.IsNullOrEmpty(vrcPath))
 		{
-			VRC_AvatarDescriptor component = Selection.get_activeObject().GetComponent<VRC_AvatarDescriptor>();
-			PipelineSaver val = component.get_gameObject().AddComponent<PipelineSaver>();
-			val.contentType = 0;
-			EditorApplication.set_isPlaying(true);
-			VRCPipelineManagerEditor.launchedFromSDKPipeline = true;
+			int num = 0;
+			if (!string.IsNullOrEmpty(vrcPath) && ValidationHelpers.CheckIfAssetBundleFileTooLarge(2, vrcPath, ref num))
+			{
+				EditorUtility.DisplayDialog("Could not publish avatar", ValidationHelpers.GetAssetBundleOverSizeLimitMessage(2, num), "Ok");
+			}
+			else
+			{
+				VRC_AvatarDescriptor component = Selection.get_activeObject().GetComponent<VRC_AvatarDescriptor>();
+				PipelineSaver val = component.get_gameObject().AddComponent<PipelineSaver>();
+				val.contentType = 0;
+				EditorApplication.set_isPlaying(true);
+				VRCPipelineManagerEditor.launchedFromSDKPipeline = true;
+			}
 		}
 	}
 
@@ -180,48 +188,47 @@ public class VRC_SdkBuilder : MonoBehaviour
 		{
 			string @string = EditorPrefs.GetString("lastExternalPluginPath");
 			string text = WWW.UnEscapeURL(EditorPrefs.GetString("lastVRCPath"));
-			bool flag = false;
-			if (string.IsNullOrEmpty(text) || (!string.IsNullOrEmpty(text) && !File.Exists(text)))
+			if (string.IsNullOrEmpty(text) || (!string.IsNullOrEmpty(text) && !File.Exists(text)) || (CustomDLLMaker.CustomScriptsAvailable() && !string.IsNullOrEmpty(@string) && !File.Exists(@string)))
 			{
-				flag = true;
-			}
-			else if (CustomDLLMaker.CustomScriptsAvailable() && !string.IsNullOrEmpty(@string) && !File.Exists(@string))
-			{
-				flag = true;
-			}
-			if (!flag)
-			{
-				EditorPrefs.SetString("currentBuildingAssetBundlePath", text);
-				if (APIUser.get_CurrentUser().get_hasScriptingAccess() && CustomDLLMaker.CustomScriptsAvailable())
-				{
-					EditorPrefs.SetString("externalPluginPath", @string);
-				}
-				else
-				{
-					CustomDLLMaker.ClearSavedPluginPrefs();
-				}
-				if (shouldBuildUnityPackage)
-				{
-					AssetExporter.ExportCurrentSceneAsUnityPackageIfNotExist();
-				}
-				else
-				{
-					AssetExporter.CleanupUnityPackageExport();
-				}
-				AssetExporter.LaunchSceneBlueprintUploader();
+				EditorUtility.DisplayDialog("Could not run VRChat scene", "Last built VRChat scene could not be found. Please Test/Compile Full Scene (slow).", "OK");
 			}
 			else
 			{
-				EditorUtility.DisplayDialog("Could not run VRChat scene", "Last built VRChat scene could not be found. Please Test/Compile Full Scene (slow).", "OK");
+				int num = 0;
+				if (ValidationHelpers.CheckIfAssetBundleFileTooLarge(1, text, ref num))
+				{
+					EditorUtility.DisplayDialog("Could not publish VRChat scene", ValidationHelpers.GetAssetBundleOverSizeLimitMessage(1, num), "OK");
+				}
+				else
+				{
+					EditorPrefs.SetString("currentBuildingAssetBundlePath", text);
+					if (APIUser.get_CurrentUser().get_hasScriptingAccess() && CustomDLLMaker.CustomScriptsAvailable())
+					{
+						EditorPrefs.SetString("externalPluginPath", @string);
+					}
+					else
+					{
+						CustomDLLMaker.ClearSavedPluginPrefs();
+					}
+					if (shouldBuildUnityPackage)
+					{
+						AssetExporter.ExportCurrentSceneAsUnityPackageIfNotExist();
+					}
+					else
+					{
+						AssetExporter.CleanupUnityPackageExport();
+					}
+					AssetExporter.LaunchSceneBlueprintUploader();
+				}
 			}
 		}
 	}
 
-	public static void ExportAndUploadSceneBlueprint()
+	public static void ExportAndUploadSceneBlueprint(string customNamespace = null)
 	{
 		if (VerifyCredentials())
 		{
-			ExportSceneAndPrepareForUpload();
+			ExportSceneAndPrepareForUpload(customNamespace);
 		}
 	}
 
@@ -278,11 +285,11 @@ public class VRC_SdkBuilder : MonoBehaviour
 		}
 	}
 
-	public static void ExportSceneResourceAndRun()
+	public static void ExportSceneResourceAndRun(string customNamespace = null)
 	{
 		try
 		{
-			if (ExportSceneResource())
+			if (ExportSceneResource(customNamespace))
 			{
 				EditorAssemblies.AddOnAssemblyReloadCallback("VRC.AssetExporter", "RunExportedSceneResourceAndCleanupPlugin");
 			}
@@ -296,11 +303,11 @@ public class VRC_SdkBuilder : MonoBehaviour
 			AssetExporter.CleanupTmpFiles();
 			EditorAssemblies.ClearAssemblyReloadCallbacks();
 			throw ex;
-			IL_0038:;
+			IL_0039:;
 		}
 	}
 
-	private static void ExportSceneAndPrepareForUpload()
+	private static void ExportSceneAndPrepareForUpload(string customNamespace = null)
 	{
 		try
 		{
@@ -312,19 +319,19 @@ public class VRC_SdkBuilder : MonoBehaviour
 			{
 				AssetExporter.CleanupUnityPackageExport();
 			}
-			if (ExportSceneResource())
+			if (ExportSceneResource(customNamespace))
 			{
 				if (!APIUser.get_CurrentUser().get_hasScriptingAccess() && CustomDLLMaker.CustomScriptsAvailable())
 				{
 					CustomDLLMaker.ClearSavedPluginPrefs();
 				}
 				EditorAssemblies.AddOnAssemblyReloadCallback("CustomDLLMaker", "Cleanup");
-				EditorAssemblies.AddOnAssemblyReloadCallback("VRC.AssetExporter", "LaunchSceneBlueprintUploader");
+				EditorAssemblies.AddOnAssemblyReloadCallback("VRC_SdkBuilder", "UploadLastExportedSceneBlueprint");
 			}
 			else
 			{
 				CustomDLLMaker.ClearSavedPluginPrefs();
-				AssetExporter.LaunchSceneBlueprintUploader();
+				UploadLastExportedSceneBlueprint();
 			}
 		}
 		catch (Exception ex)
@@ -332,7 +339,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 			AssetExporter.CleanupTmpFiles();
 			EditorAssemblies.ClearAssemblyReloadCallbacks();
 			throw ex;
-			IL_0082:;
+			IL_0083:;
 		}
 	}
 
@@ -360,7 +367,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 		return str2;
 	}
 
-	public static bool ExportSceneResource()
+	public static bool ExportSceneResource(string customNamespace = null)
 	{
 		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
 		//IL_004e: Unknown result type (might be due to invalid IL or missing references)
@@ -381,7 +388,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 		}
 		if (CustomDLLMaker.CustomScriptsAvailable())
 		{
-			ExportCurrentSceneResourceWithPlugin();
+			ExportCurrentSceneResourceWithPlugin(customNamespace);
 			return true;
 		}
 		CustomDLLMaker.ClearSavedPluginPrefs();
@@ -389,9 +396,9 @@ public class VRC_SdkBuilder : MonoBehaviour
 		return false;
 	}
 
-	private static void ExportCurrentSceneResourceWithPlugin()
+	private static void ExportCurrentSceneResourceWithPlugin(string customNamespace = null)
 	{
-		CustomDLLMaker.PrepareSceneForExport();
+		CustomDLLMaker.PrepareSceneForExport(customNamespace);
 		EditorAssemblies.AddOnAssemblyReloadCallback("VRC.AssetExporter", "FinishExportCurrentSceneResourceWithPlugin");
 	}
 

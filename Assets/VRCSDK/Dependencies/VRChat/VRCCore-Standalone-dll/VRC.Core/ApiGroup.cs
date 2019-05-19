@@ -318,7 +318,7 @@ namespace VRC.Core
 						{
 						}
 						locked = true;
-						List<ApiFavorite> responseModels = (c as ApiModelListContainer<ApiFavorite>).ResponseModels;
+						IEnumerable<ApiFavorite> responseModels = (c as ApiModelListContainer<ApiFavorite>).ResponseModels;
 						totalFaves.AddRange(responseModels);
 						locked = false;
 						groupsFetched++;

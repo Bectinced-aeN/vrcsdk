@@ -29,7 +29,9 @@ namespace VRCSDK2
         }
 
         private static GUIStyle vrcSdkHeader;
+        private static GUIStyle vrcSdkBottomHeader;
         private static GUIStyle vrcHeaderLearnMoreButton;
+        private static GUIStyle vrcBottomHeaderLearnMoreButton;
         private static Vector2 changeLogScroll;
         [MenuItem("VRChat SDK/Splash Screen", false, 500)]
         public static void OpenSplashScreen()
@@ -46,7 +48,7 @@ namespace VRCSDK2
         {
             titleContent = new GUIContent("VRChat SDK");
 
-            maxSize = new Vector2(400, 500);
+            maxSize = new Vector2(400, 600);
             minSize = maxSize;
 
             vrcSdkHeader = new GUIStyle
@@ -62,6 +64,18 @@ namespace VRCSDK2
                     },
                 fixedHeight = 200
             };
+
+            vrcSdkBottomHeader = new GUIStyle
+            {
+                normal =
+                {
+                    background = Resources.Load("vrcSdkBottomHeader") as Texture2D,
+
+                    textColor = Color.white
+                },
+                fixedHeight = 100
+            };
+
         }
 
         public void OnGUI()
@@ -89,11 +103,11 @@ namespace VRCSDK2
             }
             if (GUILayout.Button("VRChat FAQ"))
             {
-                Application.OpenURL("https://www.vrchat.net/developerfaq");
+                Application.OpenURL("https://vrchat.com/developer-faq");
             }
             if (GUILayout.Button("Help Center"))
             {
-                Application.OpenURL("https://vrchat.groovehq.com/knowledge_base/categories/technical-issues-vrchat-sdk");
+                Application.OpenURL("http://help.vrchat.com");
             }
             if(GUILayout.Button("Examples"))
             {
@@ -102,41 +116,64 @@ namespace VRCSDK2
             GUI.backgroundColor = Color.white;
             GUILayout.EndHorizontal();
             GUILayout.Space(4);
+            GUILayout.BeginHorizontal();
+            GUI.backgroundColor = Color.gray;
+            if (GUILayout.Button("Building VRChat Quest Content"))
+            {
+                Application.OpenURL("https://docs.vrchat.com/docs/creating-content-for-the-oculus-quest");
+            }
+            GUI.backgroundColor = Color.white;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(4);
 
-            changeLogScroll = GUILayout.BeginScrollView(changeLogScroll);
+            changeLogScroll = GUILayout.BeginScrollView(changeLogScroll, GUILayout.Width(390));
+
             GUILayout.Label(
     @"Changelog:
-2018.2.2
-Changes
--New triggers added to 'Example - Triggers - 2.unity' included 
-    with the SDK
-Fixes
--VRCWorld prefab had the UpdateTimeInMS set to 10ms even 
-    though the slider value in inspector is capped to 33ms 
-    as minimum value. The default is now set to 33ms.
+2019.1.4p4
+- Fixed an issue causing redundant error messaging when 
+informing the user that there are objects that share the 
+same path
 
-2018.2.1
-- Added Bufferone support for actions where it was missing
-   --SetLayer
-   --SetWebpanelVolume
-   --AddHealth
-   --AddDamage
-   --SetComponentActive
-   --SetMaterial
-   --ActivateCustomTrigger
+2019.1.4
+- Some additional tooltips in VRC_Mirror inspector for 
+clarity
+- Added a field for a custom shader on mirrors, allowing 
+the mirror shader to be overridden without the need to 
+swap materials 
+using an animator
+- Added a drop-down option for mirrors allowing for the 
+setting of lower fixed resolutions
 
- - Added MIDI Driver(opens any available midi - input)
- - Added OSC Driver(input port 9000)
- - Added VRC_MidiNoteIn component for custom triggering note input
- - Added VRC_OscButtonIn component for custom triggering osc button input
- - Added drag and drop support to the trigger references list
+2019.1.3
+- Implemented features to enable usage of Community Labs
+    - Added Community Labs checkbox in the Publish World
+screen
+- Publishing a world no longer changes its release status.
+If you update a Public World, it now remains public
+- Changed and updated SDK UI in some places
+- Mirrors should now display properly in the editor as 
+we've moved the necessary shader into place
 
- - Fixed ParticleCollision Trigger
- - Fixed some trigger editor issues
- - Fixed enable / disablekinematic action(objectsync)
- - Fixed enable / disablegravity action(objectsync)"
+2019.1.1
+- Content Manager now behaves better when resizing 
+the window and scales the contents appropriately"
             );
             GUILayout.EndScrollView();
+
+            GUILayout.Space(4);
+
+            GUILayout.Box("", vrcSdkBottomHeader);
+            vrcBottomHeaderLearnMoreButton = EditorStyles.miniButton;
+            vrcBottomHeaderLearnMoreButton.normal.textColor = Color.black;
+            vrcBottomHeaderLearnMoreButton.fontSize = 10;
+            vrcBottomHeaderLearnMoreButton.border = new RectOffset(10, 10, 10, 10);
+            vrcBottomHeaderLearnMoreButton.normal.background = texture;
+            vrcBottomHeaderLearnMoreButton.active.background = texture;
+            if (GUI.Button(new Rect(80, 540, 240, 30), "Learn how to create for VRChat Quest!", vrcBottomHeaderLearnMoreButton))
+            {
+                Application.OpenURL("https://docs.vrchat.com/docs/creating-content-for-the-oculus-quest");
+            }
 
             GUILayout.FlexibleSpace();
 

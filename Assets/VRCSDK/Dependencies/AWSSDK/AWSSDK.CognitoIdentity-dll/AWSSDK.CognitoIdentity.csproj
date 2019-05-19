@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{5A14C5B1-CBEB-45D9-9255-9B0A65854C3C}</ProjectGuid>
+    <ProjectGuid>{C8E6D31D-F878-4865-BB25-0DD42FFFABDF}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -28,10 +28,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AWSSDK.Core">
-      <HintPath>.\output\VRCSDK-2019.04.14.12.31_Public\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.Core.dll</HintPath>
+      <HintPath>.\output\VRCSDK-2019.05.16.13.10_Public\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.SecurityToken">
-      <HintPath>.\output\VRCSDK-2019.04.14.12.31_Public\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.SecurityToken.dll</HintPath>
+      <HintPath>.\output\VRCSDK-2019.05.16.13.10_Public\Assets\VRCSDK\Dependencies\AWSSDK\AWSSDK.SecurityToken.dll</HintPath>
     </Reference>
     <Reference Include="System.Core">
       <HintPath>C:\WINDOWS\assembly\GAC_MSIL\System.Core\3.5.0.0__b77a5c561934e089\System.Core.dll</HintPath>

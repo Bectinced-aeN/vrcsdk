@@ -1015,14 +1015,6 @@ namespace VRCSDK2
                             RenderPropertyEditor(shadowProperty, parameterBoolOpProperty, new GUIContent("Enable"), true);
                     }
                     break;
-#if PLAYMAKER
-                case VRC_EventHandler.VrcEventType.PlaymakerEvent:
-                    {
-                        RenderTargetGameObjectList(parameterObjectsProperty, triggerIdx);
-                        RenderPlaymakerEventPicker(parameterObjectsProperty, parameterStringProperty, new GUIContent("Playmaker Event"));
-                    }
-                    break;
-#endif
                 case VRC_EventHandler.VrcEventType.AddVelocity:
                 case VRC_EventHandler.VrcEventType.SetVelocity:
                     {
@@ -1381,89 +1373,6 @@ namespace VRCSDK2
                 EditorGUILayout.PropertyField(parameterStringProperty, new GUIContent("Custom Method"));
             else
                 parameterStringProperty.stringValue = combined[currentIndex].Split('.')[1];
-        }
-
-        private void RenderPlaymakerEventPicker(SerializedProperty parameterObjectsProperty, SerializedProperty property, GUIContent label)
-        {
-#if PLAYMAKER
-            bool eventsFound = false;
-            bool pmFound = false;
-            List<string> potentialEvents = new List<string>();
-            for (int idx = 0; idx < parameterObjectsProperty.arraySize; ++idx)
-            {
-                GameObject obj = parameterObjectsProperty.GetArrayElementAtIndex(idx).objectReferenceValue as GameObject;
-                if (obj == null)
-                    continue;
-
-                PlayMakerFSM pm = obj.GetComponent<PlayMakerFSM>();
-                if (pm == null)
-                    EditorGUILayout.LabelField("You have a receiver without a PlaymakerFSM attached - " + obj.name);
-                else if (pm.FsmEvents == null || pm.FsmEvents.Length == 0)
-                    EditorGUILayout.LabelField("Your receiver FSM has no events to pick from - " + obj.name);
-
-                if (pm != null)
-                    pmFound = true;
-
-                var newEvents = pm.FsmEvents.Select(el => el.Name).ToList();
-                if (potentialEvents.Count == 0)
-                    potentialEvents.AddRange(newEvents);
-                else
-                    potentialEvents = potentialEvents.Where(p => newEvents.Contains(p)).ToList();
-                if (potentialEvents.Count > 0)
-                    eventsFound = true;
-            }
-
-            if (potentialEvents.Count > 0)
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PrefixLabel(label);
-
-                SerializedProperty prop = property;
-                bool renderField = !ListPopup(potentialEvents, prop, false);
-                if (renderField)
-                    EditorGUILayout.PropertyField(property, GUIContent.none);
-
-                EditorGUILayout.EndHorizontal();
-            }
-            else
-            {
-                if (eventsFound)
-                    EditorGUILayout.LabelField("Selected receivers have no FSM events in common.");
-                EditorGUILayout.PropertyField(property, label);
-            }
-
-            string indexString = property.propertyPath;
-            indexString = indexString.Remove(0, "Triggers.Array.data[".Length);
-            indexString = indexString.Remove(indexString.IndexOf(']'));
-            int index = Convert.ToInt16(indexString);
-            var t = property.serializedObject.targetObject as VRC_Trigger;
-            string defaultEventName = t.Triggers[index].TriggerType.ToString();
-
-            if (pmFound && GUILayout.Button("Create Event - " + defaultEventName))
-            {
-                for (int idx = 0; idx < parameterObjectsProperty.arraySize; ++idx)
-                {
-                    GameObject obj = parameterObjectsProperty.GetArrayElementAtIndex(idx).objectReferenceValue as GameObject;
-                    if (obj == null)
-                        continue;
-
-                    PlayMakerFSM pm = obj.GetComponent<PlayMakerFSM>();
-                    if (pm != null && pm.Fsm.HasEvent(defaultEventName) == false)
-                    {
-                        HutongGames.PlayMaker.FsmEvent[] events = new HutongGames.PlayMaker.FsmEvent[pm.FsmEvents.Length + 1];
-                        for (int ev = 0; ev < events.Length - 1; ++ev)
-                            events[ev] = pm.FsmEvents[ev];
-                        events[events.Length - 1] = new HutongGames.PlayMaker.FsmEvent(defaultEventName);
-                        pm.Fsm.Events = events;
-                    }
-                }
-                property.stringValue = defaultEventName;
-
-                HutongGames.PlayMakerEditor.BaseEditorWindow.GetWindow<HutongGames.PlayMakerEditor.FsmEditorWindow>().Focus();
-            }
-#else
-            EditorGUILayout.PropertyField(property, label);
-#endif
         }
 
         private void RenderPropertyEditor(SerializedProperty shadowProperty, SerializedProperty property, GUIContent label, bool isBoolOp = false)

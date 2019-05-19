@@ -109,8 +109,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public byte[] ParameterBytes;
 
-			[HideInInspector]
 			[SerializeField]
+			[HideInInspector]
 			public int? ParameterBytesVersion;
 		}
 
@@ -254,7 +254,7 @@ namespace VRCSDK2
 				}
 				else
 				{
-					int instagatorId = GetInstigatorId(this.get_gameObject());
+					int instagatorId = GetInstigatorId(instagator);
 					if (e.ParameterObjects != null)
 					{
 						GameObject[] parameterObjects = e.ParameterObjects;
@@ -262,8 +262,14 @@ namespace VRCSDK2
 						{
 							GameObject parameterObject2 = e.ParameterObject;
 							e.ParameterObject = parameterObject;
-							InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
-							e.ParameterObject = parameterObject2;
+							try
+							{
+								InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
+							}
+							finally
+							{
+								e.ParameterObject = parameterObject2;
+							}
 						}
 					}
 					if (e.ParameterObject != null)
@@ -276,6 +282,14 @@ namespace VRCSDK2
 
 		private void InternalTriggerEvent(VrcEvent e, VrcBroadcastType broadcast, int instagatorId, float fastForward)
 		{
+			if (instagatorId <= 0)
+			{
+				Debug.LogErrorFormat("Cancelling event because the Instigator was invalid: {0}/{1}", new object[2]
+				{
+					e.EventType,
+					broadcast
+				});
+			}
 			if (LogEvent != null)
 			{
 				LogEvent(this, e, broadcast, instagatorId, fastForward);

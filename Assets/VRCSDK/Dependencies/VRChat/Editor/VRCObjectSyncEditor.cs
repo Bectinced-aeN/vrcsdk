@@ -18,15 +18,5 @@ public class VRCObjectSyncEditor : Editor
     {
         sync.SynchronizePhysics = EditorGUILayout.Toggle("Synchronize Physics",sync.SynchronizePhysics);
         sync.AllowCollisionTransfer = EditorGUILayout.Toggle("Allow Collision Transfer", sync.AllowCollisionTransfer);
-
-#if PLAYMAKER
-        if ( sync.GetComponent<PlayMakerFSM>() != null )
-        {
-            EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Playmaker");
-            sync.PlaymakerSyncState = EditorGUILayout.Toggle("Synchronize Playmaker State?", sync.PlaymakerSyncState);
-            sync.PlaymakerSyncVariables = EditorGUILayout.Toggle("Synchronize Playmaker Variables?", sync.PlaymakerSyncVariables);
-        }
-#endif
     }
 }

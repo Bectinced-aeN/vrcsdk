@@ -36,9 +36,9 @@ namespace VRCSDK2
 
 		public delegate void HapticEventDelegate(VRC_Pickup obj, float duration, float amplitude, float frequency);
 
-		public bool DisallowTheft;
+		public ForceMode MomentumTransferMethod;
 
-		public Rigidbody physicalRoot;
+		public bool DisallowTheft;
 
 		public Transform ExactGun;
 
@@ -72,8 +72,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string PickupEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string DropEventName;
 
 		public float ThrowVelocityBoostMinSpeed = 1f;
@@ -98,18 +98,6 @@ namespace VRCSDK2
 		public static OnDestroyedDelegate OnDestroyed;
 
 		public static HapticEventDelegate HapticEvent;
-
-		[HideInInspector]
-		public bool originalKinematic;
-
-		[HideInInspector]
-		public bool originalGravity = true;
-
-		[HideInInspector]
-		public bool originalTrigger;
-
-		[HideInInspector]
-		public Transform originalParent;
 
 		public static Func<VRC_Pickup, PickupHand> _GetPickupHand;
 
@@ -182,30 +170,6 @@ namespace VRCSDK2
 			if (OnDestroyed != null)
 			{
 				OnDestroyed(this);
-			}
-		}
-
-		public void RevertPhysics()
-		{
-			if (this.get_transform().get_parent() != originalParent)
-			{
-				this.get_transform().SetParent(originalParent);
-			}
-			if (physicalRoot != null)
-			{
-				if (physicalRoot.get_isKinematic() != originalKinematic)
-				{
-					physicalRoot.set_isKinematic(originalKinematic);
-				}
-				if (physicalRoot.get_useGravity() != originalGravity)
-				{
-					physicalRoot.set_useGravity(originalGravity);
-				}
-				Collider component = physicalRoot.GetComponent<Collider>();
-				if (component != null && component.get_isTrigger() != originalTrigger)
-				{
-					component.set_isTrigger(originalTrigger);
-				}
 			}
 		}
 

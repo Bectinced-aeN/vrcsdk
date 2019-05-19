@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VRC.Core;
@@ -18,6 +19,10 @@ namespace VRC
 	{
 		private static bool? _isClient;
 
+		private static string _clientVersion;
+
+		private static string _platform;
+
 		public static bool isClient
 		{
 			get
@@ -29,6 +34,66 @@ namespace VRC
 				}
 				bool? isClient2 = _isClient;
 				return isClient2.Value;
+			}
+		}
+
+		public static string ClientVersion
+		{
+			get
+			{
+				if (_clientVersion == null)
+				{
+					if (isClient)
+					{
+						_clientVersion = Application.get_version();
+					}
+					else
+					{
+						_clientVersion = SDKClientUtilities.GetSDKVersionDate();
+					}
+				}
+				return _clientVersion;
+			}
+		}
+
+		public static string Platform
+		{
+			get
+			{
+				//IL_000a: Unknown result type (might be due to invalid IL or missing references)
+				//IL_000f: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0010: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0012: Invalid comparison between Unknown and I4
+				//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+				//IL_001a: Invalid comparison between Unknown and I4
+				//IL_001f: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0022: Invalid comparison between Unknown and I4
+				if (_platform == null)
+				{
+					BuildTarget activeBuildTarget = EditorUserBuildSettings.get_activeBuildTarget();
+					if ((int)activeBuildTarget == 5)
+					{
+						goto IL_002c;
+					}
+					if ((int)activeBuildTarget != 13)
+					{
+						if ((int)activeBuildTarget == 19)
+						{
+							goto IL_002c;
+						}
+						_platform = "unknownplatform";
+					}
+					else
+					{
+						_platform = "android";
+					}
+				}
+				goto IL_0059;
+				IL_002c:
+				_platform = "standalonewindows";
+				goto IL_0059;
+				IL_0059:
+				return _platform;
 			}
 		}
 
@@ -286,15 +351,7 @@ namespace VRC
 
 		public static int GetNumReservedLayers()
 		{
-			int num = 0;
-			for (int i = 0; i < 32; i++)
-			{
-				if (!string.IsNullOrEmpty(LayerMask.LayerToName(i)) && i > num)
-				{
-					num = i;
-				}
-			}
-			return num + 1;
+			return 22;
 		}
 
 		public static string[] GetReservedLayers()

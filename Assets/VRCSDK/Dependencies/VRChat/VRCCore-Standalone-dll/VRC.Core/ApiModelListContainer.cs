@@ -5,7 +5,7 @@ namespace VRC.Core
 {
 	public class ApiModelListContainer<T> : ApiListContainer where T : ApiModel, new()
 	{
-		public List<T> ResponseModels
+		public IEnumerable<T> ResponseModels
 		{
 			get;
 			private set;
@@ -22,7 +22,7 @@ namespace VRC.Core
 			{
 				return false;
 			}
-			ResponseModels = API.ConvertJsonListToModelList<T>(base.ResponseList, ref responseError, base.DataTimestamp);
+			ResponseModels = API.ConvertJsonListToModelList<T>(base.ResponseList, base.DataTimestamp);
 			return ResponseModels != null;
 		}
 	}

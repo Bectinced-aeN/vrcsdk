@@ -79,8 +79,8 @@ namespace VRCSDK2
 
 		public string unityVersion;
 
-		[HideInInspector]
 		[Obsolete("Property is not used.")]
+		[HideInInspector]
 		public string Name;
 
 		[Obsolete("Property is not used.")]

@@ -11,7 +11,9 @@ namespace VRCSDK2
         public static readonly string[] ComponentTypeWhiteList = new string[] {
             "VRCSDK2.VRCTriggerRelay",
             "VRCSDK2.VRC_AudioBank",
+#if UNITY_STANDALONE
             "VRCSDK2.VRC_CustomRendererBehaviour",
+#endif
             "VRCSDK2.VRC_DataStorage",
             "VRCSDK2.VRC_EventHandler",
             "VRCSDK2.VRC_IKFollower",
@@ -22,7 +24,9 @@ namespace VRCSDK2
             "VRCSDK2.VRC_DestructibleStandard",
             "VRC_VisualDamage",
             "VRCSDK2.VRC_MirrorCamera",
+#if UNITY_STANDALONE
             "VRCSDK2.VRC_MidiNoteIn",
+#endif
             "VRCSDK2.VRC_OscButtonIn",
             "VRCSDK2.VRC_AddDamage",
             "VRCSDK2.VRC_AddHealth",
@@ -42,9 +46,11 @@ namespace VRCSDK2
             "VRCSDK2.VRC_SyncVideoStream",
             "VRCSDK2.VRC_VideoScreen",
             "VRCSDK2.VRC_VideoSpeaker",
-            "VRC_YouTubeSync",
+            "VRC_YouTubeSync", // TODO: this is deprecated and should be removed
             "VRCSDK2.VRC_MirrorReflection",
+#if UNITY_STANDALONE
             "VRCSDK2.scripts.Scenes.VRC_Panorama",
+#endif
             "VRCSDK2.VRC_PlayerMods",
             "VRCSDK2.VRC_SceneDescriptor",
             "VRCSDK2.VRC_SceneResetPosition",
@@ -56,10 +62,13 @@ namespace VRCSDK2
             "VRCSDK2.VRC_Trigger",
             "VRCSDK2.VRC_TriggerColliderEventTrigger",
             "VRCSDK2.VRC_UseEvents",
+#if UNITY_STANDALONE
             "VRCSDK2.VRC_Water",
-            "VRCSDK2.VRC_WebPanel",
+            "VRCSDK2.VRC_Webpanel", // TODO: this is deprecated and should be removed
+#endif
             "VRCSDK2.VRC_UiShape",
             "VRC.Core.PipelineManager",
+            "UiInputField",
             "VRCProjectSettings",
             "DynamicBone",
             "DynamicBoneCollider",
@@ -123,9 +132,9 @@ namespace VRCSDK2
             "UnityEngine.Rendering.PostProcessing.PostProcessLayer",
             "UnityEngine.Rendering.PostProcessing.PostProcessVolume",
             "UnityEngine.PostProcessing.PostProcessingBehaviour",
-#endif
             "VolumetricFogAndMist.FogVolumeExtensions",
             "DynamicFogAndMist.FogVolumeExtensions",
+#endif
             "RenderHeads.Media.AVProVideo.ApplyToMaterial",
             "RenderHeads.Media.AVProVideo.ApplyToMesh",
             "RenderHeads.Media.AVProVideo.AudioOutput",
@@ -145,6 +154,7 @@ namespace VRCSDK2
             "PhysSound.PhysSoundTerrain",
             "RealisticEyeMovements.EyeAndHeadAnimator",
             "RealisticEyeMovements.LookTargetController",
+#if UNITY_STANDALONE
             "DynamicFogAndMist.DynamicFog",
             "DynamicFogAndMist.DynamicFogManager",
             "DynamicFogAndMist.DynamicFogOfWar",
@@ -154,6 +164,7 @@ namespace VRCSDK2
             "VolumetricFogAndMist.VolumetricFog",
             "VolumetricFogAndMist.VolumetricFogPosT",
             "VolumetricFogAndMist.VolumetricFogPreT",
+#endif
             "OVRLipSync",
             "OVRLipSyncContext",
             "OVRLipSyncContextBase",
@@ -223,9 +234,11 @@ namespace VRCSDK2
             "RootMotion.Dynamics.PropRoot",
             "RootMotion.Dynamics.PuppetMaster",
             "RootMotion.Dynamics.PuppetMasterSettings",
+            // TODO: remove these if they are only needed in editor
             "RootMotion.Dynamics.BipedRagdollCreator",
             "RootMotion.Dynamics.RagdollCreator",
             "RootMotion.Dynamics.RagdollEditor",
+            //
             "RootMotion.SolverManager",
             "RootMotion.TriggerEventBroadcaster",
             "UnityStandardAssets.Cameras.AbstractTargetFollower",
@@ -251,6 +264,7 @@ namespace VRCSDK2
             "UnityStandardAssets.CrossPlatformInput.MobileControlRig",
             "UnityStandardAssets.CrossPlatformInput.TiltInput",
             "UnityStandardAssets.CrossPlatformInput.TouchPad",
+#if UNITY_STANDALONE
             "UnityStandardAssets.Water.WaterBasic",
             "UnityStandardAssets.Water.Displace",
             "UnityStandardAssets.Water.GerstnerDisplace",
@@ -259,6 +273,7 @@ namespace VRCSDK2
             "UnityStandardAssets.Water.Water",
             "UnityStandardAssets.Water.WaterBase",
             "UnityStandardAssets.Water.WaterTile",
+#endif
             "UnityStandardAssets.Effects.AfterburnerPhysicsForce",
             "UnityStandardAssets.Effects.ExplosionFireAndDebris",
             "UnityStandardAssets.Effects.ExplosionPhysicsForce",
@@ -387,6 +402,22 @@ namespace VRCSDK2
             "UnityEngine.MeshRenderer"
         };
 
+        public static readonly string[] ShaderWhiteList = new string[]
+        {
+            "VRChat/Mobile/Standard Lite",
+            "VRChat/Mobile/Bumped Diffuse",
+            "VRChat/Mobile/Bumped Mapped Specular",
+            "VRChat/Mobile/Diffuse",
+            "VRChat/Mobile/Particles/Additive",
+            "VRChat/Mobile/Particles/Multiply",
+            "VRChat/Mobile/Toon Lit",
+            "VRChat/Mobile/MatCap Lit",
+            "VRChat/Mobile/Lightmapped",
+            "VRChat/Mobile/Skybox",
+            "FX/MirrorReflection",
+            "UI/Default",
+        };
+
         private static List<int> scannedObjects = new List<int>();
 
 
@@ -419,6 +450,11 @@ namespace VRCSDK2
         public static void ClearScannedGameobjectCache()
         {
             scannedObjects.Clear();
+        }
+
+        public static IEnumerable<Shader> FindIllegalShaders(GameObject target)
+        {
+            return Validation.FindIllegalShaders(target, ShaderWhiteList);
         }
     }
 }

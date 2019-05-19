@@ -8,11 +8,13 @@ public class ImageDownloader : MonoBehaviour
 {
 	public delegate void OnImageDownloaded(Texture2D image);
 
-	private const int MAX_CACHED_IMAGES = 100;
+	private const int MAX_CACHED_IMAGES = 200;
+
+	private const int MIN_CACHED_IMAGES = 100;
 
 	private const int kNumberOfFramesBetweenLoads = 3;
 
-	private static Queue<string> cachedImageQueue;
+	private static List<string> cachedImageQueue;
 
 	public static Dictionary<string, Texture2D> downloadedImages;
 
@@ -57,7 +59,50 @@ public class ImageDownloader : MonoBehaviour
 		ProcessLoadQueue();
 	}
 
-	public static void DownloadImage(string imageUrl, OnImageDownloaded onImageDownload, string fallbackImageUrl = "", bool isRetry = false)
+	public static void TrimCache(int size)
+	{
+		if (cachedImageQueue != null)
+		{
+			if (size == 0)
+			{
+				downloadedImages.Clear();
+				cachedImageQueue.Clear();
+			}
+			else
+			{
+				int num = cachedImageQueue.Count - size;
+				if (num > 0)
+				{
+					for (int i = 0; i < num; i++)
+					{
+						downloadedImages.Remove(cachedImageQueue[i]);
+					}
+					cachedImageQueue.RemoveRange(0, num);
+				}
+			}
+		}
+	}
+
+	private static void EncacheTexture(string cacheRef, Texture2D tex)
+	{
+		if (cachedImageQueue.Contains(cacheRef))
+		{
+			cachedImageQueue.Remove(cacheRef);
+			cachedImageQueue.Add(cacheRef);
+		}
+		else
+		{
+			downloadedImages[cacheRef] = tex;
+			cachedImageQueue.Add(cacheRef);
+			if (cachedImageQueue.Count > 200)
+			{
+				TrimCache(100);
+				Resources.UnloadUnusedAssets();
+			}
+		}
+	}
+
+	public static void DownloadImage(string imageUrl, int imageSize, OnImageDownloaded onImageDownload, string fallbackImageUrl = "", bool isRetry = false)
 	{
 		ImageDownloader imageDownloaderQueue = CreateInstanceIfNeeded();
 		if (!string.IsNullOrEmpty(imageUrl))
@@ -72,40 +117,49 @@ public class ImageDownloader : MonoBehaviour
 			}
 			if (cachedImageQueue == null)
 			{
-				cachedImageQueue = new Queue<string>();
+				cachedImageQueue = new List<string>();
 			}
-			if (downloadedImages.ContainsKey(imageUrl))
+			string cacheRef = imageUrl + ":" + imageSize;
+			if (downloadedImages.ContainsKey(cacheRef))
 			{
-				onImageDownload(downloadedImages[imageUrl]);
+				onImageDownload(downloadedImages[cacheRef]);
 			}
-			else if (downloadingImages.ContainsKey(imageUrl))
+			else if (downloadingImages.ContainsKey(cacheRef))
 			{
-				downloadingImages[imageUrl].Add(onImageDownload);
+				downloadingImages[cacheRef].Add(onImageDownload);
 			}
 			else
 			{
 				try
 				{
-					downloadingImages[imageUrl] = new List<OnImageDownloaded>();
-					HTTPManager.SendRequest(imageUrl, HTTPMethods.Get, HTTPManager.KeepAliveDefaultValue, disableCache: false, delegate(HTTPRequest request, HTTPResponse response)
+					string url = imageUrl;
+					bool flag = false;
+					if (imageSize != 0 && imageUrl.StartsWith("https://api.vrchat.cloud/api/1/file/"))
+					{
+						string[] array = imageUrl.Remove(0, "https://api.vrchat.cloud/api/1/file/".Length).Split('/');
+						if (array.Length == 2 || (array.Length == 3 && array[2] == "file"))
+						{
+							string text = array[0];
+							string text2 = array[1];
+							url = "https://api.vrchat.cloud/api/1/image/" + text + "/" + text2 + "/" + imageSize.ToString();
+							flag = true;
+						}
+					}
+					downloadingImages[cacheRef] = new List<OnImageDownloaded>();
+					HTTPManager.SendRequest(url, HTTPMethods.Get, HTTPManager.KeepAliveDefaultValue, disableCache: false, delegate(HTTPRequest request, HTTPResponse response)
 					{
 						Action loadImage2 = delegate
 						{
 							if (response != null)
 							{
-								if (cachedImageQueue.Count > 100)
-								{
-									string key = cachedImageQueue.Dequeue();
-									downloadedImages.Remove(key);
-								}
-								downloadedImages[imageUrl] = response.DataAsTexture2D;
-								cachedImageQueue.Enqueue(imageUrl);
-								onImageDownload(response.DataAsTexture2D);
-								foreach (OnImageDownloaded item in downloadingImages[imageUrl])
+								Texture2D dataAsTexture2D = response.DataAsTexture2D;
+								EncacheTexture(cacheRef, dataAsTexture2D);
+								onImageDownload(dataAsTexture2D);
+								foreach (OnImageDownloaded item in downloadingImages[cacheRef])
 								{
 									item(response.DataAsTexture2D);
 								}
-								downloadingImages.Remove(imageUrl);
+								downloadingImages.Remove(cacheRef);
 							}
 							else
 							{
@@ -115,11 +169,11 @@ public class ImageDownloader : MonoBehaviour
 						};
 						if (response != null && response.Data == null)
 						{
-							downloadingImages.Remove(imageUrl);
+							downloadingImages.Remove(cacheRef);
 							HTTPCacheService.DeleteEntity(request.CurrentUri);
 							if (!isRetry)
 							{
-								DownloadImage(imageUrl, onImageDownload, fallbackImageUrl, isRetry: true);
+								DownloadImage(imageUrl, imageSize, onImageDownload, fallbackImageUrl, isRetry: true);
 							}
 						}
 						else if (imageDownloaderQueue != null)
@@ -152,7 +206,7 @@ public class ImageDownloader : MonoBehaviour
 		}
 		else
 		{
-			DownloadImage(fallbackImageUrl, onImageDownload, string.Empty);
+			DownloadImage(fallbackImageUrl, 0, onImageDownload, string.Empty);
 		}
 	}
 

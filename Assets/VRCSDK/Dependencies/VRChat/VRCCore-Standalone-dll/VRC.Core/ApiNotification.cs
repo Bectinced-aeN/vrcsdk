@@ -226,7 +226,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchAll(NotificationType t, bool sentMessages, string afterString, Action<List<ApiNotification>> successCallback, Action<string> errorCallback)
+		public static void FetchAll(NotificationType t, bool sentMessages, string afterString, Action<IEnumerable<ApiNotification>> successCallback, Action<string> errorCallback)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			switch (t)

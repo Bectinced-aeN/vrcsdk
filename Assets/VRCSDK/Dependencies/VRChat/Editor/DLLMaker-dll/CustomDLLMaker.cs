@@ -28,13 +28,13 @@ public class CustomDLLMaker
 
 	public static string INTERNAL_TMP_FULL_PATH = Application.get_dataPath() + "/VRCSDK/tmp";
 
-	public static void PrepareSceneForExport()
+	public static void PrepareSceneForExport(string customNamespace = null)
 	{
 		EditorPrefs.DeleteKey("pluginNamespace");
 		if (CustomScriptsAvailable())
 		{
 			CopyAndOpenCurrentScene();
-			BuildAndLoadPlugin();
+			BuildAndLoadPlugin(recompileCurrentPlugin: false, customNamespace);
 			AssetDatabase.Refresh();
 			EditorAssemblies.AddOnAssemblyReloadCallback("CustomDLLMaker", "SwapScripts");
 		}
@@ -211,7 +211,7 @@ public class CustomDLLMaker
 		select a).ToList().Count > 0;
 	}
 
-	public static string BuildAndLoadPlugin(bool recompileCurrentPlugin = false)
+	public static string BuildAndLoadPlugin(bool recompileCurrentPlugin = false, string customNamespace = null)
 	{
 		if (Directory.Exists(EXTERNAL_DLL_OUTPUT_FULL_PATH))
 		{
@@ -219,7 +219,11 @@ public class CustomDLLMaker
 		}
 		Directory.CreateDirectory(EXTERNAL_DLL_OUTPUT_FULL_PATH);
 		string @string = EditorPrefs.GetString("lastExternalPluginPath");
-		string text = (!recompileCurrentPlugin) ? ("vrc" + GetRandomString()) : Path.GetFileNameWithoutExtension(@string);
+		string text = customNamespace;
+		if (string.IsNullOrEmpty(customNamespace))
+		{
+			text = ((!recompileCurrentPlugin) ? ("vrc" + GetRandomString()) : Path.GetFileNameWithoutExtension(@string));
+		}
 		EditorPrefs.SetString("pluginNamespace", text);
 		DLLMaker dLLMaker = new DLLMaker();
 		CreateNamespacedSourceFiles(dLLMaker, text);

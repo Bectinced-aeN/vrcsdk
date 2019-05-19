@@ -49,9 +49,12 @@ namespace VRCSDK2
             "UnityEngine.Animation",
             "UnityEngine.ParticleSystem",
             "UnityEngine.ParticleSystemRenderer",
+#if UNITY_STANDALONE
             "DynamicBone",
             "DynamicBoneCollider",
+#endif
             "UnityEngine.TrailRenderer",
+#if UNITY_STANDALONE
             "UnityEngine.Cloth",
             "UnityEngine.Light",
             "UnityEngine.BoxCollider",
@@ -60,10 +63,13 @@ namespace VRCSDK2
             "UnityEngine.Rigidbody",
             "UnityEngine.Joint",
             "UnityEngine.Camera",
+#endif
             "UnityEngine.FlareLayer",
             "UnityEngine.GUILayer",
+#if UNITY_STANDALONE
             "UnityEngine.AudioSource",
             "ONSPAudioSource",
+#endif
             "AvatarCustomAudioLimiter",
             "UnityEngine.EllipsoidParticleEmitter",
             "UnityEngine.ParticleRenderer",
@@ -78,6 +84,18 @@ namespace VRCSDK2
             "VRCSDK2.VRC_Station",
             "VRC_StationInternal",
             "VRC.AvatarPerformanceComponentSettings",
+        };
+
+        public static readonly string[] ShaderWhiteList = new string[]
+        {
+            "VRChat/Mobile/Standard Lite",
+            "VRChat/Mobile/Bumped Diffuse",
+            "VRChat/Mobile/Bumped Mapped Specular",
+            "VRChat/Mobile/Diffuse",
+            "VRChat/Mobile/Particles/Additive",
+            "VRChat/Mobile/Particles/Multiply",
+            "VRChat/Mobile/Toon Lit",
+            "VRChat/Mobile/MatCap Lit",
         };
 
         public static bool ps_limiter_enabled = false;
@@ -545,12 +563,13 @@ namespace VRCSDK2
         {
 #if VRC_CLIENT
             Material fallbackMaterial;
-            Color trustCol = GetTrustLevelColor(user);
+            Color trustCol = user != null ? (Color)GetTrustLevelColor(user) : Color.white;
+            string displayName = user != null ? user.displayName : "localUser";
 
             if (originalMaterial == null || originalMaterial.shader == null)
             {
                 fallbackMaterial = VRC.Core.AssetManagement.CreateMatCap(trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
-                fallbackMaterial.name = string.Format("MC_{0}_{1}", fallbackMaterial.shader.name, user.displayName);
+                fallbackMaterial.name = string.Format("MC_{0}_{1}", fallbackMaterial.shader.name, displayName);
             }
             else
             {
@@ -558,7 +577,7 @@ namespace VRCSDK2
                 if (safeShader == null)
                 {
                     fallbackMaterial = VRC.Core.AssetManagement.CreateSafeFallbackMaterial(originalMaterial, trustCol * 0.8f + new Color(0.2f, 0.2f, 0.2f));
-                    fallbackMaterial.name = string.Format("FB_{0}_{1}_{2}", fallbackMaterial.shader.name, user.displayName, originalMaterial.name);
+                    fallbackMaterial.name = string.Format("FB_{0}_{1}_{2}", fallbackMaterial.shader.name, displayName, originalMaterial.name);
                 }
                 else
                 {
@@ -570,7 +589,7 @@ namespace VRCSDK2
                     }
 
                     fallbackMaterial.CopyPropertiesFromMaterial(originalMaterial);
-                    fallbackMaterial.name = string.Format("INT_{0}_{1}_{2}", fallbackMaterial.shader.name, user.displayName, originalMaterial.name);
+                    fallbackMaterial.name = string.Format("INT_{0}_{1}_{2}", fallbackMaterial.shader.name, displayName, originalMaterial.name);
                 }
             }
 
@@ -587,12 +606,13 @@ namespace VRCSDK2
             avatarRenderers.UnionWith(currentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>(true));
             avatarRenderers.UnionWith(currentAvatar.GetComponentsInChildren<MeshRenderer>(true));
         }
-        
+
         public static void ReplaceShaders(VRC.Core.APIUser user, IEnumerable<Renderer> avatarRenderers, FallbackMaterialCache fallbackMaterialCache, bool debug = true)
         {
             foreach(Renderer avatarRenderer in avatarRenderers)
             {
                 //TODO 2018.4 LTS: Replace this with avatarRenderer.GetSharedMaterials(List<Material> sharedMaterials);
+                if(avatarRenderer == null) continue;
                 Material[] avatarRendererSharedMaterials = avatarRenderer.sharedMaterials;
                 for(int i = 0; i < avatarRendererSharedMaterials.Length; ++i)
                 {
@@ -852,6 +872,11 @@ namespace VRCSDK2
                     kp.Key.Stop();
                 }
             }
+        }
+
+        public static IEnumerable<Shader> FindIllegalShaders(GameObject target)
+        {
+            return Validation.FindIllegalShaders(target, ShaderWhiteList);
         }
     }
 }

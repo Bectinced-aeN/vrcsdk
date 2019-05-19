@@ -140,13 +140,6 @@ namespace VRC.Core
 		}
 
 		[ApiField(Required = false, IsApiWritableOnly = true)]
-		public List<string> unityPackages
-		{
-			get;
-			set;
-		}
-
-		[ApiField(Required = false, IsApiWritableOnly = true)]
 		public bool unityPackageUpdated
 		{
 			get;
@@ -248,11 +241,6 @@ namespace VRC.Core
 			}
 		}
 
-		public override void Get(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
-		{
-			Get(compatibleVersionsOnly: true, onSuccess, onFailure, parameters, disableCache);
-		}
-
 		public void Get(bool compatibleVersionsOnly, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
 		{
 			if (parameters == null)
@@ -265,7 +253,7 @@ namespace VRC.Core
 				parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
 				parameters["maxAssetVersion"] = VERSION.ApiVersion;
 				parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
-				parameters["platform"] = API.GetAssetPlatformString();
+				parameters["platform"] = Tools.Platform;
 				base.Get(onSuccess, onFailure, parameters, disableCache);
 			}
 			else
@@ -287,7 +275,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchList(Action<List<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, bool compatibleVersionsOnly = true, bool disableCache = false, bool areFavorites = false)
+		public static void FetchList(Action<IEnumerable<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false, bool areFavorites = false, string tags = null)
 		{
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
 			if (owner == Owner.Mine)
@@ -322,14 +310,25 @@ namespace VRC.Core
 				dictionary.Add("order", "descending");
 				break;
 			}
-			if (compatibleVersionsOnly)
+			if (includePlatforms != null || excludePlatforms != null)
 			{
 				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
 				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
 				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
 				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
+				if (includePlatforms != null)
+				{
+					dictionary.Add("platform", includePlatforms);
+				}
+				if (excludePlatforms != null)
+				{
+					dictionary.Add("noplatform", excludePlatforms);
+				}
 			}
-			dictionary.Add("platform", API.GetAssetPlatformString());
+			if (tags != null)
+			{
+				dictionary.Add("tag", tags);
+			}
 			ApiModelListContainer<ApiAvatar> apiModelListContainer = new ApiModelListContainer<ApiAvatar>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
@@ -421,13 +420,35 @@ namespace VRC.Core
 		{
 			apiVersion = VERSION.ApiVersion;
 			unityVersion = VERSION.UnityVersion;
-			platform = API.GetAssetPlatformString();
+			platform = Tools.Platform;
 		}
 
 		public override bool SetApiFieldsFromJson(Dictionary<string, object> fields, ref string Error)
 		{
 			assetUrl = null;
 			return base.SetApiFieldsFromJson(fields, ref Error);
+		}
+
+		private void ReadUnityPackage(object dict)
+		{
+			Dictionary<string, object> dictionary = dict as Dictionary<string, object>;
+			if (dictionary.ContainsKey("platform"))
+			{
+				string text = dictionary["platform"].ToString();
+				switch (text)
+				{
+				case "android":
+					supportedPlatforms |= SupportedPlatforms.Android;
+					break;
+				case "standalonewindows":
+					supportedPlatforms |= SupportedPlatforms.StandaloneWindows;
+					break;
+				}
+				if (text == Tools.Platform)
+				{
+					assetUrl = dictionary["assetUrl"].ToString();
+				}
+			}
 		}
 
 		protected override bool WriteField(string fieldName, object data)
@@ -442,17 +463,14 @@ namespace VRC.Core
 				return true;
 			case "unityPackages":
 			{
+				supportedPlatforms = SupportedPlatforms.None;
 				object[] array = data as object[];
 				if (array != null)
 				{
 					object[] array2 = array;
-					foreach (object obj in array2)
+					foreach (object dict in array2)
 					{
-						Dictionary<string, object> dictionary = obj as Dictionary<string, object>;
-						if (dictionary.ContainsKey("platform") && !(dictionary["platform"].ToString() != API.GetAssetPlatformString()) && dictionary.ContainsKey("assetUrl"))
-						{
-							assetUrl = dictionary["assetUrl"].ToString();
-						}
+						ReadUnityPackage(dict);
 					}
 					return true;
 				}
@@ -461,11 +479,7 @@ namespace VRC.Core
 				{
 					foreach (object item in list)
 					{
-						Dictionary<string, object> dictionary2 = item as Dictionary<string, object>;
-						if (dictionary2.ContainsKey("platform") && !(dictionary2["platform"].ToString() != API.GetAssetPlatformString()) && dictionary2.ContainsKey("assetUrl"))
-						{
-							assetUrl = dictionary2["assetUrl"].ToString();
-						}
+						ReadUnityPackage(item);
 					}
 					return true;
 				}

@@ -132,7 +132,7 @@ namespace SQLite
 				}
 				finally
 				{
-					((_003CExecuteDeferredQuery_003Ec__Iterator2<T>)/*Error near IL_0234: stateMachine*/)._003C_003E__Finally0();
+					((_003CExecuteDeferredQuery_003Ec__Iterator3<T>)/*Error near IL_0234: stateMachine*/)._003C_003E__Finally0();
 				}
 			}
 		}

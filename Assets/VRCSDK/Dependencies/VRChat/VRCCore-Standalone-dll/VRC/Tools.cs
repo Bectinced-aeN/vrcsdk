@@ -18,6 +18,10 @@ namespace VRC
 	{
 		private static bool? _isClient;
 
+		private static string _clientVersion;
+
+		private static string _platform;
+
 		public static bool isClient
 		{
 			get
@@ -29,6 +33,50 @@ namespace VRC
 				}
 				bool? isClient2 = _isClient;
 				return isClient2.Value;
+			}
+		}
+
+		public static string ClientVersion
+		{
+			get
+			{
+				if (_clientVersion == null)
+				{
+					_clientVersion = Application.get_version();
+				}
+				return _clientVersion;
+			}
+		}
+
+		public static string Platform
+		{
+			get
+			{
+				//IL_000a: Unknown result type (might be due to invalid IL or missing references)
+				//IL_000f: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0010: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0012: Invalid comparison between Unknown and I4
+				//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0019: Invalid comparison between Unknown and I4
+				//IL_002d: Unknown result type (might be due to invalid IL or missing references)
+				//IL_0030: Invalid comparison between Unknown and I4
+				if (_platform == null)
+				{
+					RuntimePlatform platform = Application.get_platform();
+					if ((int)platform == 2 || (int)platform == 7)
+					{
+						_platform = "standalonewindows";
+					}
+					else if ((int)platform == 11)
+					{
+						_platform = "android";
+					}
+					else
+					{
+						_platform = "unknownplatform";
+					}
+				}
+				return _platform;
 			}
 		}
 
@@ -286,15 +334,7 @@ namespace VRC
 
 		public static int GetNumReservedLayers()
 		{
-			int num = 0;
-			for (int i = 0; i < 32; i++)
-			{
-				if (!string.IsNullOrEmpty(LayerMask.LayerToName(i)) && i > num)
-				{
-					num = i;
-				}
-			}
-			return num + 1;
+			return 22;
 		}
 
 		public static string[] GetReservedLayers()

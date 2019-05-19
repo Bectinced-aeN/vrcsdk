@@ -123,7 +123,7 @@ namespace VRCSDK2
 
             ApiWorld model = new ApiWorld();
             model.id = pipelineManager.blueprintId;
-            model.Fetch(null, false,
+            model.Fetch(null, null,
                 (c) =>
                 {
                     Debug.Log("<color=magenta>Updating an existing world.</color>");
@@ -145,9 +145,9 @@ namespace VRCSDK2
         {
             // check if world has been previously uploaded, and if world is in community labs
             ApiWorld.FetchUploadedWorlds(
-                delegate (List<ApiWorld> worlds)
+                delegate (IEnumerable<ApiWorld> worlds)
                 {
-                    ApiWorld selectedWorld = worlds.Find(w => w.id == worldId);
+                    ApiWorld selectedWorld = worlds.FirstOrDefault(w => w.id == worldId);
                     if (null!=selectedWorld)
                     {
                         IsCurrentWorldInCommunityLabs = selectedWorld.IsCommunityLabsWorld;
@@ -282,7 +282,7 @@ namespace VRCSDK2
                         userTags.text = userTags.text + " ";
                     }
 
-                    ImageDownloader.DownloadImage(worldRecord.imageUrl, delegate (Texture2D obj) {
+                    ImageDownloader.DownloadImage(worldRecord.imageUrl, 0, delegate (Texture2D obj) {
                         bpImage.texture = obj;
                     });
                 }
@@ -479,7 +479,7 @@ namespace VRCSDK2
         private string GetFriendlyWorldFileName(string type)
         {
             return "World - " + blueprintName.text + " - " + type + " - " + Application.unityVersion + "_" + ApiWorld.VERSION.ApiVersion +
-                   "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl();
+                   "_" + VRC.Tools.Platform + "_" + API.GetServerEnvironmentForApiUrl();
         }
 
         List<string> BuildTags()
@@ -665,7 +665,7 @@ namespace VRCSDK2
             {
                 bpImage.enabled = true;
                 liveBpImage.enabled = false;
-                ImageDownloader.DownloadImage(worldRecord.imageUrl, delegate (Texture2D obj) {
+                ImageDownloader.DownloadImage(worldRecord.imageUrl, 0, delegate (Texture2D obj) {
                     bpImage.texture = obj;
                 });
             }

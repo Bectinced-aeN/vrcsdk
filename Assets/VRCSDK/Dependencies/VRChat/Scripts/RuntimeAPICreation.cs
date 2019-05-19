@@ -60,7 +60,6 @@ namespace VRCSDK2
             forceNewFileCreation = UnityEditor.EditorPrefs.GetBool("forceNewFileCreation", true);
             useFileApi = UnityEditor.EditorPrefs.GetBool("useFileApi", VRC.Core.ApiFile.kDefaultUseFileAPI);
 
-            API.InitializeDebugLevel();
             API.SetOnlineMode(true);
         }
 
@@ -209,7 +208,7 @@ namespace VRCSDK2
 
         protected void PrepareUnityPackageForS3(string packagePath, string blueprintId, int version, AssetVersion assetVersion)
         {
-            uploadUnityPackagePath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + API.GetAssetPlatformString() +
+            uploadUnityPackagePath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + VRC.Tools.Platform +
                 "_" + API.GetServerEnvironmentForApiUrl() + ".unitypackage";
             uploadUnityPackagePath.Trim();
             uploadUnityPackagePath.Replace(' ', '_');
@@ -222,7 +221,7 @@ namespace VRCSDK2
 
         protected void PrepareVRCPathForS3(string abPath, string blueprintId, int version, AssetVersion assetVersion)
         {
-            uploadVrcPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl() + System.IO.Path.GetExtension(abPath);
+            uploadVrcPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + VRC.Tools.Platform + "_" + API.GetServerEnvironmentForApiUrl() + System.IO.Path.GetExtension(abPath);
             uploadVrcPath.Trim();
             uploadVrcPath.Replace(' ', '_');
 
@@ -234,7 +233,7 @@ namespace VRCSDK2
 
         protected void PreparePluginPathForS3(string pluginPath, string blueprintId, int version, AssetVersion assetVersion)
         {
-            uploadPluginPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl() + ".dll";
+            uploadPluginPath = Application.temporaryCachePath + "/" + blueprintId + "_" + version.ToString() + "_" + Application.unityVersion + "_" + assetVersion.ApiVersion + "_" + VRC.Tools.Platform + "_" + API.GetServerEnvironmentForApiUrl() + ".dll";
             uploadPluginPath.Trim();
             uploadPluginPath.Replace(' ', '_');
 

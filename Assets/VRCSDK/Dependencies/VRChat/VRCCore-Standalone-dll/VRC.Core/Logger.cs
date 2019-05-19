@@ -182,6 +182,30 @@ namespace VRC.Core
 			}
 		}
 
+		public static void Log(string message, int debugLevel, Object context = null)
+		{
+			if (DebugLevelIsEnabled(debugLevel))
+			{
+				Debug.Log((object)(MakePrefix(debugLevel) + message), context);
+			}
+		}
+
+		public static void LogWarning(string message, int debugLevel, Object context = null)
+		{
+			if (DebugLevelIsEnabled(debugLevel))
+			{
+				Debug.LogWarning((object)(MakePrefix(debugLevel) + message), context);
+			}
+		}
+
+		public static void LogError(string message, int debugLevel, Object context = null)
+		{
+			if (DebugLevelIsEnabled(debugLevel))
+			{
+				Debug.LogError((object)(MakePrefix(debugLevel) + message), context);
+			}
+		}
+
 		public static void LogFormat(int debugLevel, Object context, string format, params object[] args)
 		{
 			if (DebugLevelIsEnabled(debugLevel))

@@ -77,7 +77,6 @@ namespace VRC.Core
 
 		public static void CacheResponse(string apiRequestPathAndQuery, byte[] data)
 		{
-			Logger.Log("<color=magenta>Caching API response for: " + apiRequestPathAndQuery + ": \n" + Encoding.UTF8.GetString(data, 0, data.Length).Replace("{", "{{").Replace("}", "}}") + "</color>", DebugLevel.API);
 			int hashCode = apiRequestPathAndQuery.GetHashCode();
 			apiResponseCache[hashCode] = new CachedResponse(data, Time.get_realtimeSinceStartup(), 3600f);
 		}

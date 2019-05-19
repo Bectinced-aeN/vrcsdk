@@ -120,6 +120,17 @@ public class EnvConfig
         "Toon/Lit Cutout",
         "Toon/Lit Cutout (Double)",
         "Toon/Lit Outline",
+        "VRChat/Mobile/Diffuse",
+        "VRChat/Mobile/Bumped Uniform Diffuse",
+        "VRChat/Mobile/Bumped Uniform Specular",
+        "VRChat/Mobile/Toon Lit",
+        "VRChat/Mobile/MatCap Lit",
+        "VRChat/Mobile/Skybox",
+        "VRChat/Mobile/Lightmapped",
+        "VRChat/PC/Toon Lit",
+        "VRChat/PC/Toon Lit (Double)",
+        "VRChat/PC/Toon Lit Cutout",
+        "VRChat/PC/Toon Lit Cutout (Double)",
         "Unlit/Color",
         "Unlit/Transparent",
         "Unlit/Transparent Cutout",
@@ -269,6 +280,8 @@ public class EnvConfig
         SetPlayerSettings();
 
 #if VRC_CLIENT
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
 #else
         // SDK
 
@@ -277,6 +290,19 @@ public class EnvConfig
 
         VRC.Core.AnalyticsSDK.Initialize(VRC.Core.SDKClientUtilities.GetSDKVersionDate());
 #endif
+
+        // VRCLog should handle disk writing
+        PlayerSettings.usePlayerLog = false;
+        if (EditorUserBuildSettings.selectedBuildTargetGroup != BuildTargetGroup.Standalone)
+        {
+            foreach (var logType in Enum.GetValues(typeof(LogType)).Cast<LogType>())
+                PlayerSettings.SetStackTraceLogType(logType, StackTraceLogType.None);
+        }
+        else
+        {
+            foreach (var logType in Enum.GetValues(typeof(LogType)).Cast<LogType>())
+                PlayerSettings.SetStackTraceLogType(logType, StackTraceLogType.ScriptOnly);
+        }
     }
 
     static void EnableBatching(bool enable)
@@ -466,8 +492,10 @@ public class EnvConfig
         SerializedProperty lensFlare = graphicsManager.FindProperty("m_LensFlare.m_Mode");
         lensFlare.enumValueIndex = 1;
 
-#if ENV_SET_INCLUDED_SHADERS
+#if ENV_SET_INCLUDED_SHADERS && VRC_CLIENT
         SerializedProperty alwaysIncluded = graphicsManager.FindProperty("m_AlwaysIncludedShaders");
+        alwaysIncluded.arraySize = 0;   // clear GraphicsSettings->Always Included Shaders - these cause a +5s app startup time increase on Quest.  
+                                        // include Shader objects as resources instead
 
 #if ENV_SEARCH_FOR_SHADERS
         Resources.LoadAll("", typeof(Shader));
@@ -480,7 +508,7 @@ public class EnvConfig
         System.Collections.Generic.List<Shader> foundShaders = new System.Collections.Generic.List<Shader>();
 #endif
 
-        for (int shaderIdx = 0; shaderIdx < ensureTheseShadersAreAvailable.Length; ++shaderIdx)
+        for (int shaderIdx = 0; shaderIdx < ensureTheseShadersAreAvailable.Length; ++shaderIdx) 
         {
             if (foundShaders.Any(s => s.name == ensureTheseShadersAreAvailable[shaderIdx]))
                 continue;
@@ -491,9 +519,11 @@ public class EnvConfig
 
         foundShaders.Sort((s1, s2) => s1.name.CompareTo(s2.name));
 
-        alwaysIncluded.arraySize = foundShaders.Count;
+        // populate Resources list of "always included shaders"
+        ShaderAssetList alwaysIncludedShaders = AssetDatabase.LoadAssetAtPath<ShaderAssetList>("Assets/Resources/AlwaysIncludedShaders.asset");
+        alwaysIncludedShaders.Shaders = new Shader[foundShaders.Count];
         for (int shaderIdx = 0; shaderIdx < foundShaders.Count; ++shaderIdx)
-            alwaysIncluded.GetArrayElementAtIndex(shaderIdx).objectReferenceValue = foundShaders[shaderIdx];
+            alwaysIncludedShaders.Shaders[shaderIdx] = foundShaders[shaderIdx];
 #endif
 
         SerializedProperty preloaded = graphicsManager.FindProperty("m_PreloadedShaders");

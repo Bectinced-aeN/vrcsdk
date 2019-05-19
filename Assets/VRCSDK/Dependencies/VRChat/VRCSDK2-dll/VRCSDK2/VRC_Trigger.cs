@@ -329,7 +329,7 @@ namespace VRCSDK2
 		public void ExecuteTriggerType(TriggerType triggerType)
 		{
 			foreach (TriggerEvent item in from t in Triggers
-			where t.TriggerType == triggerType
+			where t != null && t.TriggerType == triggerType
 			select t)
 			{
 				ExecuteTrigger(item);
@@ -339,7 +339,7 @@ namespace VRCSDK2
 		public void ExecuteCustomTrigger(string name)
 		{
 			foreach (TriggerEvent item in from t in Triggers
-			where t.TriggerType == TriggerType.Custom && t.Name == name
+			where t != null && t.TriggerType == TriggerType.Custom && t.Name == name
 			select t)
 			{
 				ExecuteTrigger(item);

@@ -88,24 +88,31 @@ namespace VRCSDK2
 
 		private unsafe void Start()
 		{
-			//IL_007e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0088: Expected O, but got Unknown
-			//IL_0088: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0092: Expected O, but got Unknown
+			//IL_0092: Unknown result type (might be due to invalid IL or missing references)
+			//IL_009c: Expected O, but got Unknown
+			//IL_009c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00a6: Expected O, but got Unknown
 			Renderer component = this.GetComponent<Renderer>();
 			Material sharedMaterial = component.get_sharedMaterial();
-			if (customShader != null)
+			if (sharedMaterial == null)
 			{
-				sharedMaterial.set_shader(customShader);
+				this.set_enabled(false);
 			}
 			else
 			{
-				sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
+				if (customShader != null)
+				{
+					sharedMaterial.set_shader(customShader);
+				}
+				else
+				{
+					sharedMaterial.set_shader(Shader.Find("FX/MirrorReflection"));
+				}
+				_texturePropertyId[0] = Shader.PropertyToID("_ReflectionTex0");
+				_texturePropertyId[1] = Shader.PropertyToID("_ReflectionTex1");
+				_playerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
+				Camera.onPostRender = Delegate.Combine((Delegate)Camera.onPostRender, (Delegate)new CameraCallback((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 			}
-			_texturePropertyId[0] = Shader.PropertyToID("_ReflectionTex0");
-			_texturePropertyId[1] = Shader.PropertyToID("_ReflectionTex1");
-			_playerLocalLayer = LayerMask.NameToLayer("PlayerLocal");
-			Camera.onPostRender = Delegate.Combine((Delegate)Camera.onPostRender, (Delegate)new CameraCallback((object)this, (IntPtr)(void*)/*OpCode not supported: LdFtn*/));
 		}
 
 		public void OnWillRenderObject()

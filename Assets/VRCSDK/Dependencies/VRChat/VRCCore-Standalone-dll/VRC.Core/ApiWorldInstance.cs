@@ -142,10 +142,10 @@ namespace VRC.Core
 			{
 				idWithTags = "unknownId";
 			}
-			string error = string.Empty;
+			string empty = string.Empty;
 			object value2;
 			List<object> json = (dict == null || !dict.TryGetValue("users", out value2)) ? new List<object>() : (value2 as List<object>);
-			List<APIUser> list = users = API.ConvertJsonListToModelList<APIUser>(json, ref error, dataTimestamp);
+			List<APIUser> list = users = API.ConvertJsonListToModelList<APIUser>(json, dataTimestamp).ToList();
 			count = users.Count;
 		}
 

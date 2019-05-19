@@ -222,7 +222,7 @@ namespace VRC.Core
 			});
 		}
 
-		public static void LocalFetchAll(Action<List<ApiModeration>> successCallback, Action<string> errorCallback)
+		public static void LocalFetchAll(Action<IEnumerable<ApiModeration>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<ApiModeration> apiModelListContainer = new ApiModelListContainer<ApiModeration>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)

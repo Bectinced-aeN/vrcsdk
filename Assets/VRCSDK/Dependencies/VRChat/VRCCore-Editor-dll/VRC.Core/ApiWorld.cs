@@ -247,13 +247,6 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false, IsApiWritableOnly = true)]
-		public List<string> unityPackages
-		{
-			get;
-			set;
-		}
-
 		public bool isAdminApproved => isCurated || (tags != null && tags.Contains("system_approved"));
 
 		public bool IsCommunityLabsWorld => tags != null && tags.Contains("system_labs");
@@ -359,7 +352,6 @@ namespace VRC.Core
 		{
 			users = new List<APIUser>();
 			tags = new List<string>();
-			unityPackages = new List<string>();
 			shouldAddToAuthor = false;
 			UpdateVersionAndPlatform();
 		}
@@ -394,6 +386,35 @@ namespace VRC.Core
 			return base.SetApiFieldsFromJson(fields, ref Error);
 		}
 
+		private void ReadUnityPackage(object dict)
+		{
+			Dictionary<string, object> dictionary = dict as Dictionary<string, object>;
+			if (dictionary.ContainsKey("platform"))
+			{
+				string text = dictionary["platform"].ToString();
+				switch (text)
+				{
+				case "android":
+					supportedPlatforms |= SupportedPlatforms.Android;
+					break;
+				case "standalonewindows":
+					supportedPlatforms |= SupportedPlatforms.StandaloneWindows;
+					break;
+				}
+				if (text == Tools.Platform)
+				{
+					if (dictionary.ContainsKey("assetUrl"))
+					{
+						assetUrl = dictionary["assetUrl"].ToString();
+					}
+					if (dictionary.ContainsKey("pluginUrl"))
+					{
+						pluginUrl = dictionary["pluginUrl"].ToString();
+					}
+				}
+			}
+		}
+
 		protected override bool WriteField(string fieldName, object data)
 		{
 			switch (fieldName)
@@ -407,38 +428,16 @@ namespace VRC.Core
 				select new ApiWorldInstance(this, kvp.Key, kvp.Value)).ToList();
 				return true;
 			}
-			case "assetUrl":
-				if (assetUrl == null)
-				{
-					assetUrl = (data as string);
-				}
-				return true;
-			case "pluginUrl":
-				if (pluginUrl == null)
-				{
-					pluginUrl = (data as string);
-				}
-				return true;
 			case "unityPackages":
 			{
+				supportedPlatforms = SupportedPlatforms.None;
 				object[] array = data as object[];
 				if (array != null)
 				{
 					object[] array2 = array;
-					foreach (object obj in array2)
+					foreach (object dict in array2)
 					{
-						Dictionary<string, object> dictionary = obj as Dictionary<string, object>;
-						if (dictionary.ContainsKey("platform") && !(dictionary["platform"].ToString() != API.GetAssetPlatformString()))
-						{
-							if (dictionary.ContainsKey("assetUrl"))
-							{
-								assetUrl = dictionary["assetUrl"].ToString();
-							}
-							if (dictionary.ContainsKey("pluginUrl"))
-							{
-								pluginUrl = dictionary["pluginUrl"].ToString();
-							}
-						}
+						ReadUnityPackage(dict);
 					}
 					return true;
 				}
@@ -447,18 +446,7 @@ namespace VRC.Core
 				{
 					foreach (object item in list)
 					{
-						Dictionary<string, object> dictionary2 = item as Dictionary<string, object>;
-						if (dictionary2.ContainsKey("platform") && !(dictionary2["platform"].ToString() != API.GetAssetPlatformString()))
-						{
-							if (dictionary2.ContainsKey("assetUrl"))
-							{
-								assetUrl = dictionary2["assetUrl"].ToString();
-							}
-							if (dictionary2.ContainsKey("pluginUrl"))
-							{
-								pluginUrl = dictionary2["pluginUrl"].ToString();
-							}
-						}
+						ReadUnityPackage(item);
 					}
 					return true;
 				}
@@ -518,12 +506,7 @@ namespace VRC.Core
 			}
 		}
 
-		public override void Get(Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool disableCache = false)
-		{
-			Fetch(string.Empty, compatibleVersionsOnly: true, onSuccess, onFailure, parameters);
-		}
-
-		public void Fetch(string instanceID = null, bool compatibleVersionsOnly = true, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
+		public void Fetch(string instanceID = null, string platforms = null, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
 		{
 			if (string.IsNullOrEmpty(base.id))
 			{
@@ -543,41 +526,41 @@ namespace VRC.Core
 				{
 					parameters = new Dictionary<string, object>();
 				}
-				if (compatibleVersionsOnly)
+				if (platforms != null)
 				{
 					parameters["maxUnityVersion"] = VERSION.UnityVersion;
 					parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
 					parameters["maxAssetVersion"] = VERSION.ApiVersion;
 					parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
-					parameters["platform"] = API.GetAssetPlatformString();
+					parameters["platform"] = platforms;
 				}
 				if (!string.IsNullOrEmpty(instanceID))
 				{
 					ApiDictContainer apiDictContainer = new ApiDictContainer("users");
 					apiDictContainer.OnSuccess = delegate(ApiContainer c)
 					{
-						string error = null;
 						List<object> json = (c as ApiDictContainer).ResponseDictionary["users"] as List<object>;
-						List<APIUser> list = API.ConvertJsonListToModelList<APIUser>(json, ref error, c.DataTimestamp);
-						if (list == null)
+						IEnumerable<APIUser> enumerable = API.ConvertJsonListToModelList<APIUser>(json, c.DataTimestamp);
+						if (enumerable == null)
 						{
-							c.Error = error;
+							c.Error = "Failed to decode user model";
 							onFailure(c);
 						}
 						else
 						{
+							int num = enumerable.Count();
 							if (instances == null)
 							{
 								instances = new Dictionary<string, int>();
 							}
 							if (!mWorldInstances.Any((ApiWorldInstance w) => w.idWithTags == instanceID))
 							{
-								mWorldInstances.Add(new ApiWorldInstance(this, instanceID, list.Count));
-								instances.Add(instanceID, list.Count);
+								mWorldInstances.Add(new ApiWorldInstance(this, instanceID, num));
+								instances.Add(instanceID, num);
 							}
 							ApiWorldInstance apiWorldInstance = worldInstances.First((ApiWorldInstance w) => w.idWithTags == instanceID);
-							apiWorldInstance.count = list.Count;
-							apiWorldInstance.users = list;
+							apiWorldInstance.count = num;
+							apiWorldInstance.users = enumerable.ToList();
 							onSuccess(c);
 						}
 					};
@@ -596,7 +579,7 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchList(Action<List<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string[] userTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, bool compatibleVersionsOnly = true, bool disableCache = false)
+		public static void FetchList(Action<IEnumerable<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string[] userTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false)
 		{
 			string endpoint = "worlds";
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
@@ -683,14 +666,21 @@ namespace VRC.Core
 				dictionary.Add("notag", string.Join(",", excludeTags));
 			}
 			dictionary.Add("releaseStatus", releaseStatus.ToString().ToLower());
-			if (compatibleVersionsOnly)
+			if (includePlatforms != null || excludePlatforms != null)
 			{
 				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
 				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
 				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
 				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
+				if (includePlatforms != null)
+				{
+					dictionary.Add("platform", includePlatforms);
+				}
+				if (excludePlatforms != null)
+				{
+					dictionary.Add("noplatform", excludePlatforms);
+				}
 			}
-			dictionary.Add("platform", API.GetAssetPlatformString());
 			ApiModelListContainer<ApiWorld> apiModelListContainer = new ApiModelListContainer<ApiWorld>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
 			{
@@ -968,7 +958,7 @@ namespace VRC.Core
 			API.SendPutRequest("worlds/" + base.id + "/" + idWithTags, responseContainer, dictionary);
 		}
 
-		public static void FetchUploadedWorlds(Action<List<ApiWorld>> successCallback, Action<string> errorCallback)
+		public static void FetchUploadedWorlds(Action<IEnumerable<ApiWorld>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<ApiWorld> apiModelListContainer = new ApiModelListContainer<ApiWorld>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
@@ -1016,7 +1006,7 @@ namespace VRC.Core
 		{
 			apiVersion = VERSION.ApiVersion;
 			unityVersion = VERSION.UnityVersion;
-			platform = API.GetAssetPlatformString();
+			platform = Tools.Platform;
 		}
 	}
 }

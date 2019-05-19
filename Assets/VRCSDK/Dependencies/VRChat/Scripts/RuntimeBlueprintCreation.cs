@@ -126,7 +126,7 @@ namespace VRCSDK2
                         liveBpImage.enabled = false;
                         bpImage.enabled = true;
 
-                        ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate (Texture2D obj) {
+                        ImageDownloader.DownloadImage(apiAvatar.imageUrl, 0, delegate (Texture2D obj) {
                             bpImage.texture = obj;
                         });
                     }
@@ -236,7 +236,7 @@ namespace VRCSDK2
         private string GetFriendlyAvatarFileName(string type)
         {
             return "Avatar - " + blueprintName.text + " - " + type + " - " + Application.unityVersion + "_" + ApiWorld.VERSION.ApiVersion +
-                   "_" + API.GetAssetPlatformString() + "_" + API.GetServerEnvironmentForApiUrl();
+                   "_" + VRC.Tools.Platform + "_" + API.GetServerEnvironmentForApiUrl();
         }
 
         List<string> BuildTags()
@@ -347,7 +347,7 @@ namespace VRCSDK2
             {
                 bpImage.enabled = true;
                 liveBpImage.enabled = false;
-                ImageDownloader.DownloadImage(apiAvatar.imageUrl, delegate (Texture2D obj) {
+                ImageDownloader.DownloadImage(apiAvatar.imageUrl, 0, delegate (Texture2D obj) {
                     bpImage.texture = obj;
                 });
             }

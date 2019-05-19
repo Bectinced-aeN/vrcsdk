@@ -150,17 +150,17 @@ namespace VRC.Core
 			}, dictionary);
 		}
 
-		public static void FetchAllAgainstMe(Action<List<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchAllAgainstMe(Action<IEnumerable<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
 		{
 			FetchList("auth/user/playermoderated", successCallback, errorCallback);
 		}
 
-		public static void FetchAllMine(Action<List<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
+		public static void FetchAllMine(Action<IEnumerable<ApiPlayerModeration>> successCallback = null, Action<string> errorCallback = null)
 		{
 			FetchList("auth/user/playermoderations", successCallback, errorCallback);
 		}
 
-		private static void FetchList(string endpoint, Action<List<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
+		private static void FetchList(string endpoint, Action<IEnumerable<ApiPlayerModeration>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<ApiPlayerModeration> apiModelListContainer = new ApiModelListContainer<ApiPlayerModeration>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)

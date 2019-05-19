@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using VRC;
 using VRC.Core;
 using VRCSDK2;
 
@@ -78,6 +80,8 @@ public class VRC_SdkControlPanel : EditorWindow
     Dictionary<Object, List<string>> GUIInfos = new Dictionary<Object, List<string>>();
     Dictionary<Object, List<string>> GUILinks = new Dictionary<Object, List<string>>();
     Dictionary<Object, List<KeyValuePair<string, PerformanceRating>>> GUIStats = new Dictionary<Object, List<KeyValuePair<string, PerformanceRating>>>();
+
+    private string customNamespace;
 
     void AddToReport(Dictionary<Object, List<string>> report, Object subject, string output)
     {
@@ -434,11 +438,6 @@ public class VRC_SdkControlPanel : EditorWindow
         if (g.y == 0)
             OnGUIWarning(scene, "Zero gravity will make walking extremely difficult, though we support different gravity, player orientation is always 'upwards' so this may not have the effect you're looking for.");
 
-#if PLAYMAKER
-            if (VRCSDK2.VRC_PlaymakerHelper.ValidatePlaymaker() == false)
-                OnGUIError(scene, VRCSDK2.VRC_PlaymakerHelper.GetErrors());
-#endif
-
         if (!UpdateLayers.AreLayersSetup())
             OnGUIError(scene, "Layers are not yet configured for VRChat. Please press the 'Setup Layers for VRChat' button above to apply layer settings and enable Test/Publish.");
 
@@ -464,19 +463,38 @@ public class VRC_SdkControlPanel : EditorWindow
             CustomDLLMaker.CreateDirectories();
         }
 
+        string vrcFilePath = WWW.UnEscapeURL(UnityEditor.EditorPrefs.GetString("lastVRCPath"));
+        int fileSize = 0;
+        if (!string.IsNullOrEmpty(vrcFilePath) && ValidationHelpers.CheckIfAssetBundleFileTooLarge(ContentType.World, vrcFilePath, out fileSize))
+        {
+            OnGUIWarning(scene, ValidationHelpers.GetAssetBundleOverSizeLimitMessageSDKWarning(ContentType.World, fileSize));
+        }
+
         if (scene.UpdateTimeInMS < (int)(1000f / 90f * 3f))
             OnGUIWarning(scene, "Room has a very fast update rate; experience may suffer with many users.");
 
         foreach (GameObject go in FindObjectsOfType<GameObject>())
         {
-            if (go.transform.parent != null)
+            if (go.transform.parent == null)
             {
+                // check root game objects
+#if UNITY_ANDROID
+                IEnumerable<Shader> illegalShaders = VRCSDK2.WorldValidation.FindIllegalShaders(go);
+                foreach (Shader s in illegalShaders)
+                {
+                    OnGUIWarning(scene, "World uses unsupported shader '" + s.name + "'. This could cause low performance or future compatibility issues.");
+                }
+#endif
+            }
+            else
+            {
+                // check sibling game objects
                 for (int idx = 0; idx < go.transform.parent.childCount; ++idx)
                 {
                     Transform t = go.transform.parent.GetChild(idx);
                     if (t == go.transform)
                         continue;
-                    else if (t.name == go.transform.name 
+                    else if (t.name == go.transform.name
                             && !(t.GetComponent<VRCSDK2.VRC_ObjectSync>()
                                 || t.GetComponent<VRCSDK2.VRC_SyncAnimation>()
                                 || t.GetComponent<VRCSDK2.VRC_SyncVideoPlayer>()
@@ -510,7 +528,7 @@ public class VRC_SdkControlPanel : EditorWindow
             if (scene.apiWorld == null)
             {
                 ApiWorld world = API.FromCacheOrNew<ApiWorld>(pms[0].blueprintId);
-                world.Fetch(null, false,
+                world.Fetch(null, null,
                     (c) => scene.apiWorld = c.Model as ApiWorld,
                     (c) =>
                     {
@@ -561,10 +579,23 @@ public class VRC_SdkControlPanel : EditorWindow
             }
         }
 
+        if (APIUser.CurrentUser.hasScriptingAccess)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            customNamespace = EditorGUILayout.TextField("Custom Namespace", customNamespace);
+            if (GUILayout.Button("Regenerate"))
+            {
+                customNamespace = "vrc" + Path.GetRandomFileName().Replace(".", "");
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
         GUI.enabled = (GUIErrors.Count == 0 && checkedForIssues);
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical();
         EditorGUILayout.LabelField("Test", EditorStyles.boldLabel);
+        
         numClients = EditorGUILayout.IntField("Number of Clients", numClients);
         if (lastBuildPresent == false)
             GUI.enabled = false;
@@ -593,7 +624,7 @@ public class VRC_SdkControlPanel : EditorWindow
             VRC.AssetExporter.CleanupUnityPackageExport();  // force unity package rebuild on next publish
             VRC_SdkBuilder.numClientsToLaunch = numClients;
             VRC_SdkBuilder.PreBuildBehaviourPackaging();
-            VRC_SdkBuilder.ExportSceneResourceAndRun();
+            VRC_SdkBuilder.ExportSceneResourceAndRun(customNamespace);
         }
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space();
@@ -622,7 +653,7 @@ public class VRC_SdkControlPanel : EditorWindow
                 EnvConfig.ConfigurePlayerSettings();
                 VRC_SdkBuilder.shouldBuildUnityPackage = VRC.AccountEditorWindow.FutureProofPublishEnabled;
                 VRC_SdkBuilder.PreBuildBehaviourPackaging();
-                VRC_SdkBuilder.ExportAndUploadSceneBlueprint();
+                VRC_SdkBuilder.ExportAndUploadSceneBlueprint(customNamespace);
             }
             else
             {
@@ -914,6 +945,13 @@ public class VRC_SdkControlPanel : EditorWindow
 
     void OnGUIAvatarCheck(VRCSDK2.VRC_AvatarDescriptor avatar)
     {
+        string vrcFilePath = WWW.UnEscapeURL(UnityEditor.EditorPrefs.GetString("currentBuildingAssetBundlePath"));
+        int fileSize = 0;
+        if (!string.IsNullOrEmpty(vrcFilePath) && ValidationHelpers.CheckIfAssetBundleFileTooLarge(ContentType.Avatar, vrcFilePath, out fileSize))
+        {
+            OnGUIWarning(avatar, ValidationHelpers.GetAssetBundleOverSizeLimitMessageSDKWarning(ContentType.Avatar, fileSize));
+        }
+
         AvatarPerformanceStats perfStats = AvatarPerformance.CalculatePerformanceStats(avatar.Name, avatar.gameObject);
 
         OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.Overall);
@@ -990,6 +1028,14 @@ public class VRC_SdkControlPanel : EditorWindow
 
         if (avatar.gameObject.GetComponentInChildren<Camera>() != null)
             OnGUIWarning(avatar, "Cameras are removed from non-local avatars at runtime.");
+
+#if UNITY_ANDROID
+        IEnumerable<Shader> illegalShaders = VRCSDK2.AvatarValidation.FindIllegalShaders(avatar.gameObject);
+        foreach (Shader s in illegalShaders)
+        {
+            OnGUIError(avatar, "Avatar uses unsupported shader '" + s.name + "'.");
+        }
+#endif
 
         foreach (AvatarPerformanceCategory perfCategory in System.Enum.GetValues(typeof(AvatarPerformanceCategory)))
         {

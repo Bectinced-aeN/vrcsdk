@@ -12,6 +12,15 @@ namespace VRC.Core
 {
 	public class ApiModel : ApiCacheObject
 	{
+		[Flags]
+		public enum SupportedPlatforms
+		{
+			None = 0x0,
+			StandaloneWindows = 0x1,
+			Android = 0x2,
+			All = 0x3
+		}
+
 		protected enum PostOrPutSelect
 		{
 			Auto,
@@ -20,6 +29,14 @@ namespace VRC.Core
 		}
 
 		private static Dictionary<string, ApiContainer> activeRequests = new Dictionary<string, ApiContainer>();
+
+		public SupportedPlatforms supportedPlatforms = SupportedPlatforms.All;
+
+		private static Dictionary<Type, string[]> requiredProperties = null;
+
+		private static Dictionary<Type, IEnumerable<PropertyInfo>> targetProperties = null;
+
+		private static Dictionary<Type, Dictionary<string, PropertyInfo>> foundProperties = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
 
 		[ApiField(Required = false)]
 		public string id
@@ -40,13 +57,43 @@ namespace VRC.Core
 			protected set;
 		}
 
-		public string[] RequiredProperties => (from p in TargetProperties
-		where ((ApiFieldAttribute)p.GetCustomAttributes(inherit: false).First((object a) => a is ApiFieldAttribute)).Required
-		select FindPropertyName(p)).ToArray();
+		public string[] RequiredProperties
+		{
+			get
+			{
+				Type type = GetType();
+				if (requiredProperties == null)
+				{
+					requiredProperties = new Dictionary<Type, string[]>();
+				}
+				if (!requiredProperties.ContainsKey(type))
+				{
+					requiredProperties.Add(type, (from p in TargetProperties
+					where ((ApiFieldAttribute)p.GetCustomAttributes(inherit: false).First((object a) => a is ApiFieldAttribute)).Required
+					select FindPropertyName(p)).ToArray());
+				}
+				return requiredProperties[type];
+			}
+		}
 
-		private IEnumerable<PropertyInfo> TargetProperties => from p in GetType().GetProperties()
-		where p?.IsDefined(typeof(ApiFieldAttribute), inherit: true) ?? false
-		select p;
+		private IEnumerable<PropertyInfo> TargetProperties
+		{
+			get
+			{
+				Type type = GetType();
+				if (targetProperties == null)
+				{
+					targetProperties = new Dictionary<Type, IEnumerable<PropertyInfo>>();
+				}
+				if (!targetProperties.ContainsKey(type))
+				{
+					targetProperties.Add(type, from p in type.GetProperties()
+					where p?.IsDefined(typeof(ApiFieldAttribute), inherit: true) ?? false
+					select p);
+				}
+				return targetProperties[type];
+			}
+		}
 
 		public ApiModel()
 		{
@@ -429,8 +476,8 @@ namespace VRC.Core
 			if (missing.Count > 0)
 			{
 				Error = "Error writing the following fields: " + string.Join(", ", missing.ToArray());
-				string[] requiredProperties = RequiredProperties;
-				flag = (!requiredProperties.Any((string s) => missing.Contains(s)) && requiredProperties.All((string s) => fields.Keys.Contains(s)));
+				string[] source = RequiredProperties;
+				flag = (!source.Any((string s) => missing.Contains(s)) && source.All((string s) => fields.Keys.Contains(s)));
 			}
 			Populated = flag;
 			if (flag && fields.Count != TargetProperties.Count() && API.IsDevApi())
@@ -545,10 +592,6 @@ namespace VRC.Core
 			PropertyInfo propertyInfo = FindProperty(fieldName);
 			if (propertyInfo == null)
 			{
-				if (Application.get_isEditor() && Tools.isClient)
-				{
-					Logger.LogFormat(DebugLevel.API, "{0}: Could not locate property to write to: {1} with type {2}", GetType().Name, fieldName, (data != null) ? data.GetType().FullName : "null");
-				}
 				return false;
 			}
 			try
@@ -571,7 +614,7 @@ namespace VRC.Core
 			{
 				Logger.LogErrorFormat(DebugLevel.API, "{0}: could not write {1} of type {2}\n{3}", GetType().Name, fieldName, propertyInfo.PropertyType.Name, ex.Message);
 				return false;
-				IL_0145:;
+				IL_00f0:;
 			}
 			try
 			{
@@ -589,7 +632,7 @@ namespace VRC.Core
 			{
 				Logger.LogErrorFormat(DebugLevel.API, "{0}: failed to set {1}\n", GetType().Name, fieldName, ex2.Message);
 				return false;
-				IL_01b3:;
+				IL_015e:;
 			}
 			return true;
 		}
@@ -731,7 +774,17 @@ namespace VRC.Core
 
 		private PropertyInfo FindProperty(string fieldName)
 		{
-			return TargetProperties.FirstOrDefault((PropertyInfo p) => FindPropertyName(p).ToLower() == fieldName.ToLower());
+			Type type = GetType();
+			if (!foundProperties.ContainsKey(type))
+			{
+				foundProperties.Add(type, new Dictionary<string, PropertyInfo>());
+			}
+			Dictionary<string, PropertyInfo> dictionary = foundProperties[type];
+			if (!dictionary.ContainsKey(fieldName))
+			{
+				dictionary.Add(fieldName, TargetProperties.FirstOrDefault((PropertyInfo p) => FindPropertyName(p).ToLower() == fieldName.ToLower()));
+			}
+			return dictionary[fieldName];
 		}
 
 		private bool IsAdminWritableOnly(PropertyInfo pi)

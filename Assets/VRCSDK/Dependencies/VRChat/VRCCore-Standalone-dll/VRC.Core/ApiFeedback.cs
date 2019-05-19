@@ -137,7 +137,7 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchWorldFeedback(string worldId, int version, ContentType contentType, Action<List<ApiFeedback>> successCallback, Action<string> errorCallback)
+		public static void FetchWorldFeedback(string worldId, int version, ContentType contentType, Action<IEnumerable<ApiFeedback>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<ApiFeedback> apiModelListContainer = new ApiModelListContainer<ApiFeedback>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
@@ -158,7 +158,7 @@ namespace VRC.Core
 			API.SendGetRequest("/users/" + APIUser.CurrentUser.id + "/feedback?contentType=world&contentId=" + worldId + "&contentVersion=" + version.ToString(), responseContainer, null, disableCache: true);
 		}
 
-		public static void FetchFeedback(Action<List<ApiFeedback>> successCallback, Action<string> errorCallback)
+		public static void FetchFeedback(Action<IEnumerable<ApiFeedback>> successCallback, Action<string> errorCallback)
 		{
 			ApiModelListContainer<ApiFeedback> apiModelListContainer = new ApiModelListContainer<ApiFeedback>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEditor;
 using UnityEngine;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Authentication;
@@ -64,12 +63,6 @@ namespace VRC.Core
 		public static string GetOrganization()
 		{
 			return API_ORGANIZATION;
-		}
-
-		public static void InitializeDebugLevel()
-		{
-			Logger.AddDebugLevel(DebugLevel.API);
-			Logger.AddDebugLevel(DebugLevel.All);
 		}
 
 		public static bool IsReady()
@@ -185,31 +178,6 @@ namespace VRC.Core
 			return list;
 		}
 
-		public static string GetAssetPlatformString()
-		{
-			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0008: Invalid comparison between Unknown and I4
-			//IL_000d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0010: Invalid comparison between Unknown and I4
-			//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0018: Invalid comparison between Unknown and I4
-			BuildTarget activeBuildTarget = EditorUserBuildSettings.get_activeBuildTarget();
-			if ((int)activeBuildTarget != 5)
-			{
-				if ((int)activeBuildTarget == 13)
-				{
-					return "android";
-				}
-				if ((int)activeBuildTarget != 19)
-				{
-					return "unknownplatform";
-				}
-			}
-			return "standalonewindows";
-		}
-
 		public static void SetApiUrlFromEnvironment(ApiServerEnvironment env)
 		{
 			SetApiUrl(GetApiUrlForEnvironment(env));
@@ -266,38 +234,36 @@ namespace VRC.Core
 			SendRequest(target, HTTPMethods.Delete, responseContainer, requestParams, authenticationRequired: true, disableCache: false, 3600f, 2, credentials);
 		}
 
-		public static List<T> ConvertJsonListToModelList<T>(List<object> json, ref string error, float dataTimestamp) where T : ApiModel, new()
+		public static IEnumerable<T> ConvertJsonListToModelList<T>(List<object> json, float dataTimestamp) where T : ApiModel, new()
 		{
 			if (json != null)
 			{
-				try
+				foreach (object item in json)
 				{
-					List<T> list = new List<T>();
-					foreach (object item2 in json)
+					Dictionary<string, object> i = item as Dictionary<string, object>;
+					T j = new T();
+					bool fail = false;
+					try
 					{
-						Dictionary<string, object> fields = item2 as Dictionary<string, object>;
-						T item = new T();
-						if (!item.SetApiFieldsFromJson(fields, ref error))
+						string error = null;
+						if (!j.SetApiFieldsFromJson(i, ref error))
 						{
-							return null;
+							Logger.LogErrorFormat(DebugLevel.API, "An error occurred filling the model {0}: {1}", typeof(T).Name, error);
+							fail = true;
 						}
-						list.Add(item);
 					}
-					return list;
-					IL_0079:
-					List<T> result;
-					return result;
-				}
-				catch (Exception ex)
-				{
-					error = "An exception was caught when filling the models: " + ex.Message + "\n" + ex.StackTrace;
-					return null;
-					IL_00a7:
-					List<T> result;
-					return result;
+					catch (Exception e)
+					{
+						Logger.LogErrorFormat(DebugLevel.API, "An exception was caught when filling the models: {0}\n{1}", e.Message, e.StackTrace);
+						fail = true;
+					}
+					if (fail)
+					{
+						break;
+					}
+					yield return j;
 				}
 			}
-			return null;
 		}
 
 		public static void SendRequest(string endpoint, HTTPMethods method, ApiContainer responseContainer = null, Dictionary<string, object> requestParams = null, bool authenticationRequired = true, bool disableCache = false, float cacheLifetime = 3600f, int retryCount = 2, CredentialsBundle credentials = null)
@@ -435,6 +401,15 @@ namespace VRC.Core
 						}
 						hTTPRequest.AddHeader("X-Requested-With", "XMLHttpRequest");
 						hTTPRequest.AddHeader("X-MacAddress", DeviceID);
+						if (Tools.isClient)
+						{
+							hTTPRequest.AddHeader("X-Client-Version", Tools.ClientVersion);
+						}
+						else
+						{
+							hTTPRequest.AddHeader("X-SDK-Version", Tools.ClientVersion);
+						}
+						hTTPRequest.AddHeader("X-Platform", Tools.Platform);
 						hTTPRequest.AddHeader("Content-Type", (method != 0) ? "application/json" : "application/x-www-form-urlencoded");
 						hTTPRequest.AddHeader("Origin", "vrchat.com");
 						hTTPRequest.MethodType = method;

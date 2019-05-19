@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{1E6065C0-BD85-4DEC-9BC6-D210FEA4B6B5}</ProjectGuid>
+    <ProjectGuid>{24DD3E2D-2723-4B80-A7AF-5302DB4967BA}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -999,8 +999,10 @@
     <Compile Include="VRC.Core\UpdateDelegator.cs" />
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCProjectSettings.cs" />
+    <Compile Include="VRC\ContentType.cs" />
     <Compile Include="VRC\HttpRequest.cs" />
     <Compile Include="VRC\Tools.cs" />
+    <Compile Include="VRC\ValidationHelpers.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
