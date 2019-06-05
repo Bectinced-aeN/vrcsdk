@@ -89,13 +89,14 @@ namespace VRCSDK2
         public static readonly string[] ShaderWhiteList = new string[]
         {
             "VRChat/Mobile/Standard Lite",
+            "VRChat/Mobile/Diffuse",
             "VRChat/Mobile/Bumped Diffuse",
             "VRChat/Mobile/Bumped Mapped Specular",
-            "VRChat/Mobile/Diffuse",
-            "VRChat/Mobile/Particles/Additive",
-            "VRChat/Mobile/Particles/Multiply",
             "VRChat/Mobile/Toon Lit",
             "VRChat/Mobile/MatCap Lit",
+
+            "VRChat/Mobile/Particles/Additive",
+            "VRChat/Mobile/Particles/Multiply",
         };
 
         public static bool ps_limiter_enabled = false;

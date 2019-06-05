@@ -112,6 +112,8 @@ namespace VRCSDK2
 			[SerializeField]
 			[HideInInspector]
 			public int? ParameterBytesVersion;
+
+			public bool TakeOwnershipOfTarget;
 		}
 
 		public class EventInfo

@@ -201,8 +201,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[DefaultValue(DeveloperType.None)]
 		[ApiField]
+		[DefaultValue(DeveloperType.None)]
 		public DeveloperType developerType
 		{
 			get;
@@ -664,7 +664,7 @@ namespace VRC.Core
 
 		public void FetchGroupNames(Action successCallback = null, Action<string> errorCallback = null)
 		{
-			FetchGroupNames(force: false);
+			FetchGroupNames(force: false, successCallback, errorCallback);
 		}
 
 		public void FetchGroupNames(bool force, Action successCallback = null, Action<string> errorCallback = null)
@@ -1913,55 +1913,6 @@ namespace VRC.Core
 		public static bool IsFriendsWithAndHasFavorited(string userId)
 		{
 			return CurrentUser.IsFavorite(userId);
-		}
-
-		public static void FetchOnlineModerators(bool onCallOnly, Action<IEnumerable<APIUser>> successCallback, Action<string> errorCallback)
-		{
-			Dictionary<string, object> dictionary = new Dictionary<string, object>();
-			dictionary.Add("developerType", "internal");
-			Dictionary<string, object> requestParams = dictionary;
-			ApiModelListContainer<APIUser> apiModelListContainer = new ApiModelListContainer<APIUser>();
-			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
-			{
-				if (successCallback != null)
-				{
-					successCallback((c as ApiModelListContainer<APIUser>).ResponseModels);
-				}
-			};
-			apiModelListContainer.OnError = delegate(ApiContainer c)
-			{
-				Logger.Log("Could not fetch users with error - " + c.Error);
-				if (errorCallback != null)
-				{
-					errorCallback(c.Error);
-				}
-			};
-			ApiModelListContainer<APIUser> responseContainer = apiModelListContainer;
-			API.SendGetRequest("users/active", responseContainer, requestParams, disableCache: true);
-		}
-
-		public static void PostHelpRequest(string fromWorldId, string fromInstanceId, Action successCallback, Action<string> errorCallback)
-		{
-			Dictionary<string, object> dictionary = new Dictionary<string, object>();
-			dictionary["worldId"] = fromWorldId;
-			dictionary["instanceId"] = fromInstanceId;
-			API.SendPostRequest("halp", new ApiContainer
-			{
-				OnSuccess = delegate
-				{
-					if (successCallback != null)
-					{
-						successCallback();
-					}
-				},
-				OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				}
-			}, dictionary);
 		}
 
 		public static bool Exists(APIUser user)

@@ -277,6 +277,7 @@ public class EnvConfig
 
         SetDefaultGraphicsAPIs();
         SetGraphicsSettings();
+        SetAudioSettings();
         SetPlayerSettings();
 
 #if VRC_CLIENT
@@ -604,13 +605,32 @@ public class EnvConfig
 
         graphicsManager.ApplyModifiedProperties();
     }
+    
+    static void SetAudioSettings()
+    {
+        var config = AudioSettings.GetConfiguration();
+        config.dspBufferSize = 0; // use default
+        config.speakerMode = AudioSpeakerMode.Stereo; // use default
+        config.sampleRate = 0; // use default
+        if (EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Android)
+        {
+            config.numRealVoices = 24;
+            config.numVirtualVoices = 24;
+        }
+        else
+        {
+            config.numRealVoices = 63;
+            config.numVirtualVoices = 63;
+        }
+        AudioSettings.Reset(config);
+    }
 
     static void SetPlayerSettings()
     {
         // asset bundles MUST be built with settings that are compatible with VRC client
-        #if VRC_OVERRIDE_COLORSPACE_GAMMA
+#if VRC_OVERRIDE_COLORSPACE_GAMMA
             PlayerSettings.colorSpace = ColorSpace.Gamma;
-        #else
+#else
             PlayerSettings.colorSpace = ColorSpace.Linear;
 #endif
 

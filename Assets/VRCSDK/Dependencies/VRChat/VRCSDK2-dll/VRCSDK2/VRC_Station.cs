@@ -73,6 +73,7 @@ namespace VRCSDK2
 			{
 				this.get_gameObject()
 			};
+			vrcEvent.TakeOwnershipOfTarget = false;
 			list.Add(vrcEvent);
 			VRC_EventHandler.VrcEvent vrcEvent2 = new VRC_EventHandler.VrcEvent();
 			vrcEvent2.Name = "ExitStation";
@@ -83,6 +84,7 @@ namespace VRCSDK2
 			{
 				this.get_gameObject()
 			};
+			vrcEvent.TakeOwnershipOfTarget = false;
 			list.Add(vrcEvent2);
 			return list;
 		}

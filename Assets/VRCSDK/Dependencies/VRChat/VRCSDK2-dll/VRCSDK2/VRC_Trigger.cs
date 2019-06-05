@@ -176,6 +176,8 @@ namespace VRCSDK2
 
 		public bool ShowHelp = true;
 
+		public bool TakesOwnershipIfNecessary;
+
 		[SerializeField]
 		public List<TriggerEvent> Triggers = new List<TriggerEvent>();
 
@@ -328,21 +330,29 @@ namespace VRCSDK2
 
 		public void ExecuteTriggerType(TriggerType triggerType)
 		{
-			foreach (TriggerEvent item in from t in Triggers
+			IEnumerable<TriggerEvent> enumerable = from t in Triggers
 			where t != null && t.TriggerType == triggerType
-			select t)
+			select t;
+			if (enumerable.FirstOrDefault() != null)
 			{
-				ExecuteTrigger(item);
+				foreach (TriggerEvent item in enumerable)
+				{
+					ExecuteTrigger(item);
+				}
 			}
 		}
 
 		public void ExecuteCustomTrigger(string name)
 		{
-			foreach (TriggerEvent item in from t in Triggers
+			IEnumerable<TriggerEvent> enumerable = from t in Triggers
 			where t != null && t.TriggerType == TriggerType.Custom && t.Name == name
-			select t)
+			select t;
+			if (enumerable.FirstOrDefault() != null)
 			{
-				ExecuteTrigger(item);
+				foreach (TriggerEvent item in enumerable)
+				{
+					ExecuteTrigger(item);
+				}
 			}
 		}
 

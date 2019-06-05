@@ -4,31 +4,38 @@
 // - no Main Color
 // - fully supports only 1 directional light. Other lights can affect it, but it will be per-vertex/SH.
 
-Shader "VRChat/Mobile/Diffuse" {
-Properties {
-    _MainTex ("Base (RGB)", 2D) = "white" {}
-}
-SubShader {
-    Tags { "RenderType"="Opaque" }
-    LOD 150
+Shader "VRChat/Mobile/Diffuse"
+{
+    Properties
+    {
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+    }
 
-CGPROGRAM
-#pragma surface surf Lambert noforwardadd
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 150
+    
+        CGPROGRAM
+        #pragma target 3.0
+        #pragma surface surf Lambert exclude_path:prepass exclude_path:deferred noforwardadd noshadow nodynlightmap nolppv noshadowmask
 
-sampler2D _MainTex;
+        UNITY_DECLARE_TEX2D(_MainTex);
 
-struct Input {
-    float2 uv_MainTex;
-    float4 color : COLOR;
-};
+        struct Input
+        {
+            float2 uv_MainTex;
+            float4 color : COLOR;
+        };
+        
+        void surf (Input IN, inout SurfaceOutput o)
+        {
+            fixed4 c = UNITY_SAMPLE_TEX2D(_MainTex, IN.uv_MainTex);
+            o.Albedo = c.rgb * IN.color;
+            o.Alpha = 1.0f;
+        }
+        ENDCG
+    }
 
-void surf (Input IN, inout SurfaceOutput o) {
-    fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-    o.Albedo = c.rgb * IN.color;
-    o.Alpha = c.a;
-}
-ENDCG
-}
-
-Fallback "Mobile/VertexLit"
+    FallBack "Diffuse"
 }

@@ -86,6 +86,7 @@ namespace VRCSDK2
         private SerializedProperty proximityProperty;
         private SerializedProperty interactTextProperty;
         private SerializedProperty advancedProperty;
+        private SerializedProperty ownershipProperty;
         private SerializedProperty helpProperty;
 
         private Dictionary<string, object[]> rpcByteCache = new Dictionary<string, object[]>();
@@ -118,6 +119,7 @@ namespace VRCSDK2
             proximityProperty = serializedObject.FindProperty("proximity");
             interactTextProperty = serializedObject.FindProperty("interactText");
             advancedProperty = serializedObject.FindProperty("UsesAdvancedOptions");
+            ownershipProperty = serializedObject.FindProperty("TakesOwnershipIfNecessary");
             helpProperty = serializedObject.FindProperty("ShowHelp");
 
             serializedObject.Update();
@@ -147,6 +149,7 @@ namespace VRCSDK2
             EditorGUILayout.BeginVertical(GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 30));
 
             EditorGUILayout.PropertyField(advancedProperty, new GUIContent("Advanced Mode"));
+            EditorGUILayout.PropertyField(ownershipProperty, new GUIContent("Take Ownership of Action Targets"));
             EditorGUILayout.PropertyField(helpProperty, new GUIContent("Show Help"));
 
             EditorGUILayout.Space();

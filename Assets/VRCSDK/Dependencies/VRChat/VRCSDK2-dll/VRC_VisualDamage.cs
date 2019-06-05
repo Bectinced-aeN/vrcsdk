@@ -63,12 +63,18 @@ public class VRC_VisualDamage : MonoBehaviour
 
 	private void HideDamageIndicator()
 	{
-		renderer.set_enabled(false);
+		if (renderer != null)
+		{
+			renderer.set_enabled(false);
+		}
 	}
 
 	private void ShowDamageIndicator()
 	{
-		renderer.set_enabled(true);
+		if (renderer != null)
+		{
+			renderer.set_enabled(true);
+		}
 	}
 
 	public void SetDamagePercent(float damagePercent)

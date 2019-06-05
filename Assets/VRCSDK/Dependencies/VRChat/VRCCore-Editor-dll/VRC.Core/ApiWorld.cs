@@ -344,7 +344,7 @@ namespace VRC.Core
 		}
 
 		public List<string> publicTags => (from tag in tags
-		where tag.StartsWith("user_") || tag.StartsWith("author_")
+		where tag.StartsWith("user_tag_") || tag.StartsWith("author_tag_")
 		select tag).ToList();
 
 		public ApiWorld()

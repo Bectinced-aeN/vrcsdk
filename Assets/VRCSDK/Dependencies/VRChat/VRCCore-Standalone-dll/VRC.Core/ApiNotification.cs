@@ -17,8 +17,6 @@ namespace VRC.Core
 			Invite,
 			Requestinvite,
 			VoteToKick,
-			Halp,
-			Hidden,
 			Broadcast
 		}
 
