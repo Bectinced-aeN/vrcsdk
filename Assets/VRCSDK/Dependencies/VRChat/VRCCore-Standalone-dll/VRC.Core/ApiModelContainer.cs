@@ -19,6 +19,24 @@ namespace VRC.Core
 		{
 		}
 
+		public bool ValidModelData()
+		{
+			try
+			{
+				if (!base.Model.SetApiFieldsFromJson(base.ResponseDictionary, ref responseError))
+				{
+					return false;
+				}
+			}
+			catch (Exception ex)
+			{
+				base.Error = "An exception was caught when filling the model: " + ex.Message;
+				return false;
+				IL_0046:;
+			}
+			return true;
+		}
+
 		protected override bool Validate(bool success, Func<byte[]> readData, Func<string> readTextData)
 		{
 			if (base.Model == null)

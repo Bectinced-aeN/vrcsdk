@@ -15,10 +15,36 @@ namespace VRC.Core
 
 		private static string humanName;
 
+		private static uint? index;
+
 		public static bool Clear()
 		{
 			Set(null, null, null, null);
 			return !Load();
+		}
+
+		public static void SetProfileIndex(uint _index)
+		{
+			if (_index == 0)
+			{
+				index = null;
+			}
+			else
+			{
+				index = _index;
+			}
+		}
+
+		private static void SetString(string key, string value)
+		{
+			key = string.Format("{0}{1}", key, (!index.HasValue) ? string.Empty : ("[" + index.Value.ToString() + "]"));
+			SecurePlayerPrefs.SetString(key, value, "vl9u1grTnvXA");
+		}
+
+		private static string GetString(string key)
+		{
+			key = string.Format("{0}{1}", key, (!index.HasValue) ? string.Empty : ("[" + index.Value.ToString() + "]"));
+			return SecurePlayerPrefs.GetString(key, "vl9u1grTnvXA");
 		}
 
 		public static bool Load()
@@ -26,18 +52,28 @@ namespace VRC.Core
 			authToken = (provider = (providerUserId = null));
 			try
 			{
-				SecurePlayerPrefs.SetString("username", string.Empty, "vl9u1grTnvXA");
-				SecurePlayerPrefs.SetString("password", string.Empty, "vl9u1grTnvXA");
-				provider = SecurePlayerPrefs.GetString("authTokenProvider", "vl9u1grTnvXA");
-				providerUserId = SecurePlayerPrefs.GetString("authTokenProviderUserId", "vl9u1grTnvXA");
-				authToken = SecurePlayerPrefs.GetString("authToken", "vl9u1grTnvXA");
-				humanName = SecurePlayerPrefs.GetString("humanName", "vl9u1grTnvXA");
+				SetString("username", string.Empty);
+				SetString("password", string.Empty);
+				provider = GetString("authTokenProvider");
+				providerUserId = GetString("authTokenProviderUserId");
+				authToken = GetString("authToken");
+				humanName = GetString("humanName");
 			}
 			catch (Exception ex)
 			{
 				Debug.LogError((object)("Exception loading credentials: " + ex.Message + "\n" + ex.StackTrace));
 			}
 			return !string.IsNullOrEmpty(authToken);
+		}
+
+		public static void SetHumanName(string _humanName)
+		{
+			if (!string.IsNullOrEmpty(_humanName))
+			{
+				SetString("humanName", _humanName);
+				humanName = _humanName;
+				PlayerPrefs.Save();
+			}
 		}
 
 		public static void Set(string _humanName, string _providerId, string _provider, string _token)
@@ -58,10 +94,10 @@ namespace VRC.Core
 			{
 				_humanName = string.Empty;
 			}
-			SecurePlayerPrefs.SetString("authTokenProvider", _provider, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("authTokenProviderUserId", _providerId, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("authToken", _token, "vl9u1grTnvXA");
-			SecurePlayerPrefs.SetString("humanName", _humanName, "vl9u1grTnvXA");
+			SetString("authTokenProvider", _provider);
+			SetString("authTokenProviderUserId", _providerId);
+			SetString("authToken", _token);
+			SetString("humanName", _humanName);
 			humanName = _humanName;
 			authToken = _token;
 			providerUserId = _providerId;

@@ -29,7 +29,7 @@ namespace VRCSDK2
         MeshCount,
         MaterialCount,
         DynamicBoneComponentCount,
-        DynamicBoneAffectedTransformCount,
+        DynamicBoneSimulatedBoneCount,
         DynamicBoneColliderCount,
         DynamicBoneCollisionCheckCount,
         AnimatorCount,
@@ -63,6 +63,9 @@ namespace VRCSDK2
 
     public class AvatarPerformanceStats
     {
+        #region Performance Stats Properties
+        public string AvatarName;
+
         public int PolyCount;
         public Bounds AABB;
         public int SkinnedMeshCount;
@@ -79,247 +82,125 @@ namespace VRCSDK2
         public int TrailRendererCount;
         public int LineRendererCount;
         public int DynamicBoneComponentCount;
-        public int DynamicBoneAffectedTransformCount;
+        public int DynamicBoneSimulatedBoneCount;
         public int DynamicBoneColliderCount;
-        public int DynamicBoneCollisionCheckCount;          // number of collider affected transforms X number of colliders
+        public int DynamicBoneCollisionCheckCount;          // number of collider simulated bones excluding the root multiplied by the number of colliders
         public int ClothCount;
         public int ClothMaxVertices;
         public int PhysicsColliderCount;
         public int PhysicsRigidbodyCount;
         public int AudioSourceCount;
 
-        public string AvatarName;
+        #endregion
 
-        public static AvatarPerformanceStats VeryGoodPerformanceStatLimits = new AvatarPerformanceStats()
+        #region Performance Rating Stats
+
+        private static AvatarPerformanceStatsLevelSet _performanceStatsLevelSet = null;
+
+        public static AvatarPerformanceStatsLevel VeryGoodPerformanceStatLimits
         {
-            PolyCount = 32000,
-            AABB = new Bounds(Vector3.zero, new Vector3(2.5f, 2.5f, 2.5f)),
-            SkinnedMeshCount = 1,
-            MeshCount = 4,
-            MaterialCount = 4,
-            AnimatorCount = 1,
-            BoneCount = 75,
-            LightCount = 0,
-            ParticleSystemCount = 0,
-            ParticleTotalCount = 0,
-            ParticleTotalActiveMeshPolyCount = 0,
-            ParticleTrailsEnabled = false,
-            ParticleCollisionEnabled = false,
-            TrailRendererCount = 1,
-            LineRendererCount = 1,
-            DynamicBoneComponentCount = 0,
-            DynamicBoneAffectedTransformCount = 0,
-            DynamicBoneColliderCount = 0,
-            DynamicBoneCollisionCheckCount = 0,
-            ClothCount = 0,
-            ClothMaxVertices = 0,
-            PhysicsColliderCount = 0,
-            PhysicsRigidbodyCount = 0,
-            AudioSourceCount = 1
-        };
+            get { return _performanceStatsLevelSet.VeryGood; }
+        }
 
-        public static AvatarPerformanceStats GoodPeformanceStatLimits = new AvatarPerformanceStats()
+        public static AvatarPerformanceStatsLevel GoodPerformanceStatLimits
         {
-            PolyCount = 70000,
-            AABB = new Bounds(Vector3.zero, new Vector3(4f, 4f, 4f)),
-            SkinnedMeshCount = 2,
-            MeshCount = 8,
-            MaterialCount = 8,
-            AnimatorCount = 4,
-            BoneCount = 150,
-            LightCount = 0,
-            ParticleSystemCount = 4,
-            ParticleTotalCount = 1000,
-            ParticleTotalActiveMeshPolyCount = 2000,
-            ParticleTrailsEnabled = false,
-            ParticleCollisionEnabled = false,
-            TrailRendererCount = 2,
-            LineRendererCount = 2,
-            DynamicBoneComponentCount = 4,
-            DynamicBoneAffectedTransformCount = 16,
-            DynamicBoneColliderCount = 0,
-            DynamicBoneCollisionCheckCount = 0,
-            ClothCount = 1,
-            ClothMaxVertices = 100,
-            PhysicsColliderCount = 1,
-            PhysicsRigidbodyCount = 1,
-            AudioSourceCount = 4
-        };
+            get { return _performanceStatsLevelSet.Good; }
+        }
 
-        public static AvatarPerformanceStats MediumPeformanceStatLimits = new AvatarPerformanceStats()
+        public static AvatarPerformanceStatsLevel MediumPerformanceStatLimits
         {
-            PolyCount = 70000,
-            AABB = new Bounds(Vector3.zero, new Vector3(5f, 6f, 5f)),
-            SkinnedMeshCount = 8,
-            MeshCount = 16,
-            MaterialCount = 16,
-            AnimatorCount = 16,
-            BoneCount = 256,
-            LightCount = 0,
-            ParticleSystemCount = 8,
-            ParticleTotalCount = 2500,
-            ParticleTotalActiveMeshPolyCount = 5000,
-            ParticleTrailsEnabled = true,
-            ParticleCollisionEnabled = true,
-            TrailRendererCount = 4,
-            LineRendererCount = 4,
-            DynamicBoneComponentCount = 16,
-            DynamicBoneAffectedTransformCount = 32,
-            DynamicBoneColliderCount = 4,
-            DynamicBoneCollisionCheckCount = 8,
-            ClothCount = 1,
-            ClothMaxVertices = 250,
-            PhysicsColliderCount = 8,
-            PhysicsRigidbodyCount = 8,
-            AudioSourceCount = 8
-        };
+            get { return _performanceStatsLevelSet.Medium; }
+        }
 
-        public static AvatarPerformanceStats BadPeformanceStatLimits = new AvatarPerformanceStats()
+        public static AvatarPerformanceStatsLevel BadPerformanceStatLimits
         {
-            PolyCount = 70000,
-            AABB = new Bounds(Vector3.zero, new Vector3(5f, 6f, 5f)),
-            SkinnedMeshCount = 16,
-            MeshCount = 24,
-            MaterialCount = 32,
-            AnimatorCount = 32,
-            BoneCount = 400,
-            LightCount = 1,
-            ParticleSystemCount = 16,
-            ParticleTotalCount = 5000,
-            ParticleTotalActiveMeshPolyCount = 10000,
-            ParticleTrailsEnabled = true,
-            ParticleCollisionEnabled = true,
-            TrailRendererCount = 8,
-            LineRendererCount = 8,
-            DynamicBoneComponentCount = 32,
-            DynamicBoneAffectedTransformCount = 256,
-            DynamicBoneColliderCount = 32,
-            DynamicBoneCollisionCheckCount = 256,
-            ClothCount = 2,
-            ClothMaxVertices = 500,
-            PhysicsColliderCount = 8,
-            PhysicsRigidbodyCount = 8,
-            AudioSourceCount = 32
-        };
+            get { return _performanceStatsLevelSet.Bad; }
+        }
 
-        private PerformanceRating[] _performanceRatingCache;
+        public static void Initialize()
+        {
+            if (_performanceStatsLevelSet != null)
+                return;
+
+            _performanceStatsLevelSet = Resources.Load<AvatarPerformanceStatsLevelSet>(GetPlatformPerformanceStatLevels());
+        }
+
+        public static IEnumerator InitializeAsync()
+        {
+            if (_performanceStatsLevelSet != null)
+                yield break;
+
+            ResourceRequest req = Resources.LoadAsync<AvatarPerformanceStatsLevelSet>(GetPlatformPerformanceStatLevels());
+            while (!req.isDone)
+                yield return null;
+
+            _performanceStatsLevelSet = req.asset as AvatarPerformanceStatsLevelSet;
+        }
+
+        private static string GetPlatformPerformanceStatLevels()
+        {
+            if (VRC.ValidationHelpers.IsStandalonePlatform())
+                return "PerformanceStatsLevels/Windows/AvatarPerformanceStatLevels_Windows";
+            else
+                return "PerformanceStatsLevels/Quest/AvatarPerformanceStatLevels_Quest";
+        }
+
+        #endregion
+
+        #region Private Fields
+
+        private readonly PerformanceRating[] _performanceRatingCache;
+
+        #endregion
+
+        #region Constructors
 
         public AvatarPerformanceStats()
         {
             _performanceRatingCache = new PerformanceRating[(int)AvatarPerformanceCategory.AvatarPerformanceCategoryCount];
         }
 
-        public void GetSDKPerformanceInfoText(out string text, out PerformanceInfoDisplayLevel displayLevel, AvatarPerformanceCategory perfCategory)
+        #endregion
+
+        #region Public Methods
+
+        public void Reset()
         {
-            PerformanceRating rating = GetPerformanceRatingForCategory(perfCategory);
-            GetSDKPerformanceInfoText(out text, out displayLevel, perfCategory, rating);
+            AvatarName = null;
+            PolyCount = 0;
+            AABB = new Bounds(Vector3.zero, Vector3.zero);
+            SkinnedMeshCount = 0;
+            MeshCount = 0;
+            MaterialCount = 0;
+            AnimatorCount = 0;
+            BoneCount = 0;
+            LightCount = 0;
+            ParticleSystemCount = 0;
+            ParticleTotalCount = 0;
+            ParticleTotalActiveMeshPolyCount = 0;
+            ParticleTrailsEnabled = false;
+            ParticleCollisionEnabled = false;
+            TrailRendererCount = 0;
+            LineRendererCount = 0;
+            DynamicBoneComponentCount = 0;
+            DynamicBoneSimulatedBoneCount = 0;
+            DynamicBoneColliderCount = 0;
+            DynamicBoneCollisionCheckCount = 0;
+            ClothCount = 0;
+            ClothMaxVertices = 0;
+            PhysicsColliderCount = 0;
+            PhysicsRigidbodyCount = 0;
+            AudioSourceCount = 0;
         }
 
         public PerformanceRating GetPerformanceRatingForCategory(AvatarPerformanceCategory perfCategory)
         {
             if (_performanceRatingCache[(int)perfCategory] == PerformanceRating.None)
-                _performanceRatingCache[(int)perfCategory] = CalculatePerformanceRatingForCategory(perfCategory);
-            return _performanceRatingCache[(int)perfCategory];
-        }
-
-        private PerformanceRating CalculatePerformanceRatingForCategory(AvatarPerformanceCategory perfCategory)
-        {
-            switch (perfCategory)
             {
-                case AvatarPerformanceCategory.Overall:
-                    {
-                        int maxRating = (int)PerformanceRating.None;
-
-                        foreach (AvatarPerformanceCategory c in Enum.GetValues(typeof(AvatarPerformanceCategory)))
-                        {
-                            if (c == AvatarPerformanceCategory.None ||
-                                c == AvatarPerformanceCategory.Overall ||
-                                c == AvatarPerformanceCategory.AvatarPerformanceCategoryCount)
-                            {
-                                continue;
-                            }
-
-                            int r = (int)GetPerformanceRatingForCategory(c);
-                            if (r > maxRating)
-                                maxRating = r;
-                        }
-
-                        return (PerformanceRating)maxRating;
-                    }
-                case AvatarPerformanceCategory.PolyCount:
-                    return CalculatePerformanceRating((x, y) => x.PolyCount - y.PolyCount);
-                case AvatarPerformanceCategory.AABB:
-                    return CalculatePerformanceRating((x, y) => (ApproxLessOrEqual(x.AABB.extents.x, y.AABB.extents.x) && ApproxLessOrEqual(x.AABB.extents.y, y.AABB.extents.y) && ApproxLessOrEqual(x.AABB.extents.z, y.AABB.extents.z)) ? -1 : 1);
-                case AvatarPerformanceCategory.SkinnedMeshCount:
-                    return CalculatePerformanceRating((x, y) => x.SkinnedMeshCount - y.SkinnedMeshCount);
-                case AvatarPerformanceCategory.MeshCount:
-                    return CalculatePerformanceRating((x, y) => x.MeshCount - y.MeshCount);
-                case AvatarPerformanceCategory.MaterialCount:
-                    return CalculatePerformanceRating((x, y) => x.MaterialCount - y.MaterialCount);
-                case AvatarPerformanceCategory.AnimatorCount:
-                    return CalculatePerformanceRating((x, y) => x.AnimatorCount - y.AnimatorCount);
-                case AvatarPerformanceCategory.BoneCount:
-                    return CalculatePerformanceRating((x, y) => x.BoneCount - y.BoneCount);
-                case AvatarPerformanceCategory.LightCount:
-                    return CalculatePerformanceRating((x, y) => x.LightCount - y.LightCount);
-                case AvatarPerformanceCategory.ParticleSystemCount:
-                    return CalculatePerformanceRating((x, y) => x.ParticleSystemCount - y.ParticleSystemCount);
-                case AvatarPerformanceCategory.ParticleTotalCount:
-                    return CalculatePerformanceRating((x, y) => x.ParticleTotalCount - y.ParticleTotalCount);
-                case AvatarPerformanceCategory.ParticleTotalActiveMeshPolyCount:
-                    return CalculatePerformanceRating((x, y) => x.ParticleTotalActiveMeshPolyCount - y.ParticleTotalActiveMeshPolyCount);
-                case AvatarPerformanceCategory.ParticleTrailsEnabled:
-                    return CalculatePerformanceRating((x, y) =>
-                    {
-                        if (x.ParticleTrailsEnabled == y.ParticleTrailsEnabled)
-                            return 0;
-                        return x.ParticleTrailsEnabled ? 1 : -1;
-                    });
-                case AvatarPerformanceCategory.ParticleCollisionEnabled:
-                    return CalculatePerformanceRating((x, y) =>
-                    {
-                        if (x.ParticleCollisionEnabled == y.ParticleCollisionEnabled)
-                            return 0;
-                        return x.ParticleCollisionEnabled ? 1 : -1;
-                    });
-                case AvatarPerformanceCategory.TrailRendererCount:
-                    return CalculatePerformanceRating((x, y) => x.TrailRendererCount - y.TrailRendererCount);
-                case AvatarPerformanceCategory.LineRendererCount:
-                    return CalculatePerformanceRating((x, y) => x.LineRendererCount - y.LineRendererCount);
-                case AvatarPerformanceCategory.DynamicBoneComponentCount:
-                    return CalculatePerformanceRating((x, y) => x.DynamicBoneComponentCount - y.DynamicBoneComponentCount);
-                case AvatarPerformanceCategory.DynamicBoneAffectedTransformCount:
-                    return CalculatePerformanceRating((x, y) => x.DynamicBoneAffectedTransformCount - y.DynamicBoneAffectedTransformCount);
-                case AvatarPerformanceCategory.DynamicBoneColliderCount:
-                    return CalculatePerformanceRating((x, y) => x.DynamicBoneColliderCount - y.DynamicBoneColliderCount);
-                case AvatarPerformanceCategory.DynamicBoneCollisionCheckCount:
-                    return CalculatePerformanceRating((x, y) => x.DynamicBoneCollisionCheckCount - y.DynamicBoneCollisionCheckCount);
-                case AvatarPerformanceCategory.ClothCount:
-                    return CalculatePerformanceRating((x, y) => x.ClothCount - y.ClothCount);
-                case AvatarPerformanceCategory.ClothMaxVertices:
-                    return CalculatePerformanceRating((x, y) => x.ClothMaxVertices - y.ClothMaxVertices);
-                case AvatarPerformanceCategory.PhysicsColliderCount:
-                    return CalculatePerformanceRating((x, y) => x.PhysicsColliderCount - y.PhysicsColliderCount);
-                case AvatarPerformanceCategory.PhysicsRigidbodyCount:
-                    return CalculatePerformanceRating((x, y) => x.PhysicsRigidbodyCount - y.PhysicsRigidbodyCount);
-                case AvatarPerformanceCategory.AudioSourceCount:
-                    return CalculatePerformanceRating((x, y) => x.AudioSourceCount - y.AudioSourceCount);
-                default:
-                    return PerformanceRating.None;
+                _performanceRatingCache[(int)perfCategory] = CalculatePerformanceRatingForCategory(perfCategory);
             }
-        }
 
-        private PerformanceRating CalculatePerformanceRating(System.Comparison<AvatarPerformanceStats> compareFn)
-        {
-            if (compareFn(this, VeryGoodPerformanceStatLimits) <= 0)
-                return PerformanceRating.VeryGood;
-            if (compareFn(this, GoodPeformanceStatLimits) <= 0)
-                return PerformanceRating.Good;
-            if (compareFn(this, MediumPeformanceStatLimits) <= 0)
-                return PerformanceRating.Medium;
-            if (compareFn(this, BadPeformanceStatLimits) <= 0)
-                return PerformanceRating.Bad;
-            return PerformanceRating.VeryBad;
+            return _performanceRatingCache[(int)perfCategory];
         }
 
         public void CalculateAllPerformanceRatings()
@@ -338,7 +219,9 @@ namespace VRCSDK2
                 }
 
                 if (_performanceRatingCache[(int)perfCategory] == PerformanceRating.None)
+                {
                     _performanceRatingCache[(int)perfCategory] = CalculatePerformanceRatingForCategory(perfCategory);
+                }
             }
         }
 
@@ -364,7 +247,9 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Overall Performance: {0} - This avatar does not meet minimum performance requirements for VRChat. See additional warnings for suggestions on how to improve performance. Click 'Avatar Optimization Tips' below for more information.", GetPerformanceRatingDisplayName(rating));
+                            text = string.Format("Overall Performance: {0} - This avatar does not meet minimum performance requirements for VRChat. " +
+                                (VRC.ValidationHelpers.IsMobilePlatform() ? "It will be blocked by default on VRChat for Quest, and will not show unless a user chooses to show your avatar." : "It may be blocked by users depending on their Performance settings.") +
+                                " See additional warnings for suggestions on how to improve performance. Click 'Avatar Optimization Tips' below for more information.", GetPerformanceRatingDisplayName(rating));
                             break;
                     }
                     break;
@@ -382,11 +267,13 @@ namespace VRCSDK2
                         case PerformanceRating.Medium:
                         case PerformanceRating.Bad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Polygons: {0} - Please try to reduce your avatar poly count to less than {1} (Recommended: {2})", PolyCount, GoodPeformanceStatLimits.PolyCount, VeryGoodPerformanceStatLimits.PolyCount);
+                            text = string.Format("Polygons: {0} - Please try to reduce your avatar poly count to less than {1} (Recommended: {2})", PolyCount, GoodPerformanceStatLimits.PolyCount, VeryGoodPerformanceStatLimits.PolyCount);
                             break;
                         case PerformanceRating.VeryBad:
-                            displayLevel = PerformanceInfoDisplayLevel.Error;
-                            text = string.Format("Polygons: {0} - This avatar has too many polygons. It must have less than {1} and should have less than {2}", PolyCount, BadPeformanceStatLimits.PolyCount, VeryGoodPerformanceStatLimits.PolyCount);
+                            displayLevel = PerformanceInfoDisplayLevel.Warning;
+                            text = string.Format("Polygons: {0} - This avatar has too many polygons. " +
+                                (VRC.ValidationHelpers.IsMobilePlatform() ? "It will be blocked by default on VRChat for Quest, and will not show unless a user chooses to show your avatar." : "It may be blocked by users depending on their Performance settings.") +
+                                " It should have less than {1}. VRChat recommends having less than {2}.", PolyCount, BadPerformanceStatLimits.PolyCount, VeryGoodPerformanceStatLimits.PolyCount);
                             break;
                     }
                     break;
@@ -394,15 +281,18 @@ namespace VRCSDK2
                     switch (rating)
                     {
                         case PerformanceRating.VeryGood:
-                        case PerformanceRating.Good:
-                        case PerformanceRating.Medium:
-                        case PerformanceRating.Bad:
                             displayLevel = PerformanceInfoDisplayLevel.Verbose;
                             text = string.Format("Bounding box (AABB) size: {0}", AABB.size.ToString());
                             break;
+                        case PerformanceRating.Good:
+                        case PerformanceRating.Medium:
+                        case PerformanceRating.Bad:
+                            displayLevel = PerformanceInfoDisplayLevel.Warning;
+                            text = string.Format("Bounding box (AABB) size: {0} (Recommended: {1})", AABB.size.ToString(), VeryGoodPerformanceStatLimits.AABB.size.ToString());
+                            break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("This avatar's bounding box (AABB) is too large on at least one axis. Current size: {0}, Maximum size: {1}", AABB.size.ToString(), BadPeformanceStatLimits.AABB.size.ToString());
+                            text = string.Format("This avatar's bounding box (AABB) is too large on at least one axis. Current size: {0}, Maximum size: {1}", AABB.size.ToString(), BadPerformanceStatLimits.AABB.size.ToString());
                             break;
                     }
 
@@ -422,7 +312,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Skinned Mesh Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many skinned meshes. Combine multiple skinned meshes for optimal performance.", SkinnedMeshCount, BadPeformanceStatLimits.SkinnedMeshCount, VeryGoodPerformanceStatLimits.SkinnedMeshCount);
+                            text = string.Format("Skinned Mesh Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many skinned meshes. Combine multiple skinned meshes for optimal performance.", SkinnedMeshCount, BadPerformanceStatLimits.SkinnedMeshCount, VeryGoodPerformanceStatLimits.SkinnedMeshCount);
                             break;
                     }
                     break;
@@ -441,7 +331,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Mesh Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many meshes. Combine multiple meshes for optimal performance.", MeshCount, BadPeformanceStatLimits.MeshCount, VeryGoodPerformanceStatLimits.MeshCount);
+                            text = string.Format("Mesh Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many meshes. Combine multiple meshes for optimal performance.", MeshCount, BadPerformanceStatLimits.MeshCount, VeryGoodPerformanceStatLimits.MeshCount);
                             break;
                     }
                     break;
@@ -451,16 +341,16 @@ namespace VRCSDK2
                         case PerformanceRating.VeryGood:
                         case PerformanceRating.Good:
                             displayLevel = PerformanceInfoDisplayLevel.Verbose;
-                            text = string.Format("Unique Materials: {0}", MaterialCount);
+                            text = string.Format("Material Slots: {0}", MaterialCount);
                             break;
                         case PerformanceRating.Medium:
                         case PerformanceRating.Bad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Unique Materials: {0} (Recommended: {1}) - Use fewer materials, or combine materials and textures for optimal performance.", MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
+                            text = string.Format("Material Slots: {0} (Recommended: {1}) - Combine materials and atlas textures for optimal performance.", MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Unique Materials: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many materials. Use fewer materials, or combine materials and textures for optimal performance.", MaterialCount, BadPeformanceStatLimits.MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
+                            text = string.Format("Material Slots: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many materials. Combine materials and atlas textures for optimal performance.", MaterialCount, BadPerformanceStatLimits.MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
                             break;
                     }
                     break;
@@ -479,7 +369,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Animator Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many Animators. Avoid using extra Animators for optimal performance.", AnimatorCount, BadPeformanceStatLimits.AnimatorCount, VeryGoodPerformanceStatLimits.AnimatorCount);
+                            text = string.Format("Animator Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many Animators. Avoid using extra Animators for optimal performance.", AnimatorCount, BadPerformanceStatLimits.AnimatorCount, VeryGoodPerformanceStatLimits.AnimatorCount);
                             break;
                     }
                     break;
@@ -498,7 +388,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Bones: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many bones. Reduce number of bones for optimal performance.", BoneCount, BadPeformanceStatLimits.BoneCount, VeryGoodPerformanceStatLimits.BoneCount);
+                            text = string.Format("Bones: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many bones. Reduce number of bones for optimal performance.", BoneCount, BadPerformanceStatLimits.BoneCount, VeryGoodPerformanceStatLimits.BoneCount);
                             break;
                     }
                     break;
@@ -517,7 +407,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Lights: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many dynamic lights. Avoid use of dynamic lights for optimal performance.", LightCount, BadPeformanceStatLimits.LightCount, VeryGoodPerformanceStatLimits.LightCount);
+                            text = string.Format("Lights: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many dynamic lights. Avoid use of dynamic lights for optimal performance.", LightCount, BadPerformanceStatLimits.LightCount, VeryGoodPerformanceStatLimits.LightCount);
                             break;
                     }
                     break;
@@ -536,7 +426,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Particle Systems: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many particle systems. Reduce number of particle systems for better performance.", ParticleSystemCount, BadPeformanceStatLimits.ParticleSystemCount, VeryGoodPerformanceStatLimits.ParticleSystemCount);
+                            text = string.Format("Particle Systems: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many particle systems. Reduce number of particle systems for better performance.", ParticleSystemCount, BadPerformanceStatLimits.ParticleSystemCount, VeryGoodPerformanceStatLimits.ParticleSystemCount);
                             break;
                     }
                     break;
@@ -555,7 +445,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Total Combined Max Particle Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar uses too many particles. Reduce 'Max Particles' across all particle systems for better performance.", ParticleTotalCount, BadPeformanceStatLimits.ParticleTotalCount, VeryGoodPerformanceStatLimits.ParticleTotalCount);
+                            text = string.Format("Total Combined Max Particle Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar uses too many particles. Reduce 'Max Particles' across all particle systems for better performance.", ParticleTotalCount, BadPerformanceStatLimits.ParticleTotalCount, VeryGoodPerformanceStatLimits.ParticleTotalCount);
                             break;
                     }
                     break;
@@ -570,11 +460,11 @@ namespace VRCSDK2
                         case PerformanceRating.Medium:
                         case PerformanceRating.Bad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Mesh Particle Active Total Poly Count: {0} (Recommended: {1}) - Reduce number of polys in particle meshes, and reduce 'Max Particles' for better performance.", ParticleTotalActiveMeshPolyCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
+                            text = string.Format("Mesh Particle Active Total Poly Count: {0} (Recommended: {1}) - Reduce number of polygons in particle meshes, and reduce 'Max Particles' for better performance.", ParticleTotalActiveMeshPolyCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Mesh Particle Active Total Poly Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar uses too many mesh particle polygons. Reduce number of polys in particle meshes, and reduce 'Max Particles' for better performance.", ParticleTotalActiveMeshPolyCount, BadPeformanceStatLimits.ParticleTotalCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
+                            text = string.Format("Mesh Particle Active Total Poly Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar uses too many mesh particle polygons. Reduce number of polygons in particle meshes, and reduce 'Max Particles' for better performance.", ParticleTotalActiveMeshPolyCount, BadPerformanceStatLimits.ParticleTotalCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
                             break;
                     }
                     break;
@@ -625,7 +515,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Trail Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many TrailRenderers. Reduce number of TrailRenderers for better performance.", TrailRendererCount, BadPeformanceStatLimits.TrailRendererCount, VeryGoodPerformanceStatLimits.TrailRendererCount);
+                            text = string.Format("Trail Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many TrailRenderers. Reduce number of TrailRenderers for better performance.", TrailRendererCount, BadPerformanceStatLimits.TrailRendererCount, VeryGoodPerformanceStatLimits.TrailRendererCount);
                             break;
                     }
                     break;
@@ -644,7 +534,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Line Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many LineRenderers. Reduce number of LineRenderers for better performance.", LineRendererCount, BadPeformanceStatLimits.LineRendererCount, VeryGoodPerformanceStatLimits.LineRendererCount);
+                            text = string.Format("Line Renderers: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many LineRenderers. Reduce number of LineRenderers for better performance.", LineRendererCount, BadPerformanceStatLimits.LineRendererCount, VeryGoodPerformanceStatLimits.LineRendererCount);
                             break;
                     }
                     break;
@@ -663,26 +553,26 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Dynamic Bone Components: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBone components. Reduce number of DynamicBone components for better performance.", DynamicBoneComponentCount, BadPeformanceStatLimits.DynamicBoneComponentCount, VeryGoodPerformanceStatLimits.DynamicBoneComponentCount);
+                            text = string.Format("Dynamic Bone Components: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBone components. Reduce number of DynamicBone components for better performance.", DynamicBoneComponentCount, BadPerformanceStatLimits.DynamicBoneComponentCount, VeryGoodPerformanceStatLimits.DynamicBoneComponentCount);
                             break;
                     }
                     break;
-                case AvatarPerformanceCategory.DynamicBoneAffectedTransformCount:
+                case AvatarPerformanceCategory.DynamicBoneSimulatedBoneCount:
                     switch (rating)
                     {
                         case PerformanceRating.VeryGood:
                         case PerformanceRating.Good:
                             displayLevel = PerformanceInfoDisplayLevel.Verbose;
-                            text = string.Format("Dynamic Bone Affected Transform Count: {0}", DynamicBoneAffectedTransformCount);
+                            text = string.Format("Dynamic Bone Simulated Bone Count: {0}", DynamicBoneSimulatedBoneCount);
                             break;
                         case PerformanceRating.Medium:
                         case PerformanceRating.Bad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Dynamic Bone Affected Transform Count: {0} (Recommended: {1}) - Reduce number of transforms in hierarchy under DynamicBone components for better performance.", DynamicBoneAffectedTransformCount, VeryGoodPerformanceStatLimits.DynamicBoneAffectedTransformCount);
+                            text = string.Format("Dynamic Bone Simulated Bone Count: {0} (Recommended: {1}) - Reduce number of transforms in hierarchy under DynamicBone components, or set EndLength or EndOffset to zero to reduce the number of simulated bones.", DynamicBoneSimulatedBoneCount, VeryGoodPerformanceStatLimits.DynamicBoneSimulatedBoneCount);
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Dynamic Bone Affected Transform Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many transforms affected by DynamicBone. Reduce number of transforms in hierarchy under DynamicBone components for better performance.", DynamicBoneAffectedTransformCount, BadPeformanceStatLimits.DynamicBoneAffectedTransformCount, VeryGoodPerformanceStatLimits.DynamicBoneAffectedTransformCount);
+                            text = string.Format("Dynamic Bone Simulated Bone Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many bones simulated by DynamicBone. Reduce number of transforms in hierarchy under DynamicBone components, or set EndLength or EndOffset to zero to reduce the number of simulated bones.", DynamicBoneSimulatedBoneCount, BadPerformanceStatLimits.DynamicBoneSimulatedBoneCount, VeryGoodPerformanceStatLimits.DynamicBoneSimulatedBoneCount);
                             break;
                     }
                     break;
@@ -701,7 +591,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Dynamic Bone Collider Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBoneColliders. Avoid use of DynamicBoneColliders for better performance.", DynamicBoneColliderCount, BadPeformanceStatLimits.DynamicBoneColliderCount, VeryGoodPerformanceStatLimits.DynamicBoneColliderCount);
+                            text = string.Format("Dynamic Bone Collider Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBoneColliders. Avoid use of DynamicBoneColliders for better performance.", DynamicBoneColliderCount, BadPerformanceStatLimits.DynamicBoneColliderCount, VeryGoodPerformanceStatLimits.DynamicBoneColliderCount);
                             break;
                     }
                     break;
@@ -720,7 +610,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Dynamic Bone Collision Check Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBoneColliders. Avoid use of DynamicBoneColliders for better performance.", DynamicBoneCollisionCheckCount, BadPeformanceStatLimits.DynamicBoneCollisionCheckCount, VeryGoodPerformanceStatLimits.DynamicBoneCollisionCheckCount);
+                            text = string.Format("Dynamic Bone Collision Check Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many DynamicBoneColliders. Avoid use of DynamicBoneColliders for better performance.", DynamicBoneCollisionCheckCount, BadPerformanceStatLimits.DynamicBoneCollisionCheckCount, VeryGoodPerformanceStatLimits.DynamicBoneCollisionCheckCount);
                             break;
                     }
                     break;
@@ -739,7 +629,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Cloth Component Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many Cloth components. Avoid use of cloth for optimal performance.", ClothCount, BadPeformanceStatLimits.ClothCount, VeryGoodPerformanceStatLimits.ClothCount);
+                            text = string.Format("Cloth Component Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many Cloth components. Avoid use of cloth for optimal performance.", ClothCount, BadPerformanceStatLimits.ClothCount, VeryGoodPerformanceStatLimits.ClothCount);
                             break;
                     }
                     break;
@@ -758,7 +648,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Cloth Total Vertex Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many vertices in cloth meshes. Reduce number of vertices in cloth meshes for improved performance.", ClothMaxVertices, BadPeformanceStatLimits.ClothMaxVertices, VeryGoodPerformanceStatLimits.ClothMaxVertices);
+                            text = string.Format("Cloth Total Vertex Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many vertices in cloth meshes. Reduce number of vertices in cloth meshes for improved performance.", ClothMaxVertices, BadPerformanceStatLimits.ClothMaxVertices, VeryGoodPerformanceStatLimits.ClothMaxVertices);
                             break;
                     }
                     break;
@@ -777,7 +667,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Physics Collider Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many colliders. Avoid use of colliders for optimal performance.", PhysicsColliderCount, BadPeformanceStatLimits.PhysicsColliderCount, VeryGoodPerformanceStatLimits.PhysicsColliderCount);
+                            text = string.Format("Physics Collider Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many colliders. Avoid use of colliders for optimal performance.", PhysicsColliderCount, BadPerformanceStatLimits.PhysicsColliderCount, VeryGoodPerformanceStatLimits.PhysicsColliderCount);
                             break;
                     }
                     break;
@@ -796,7 +686,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Physics Rigidbody Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many rigidbodies. Avoid use of rigidbodies for optimal performance.", PhysicsRigidbodyCount, BadPeformanceStatLimits.PhysicsRigidbodyCount, VeryGoodPerformanceStatLimits.PhysicsRigidbodyCount);
+                            text = string.Format("Physics Rigidbody Count: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many rigidbodies. Avoid use of rigidbodies for optimal performance.", PhysicsRigidbodyCount, BadPerformanceStatLimits.PhysicsRigidbodyCount, VeryGoodPerformanceStatLimits.PhysicsRigidbodyCount);
                             break;
                     }
                     break;
@@ -815,7 +705,7 @@ namespace VRCSDK2
                             break;
                         case PerformanceRating.VeryBad:
                             displayLevel = PerformanceInfoDisplayLevel.Warning;
-                            text = string.Format("Audio Sources: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many audio sources. Reduce number of audio sources for better performance.", AudioSourceCount, BadPeformanceStatLimits.AudioSourceCount, VeryGoodPerformanceStatLimits.AudioSourceCount);
+                            text = string.Format("Audio Sources: {0} (Maximum: {1}, Recommended: {2}) - This avatar has too many audio sources. Reduce number of audio sources for better performance.", AudioSourceCount, BadPerformanceStatLimits.AudioSourceCount, VeryGoodPerformanceStatLimits.AudioSourceCount);
                             break;
                     }
                     break;
@@ -838,13 +728,19 @@ namespace VRCSDK2
                         case PerformanceRating.VeryGood:
                             return string.Format("Polygons: {0}", PolyCount);
                         default:
+                        {
+                            if(PolyCount == int.MaxValue)
+                            {
+                                return "Polygons: Mesh Read/Write Disabled";
+                            }
                             return string.Format("Polygons: {0} ({1})", PolyCount, VeryGoodPerformanceStatLimits.PolyCount);
+                        }
                     }
                 case AvatarPerformanceCategory.AABB:
                     switch (rating)
                     {
                         case PerformanceRating.VeryBad:
-                            return string.Format("Bounds Size: {0} ({1})", AABB.size.ToString(), BadPeformanceStatLimits.AABB.size.ToString());
+                            return string.Format("Bounds Size: {0} ({1})", AABB.size.ToString(), BadPerformanceStatLimits.AABB.size.ToString());
                         default:
                             return string.Format("Bounds Size: {0}", AABB.size.ToString());
                     }
@@ -870,9 +766,9 @@ namespace VRCSDK2
                     switch (rating)
                     {
                         case PerformanceRating.VeryGood:
-                            return string.Format("Unique Materials: {0}", MaterialCount);
+                            return string.Format("Material Slots: {0}", MaterialCount);
                         default:
-                            return string.Format("Unique Materials: {0} ({1})", MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
+                            return string.Format("Material Slots: {0} ({1})", MaterialCount, VeryGoodPerformanceStatLimits.MaterialCount);
                     }
                 case AvatarPerformanceCategory.AnimatorCount:
                     switch (rating)
@@ -918,9 +814,9 @@ namespace VRCSDK2
                     switch (rating)
                     {
                         case PerformanceRating.VeryGood:
-                            return string.Format("Mesh Particle Active Polys: {0}", ParticleTotalActiveMeshPolyCount);
+                            return string.Format("Mesh Particle Active Polygons: {0}", ParticleTotalActiveMeshPolyCount);
                         default:
-                            return string.Format("Mesh Particle Active Polys: {0} ({1})", ParticleTotalActiveMeshPolyCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
+                            return string.Format("Mesh Particle Active Polygons: {0} ({1})", ParticleTotalActiveMeshPolyCount, VeryGoodPerformanceStatLimits.ParticleTotalActiveMeshPolyCount);
                     }
                 case AvatarPerformanceCategory.ParticleTrailsEnabled:
                     switch (rating)
@@ -962,13 +858,13 @@ namespace VRCSDK2
                         default:
                             return string.Format("Dynamic Bone Components: {0} ({1})", DynamicBoneComponentCount, VeryGoodPerformanceStatLimits.DynamicBoneComponentCount);
                     }
-                case AvatarPerformanceCategory.DynamicBoneAffectedTransformCount:
+                case AvatarPerformanceCategory.DynamicBoneSimulatedBoneCount:
                     switch (rating)
                     {
                         case PerformanceRating.VeryGood:
-                            return string.Format("Dynamic Bone Transforms: {0}", DynamicBoneAffectedTransformCount);
+                            return string.Format("Dynamic Bone Transforms: {0}", DynamicBoneSimulatedBoneCount);
                         default:
-                            return string.Format("Dynamic Bone Transforms: {0} ({1})", DynamicBoneAffectedTransformCount, VeryGoodPerformanceStatLimits.DynamicBoneAffectedTransformCount);
+                            return string.Format("Dynamic Bone Transforms: {0} ({1})", DynamicBoneSimulatedBoneCount, VeryGoodPerformanceStatLimits.DynamicBoneSimulatedBoneCount);
                     }
                 case AvatarPerformanceCategory.DynamicBoneColliderCount:
                     switch (rating)
@@ -1050,6 +946,157 @@ namespace VRCSDK2
             }
         }
 
+        #endregion
+
+        #region Private Methods
+
+        private delegate int ComparePerformanceStatsDelegate(AvatarPerformanceStats stats, AvatarPerformanceStatsLevel statsLevel);
+
+        private PerformanceRating CalculatePerformanceRatingForCategory(AvatarPerformanceCategory perfCategory)
+        {
+            switch (perfCategory)
+            {
+                case AvatarPerformanceCategory.Overall:
+                    {
+                        PerformanceRating maxRating = PerformanceRating.None;
+
+                        foreach (AvatarPerformanceCategory category in Enum.GetValues(typeof(AvatarPerformanceCategory)))
+                        {
+                            if (category == AvatarPerformanceCategory.None ||
+                                category == AvatarPerformanceCategory.Overall ||
+                                category == AvatarPerformanceCategory.AvatarPerformanceCategoryCount)
+                            {
+                                continue;
+                            }
+
+                            PerformanceRating rating = GetPerformanceRatingForCategory(category);
+                            
+                            // Bounds don't affect the Overall rating beyond medium.
+                            if(category == AvatarPerformanceCategory.AABB)
+                            {
+                                rating = rating > PerformanceRating.Medium ? PerformanceRating.Medium : rating;
+                            }
+
+                            if (rating > maxRating)
+                            {
+                                maxRating = rating;
+                            }
+                        }
+
+                        return maxRating;
+                    }
+                case AvatarPerformanceCategory.PolyCount:
+                    return CalculatePerformanceRating((x, y) => x.PolyCount - y.PolyCount);
+                case AvatarPerformanceCategory.AABB:
+                {
+                    return CalculatePerformanceRating((x, y) => 
+                        ApproxLessOrEqual(y.AABB.extents.x, 0.0f) ||    // -1 extents means "no AABB limit"
+                        (
+                            ApproxLessOrEqual(x.AABB.extents.x, y.AABB.extents.x) &&
+                            ApproxLessOrEqual(x.AABB.extents.y, y.AABB.extents.y) &&
+                            ApproxLessOrEqual(x.AABB.extents.z, y.AABB.extents.z)) ? -1 : 1
+                        );
+                }
+                case AvatarPerformanceCategory.SkinnedMeshCount:
+                    return CalculatePerformanceRating((x, y) => x.SkinnedMeshCount - y.SkinnedMeshCount);
+                case AvatarPerformanceCategory.MeshCount:
+                    return CalculatePerformanceRating((x, y) => x.MeshCount - y.MeshCount);
+                case AvatarPerformanceCategory.MaterialCount:
+                    return CalculatePerformanceRating((x, y) => x.MaterialCount - y.MaterialCount);
+                case AvatarPerformanceCategory.AnimatorCount:
+                    return CalculatePerformanceRating((x, y) => x.AnimatorCount - y.AnimatorCount);
+                case AvatarPerformanceCategory.BoneCount:
+                    return CalculatePerformanceRating((x, y) => x.BoneCount - y.BoneCount);
+                case AvatarPerformanceCategory.LightCount:
+                    return CalculatePerformanceRating((x, y) => x.LightCount - y.LightCount);
+                case AvatarPerformanceCategory.ParticleSystemCount:
+                    return CalculatePerformanceRating((x, y) => x.ParticleSystemCount - y.ParticleSystemCount);
+                case AvatarPerformanceCategory.ParticleTotalCount:
+                    return CalculatePerformanceRating((x, y) => x.ParticleTotalCount - y.ParticleTotalCount);
+                case AvatarPerformanceCategory.ParticleTotalActiveMeshPolyCount:
+                    return CalculatePerformanceRating((x, y) => x.ParticleTotalActiveMeshPolyCount - y.ParticleTotalActiveMeshPolyCount);
+                case AvatarPerformanceCategory.ParticleTrailsEnabled:
+                    return CalculatePerformanceRating((x, y) =>
+                    {
+                        if (x.ParticleTrailsEnabled == y.ParticleTrailsEnabled)
+                        {
+                            return 0;
+                        }
+
+                        return x.ParticleTrailsEnabled ? 1 : -1;
+                    });
+                case AvatarPerformanceCategory.ParticleCollisionEnabled:
+                    return CalculatePerformanceRating((x, y) =>
+                    {
+                        if (x.ParticleCollisionEnabled == y.ParticleCollisionEnabled)
+                        {
+                            return 0;
+                        }
+
+                        return x.ParticleCollisionEnabled ? 1 : -1;
+                    });
+                case AvatarPerformanceCategory.TrailRendererCount:
+                    return CalculatePerformanceRating((x, y) => x.TrailRendererCount - y.TrailRendererCount);
+                case AvatarPerformanceCategory.LineRendererCount:
+                    return CalculatePerformanceRating((x, y) => x.LineRendererCount - y.LineRendererCount);
+                case AvatarPerformanceCategory.DynamicBoneComponentCount:
+                    return CalculatePerformanceRating((x, y) => x.DynamicBoneComponentCount - y.DynamicBoneComponentCount);
+                case AvatarPerformanceCategory.DynamicBoneSimulatedBoneCount:
+                    return CalculatePerformanceRating((x, y) => x.DynamicBoneSimulatedBoneCount - y.DynamicBoneSimulatedBoneCount);
+                case AvatarPerformanceCategory.DynamicBoneColliderCount:
+                    return CalculatePerformanceRating((x, y) => x.DynamicBoneColliderCount - y.DynamicBoneColliderCount);
+                case AvatarPerformanceCategory.DynamicBoneCollisionCheckCount:
+                    return CalculatePerformanceRating((x, y) => x.DynamicBoneCollisionCheckCount - y.DynamicBoneCollisionCheckCount);
+                case AvatarPerformanceCategory.ClothCount:
+                    return CalculatePerformanceRating((x, y) => x.ClothCount - y.ClothCount);
+                case AvatarPerformanceCategory.ClothMaxVertices:
+                    return CalculatePerformanceRating((x, y) => x.ClothMaxVertices - y.ClothMaxVertices);
+                case AvatarPerformanceCategory.PhysicsColliderCount:
+                    return CalculatePerformanceRating((x, y) => x.PhysicsColliderCount - y.PhysicsColliderCount);
+                case AvatarPerformanceCategory.PhysicsRigidbodyCount:
+                    return CalculatePerformanceRating((x, y) => x.PhysicsRigidbodyCount - y.PhysicsRigidbodyCount);
+                case AvatarPerformanceCategory.AudioSourceCount:
+                    return CalculatePerformanceRating((x, y) => x.AudioSourceCount - y.AudioSourceCount);
+                default:
+                    return PerformanceRating.None;
+            }
+        }
+
+        private PerformanceRating CalculatePerformanceRating(ComparePerformanceStatsDelegate compareFn)
+        {
+            if (compareFn(this, VeryGoodPerformanceStatLimits) <= 0)
+            {
+                return PerformanceRating.VeryGood;
+            }
+
+            if (compareFn(this, GoodPerformanceStatLimits) <= 0)
+            {
+                return PerformanceRating.Good;
+            }
+
+            if (compareFn(this, MediumPerformanceStatLimits) <= 0)
+            {
+                return PerformanceRating.Medium;
+            }
+
+            if (compareFn(this, BadPerformanceStatLimits) <= 0)
+            {
+                return PerformanceRating.Bad;
+            }
+
+            return PerformanceRating.VeryBad;
+        }
+
+        private static bool ApproxLessOrEqual(float x1, float x2)
+        {
+            float r = x1 - x2;
+            return r < 0.0f || Mathf.Approximately(r, 0.0f);
+        }
+        
+        #endregion
+
+        #region Overrides
+
         public override string ToString()
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -1071,9 +1118,9 @@ namespace VRCSDK2
             sb.AppendFormat("TrailRendererCount: {0}\n", TrailRendererCount);
             sb.AppendFormat("LineRendererCount: {0}\n", LineRendererCount);
             sb.AppendFormat("DynamicBoneComponentCount: {0}\n", DynamicBoneComponentCount);
-            sb.AppendFormat("DynamicBoneAffectedTransformCount: {0}\n", DynamicBoneAffectedTransformCount);
+            sb.AppendFormat("DynamicBoneSimulatedBoneCount: {0}\n", DynamicBoneSimulatedBoneCount);
             sb.AppendFormat("DynamicBoneColliderCount: {0}\n", DynamicBoneColliderCount);
-            sb.AppendFormat(": {0}\n", DynamicBoneCollisionCheckCount);
+            sb.AppendFormat("DynamicBoneCollisionCheckCount: {0}\n", DynamicBoneCollisionCheckCount);
             sb.AppendFormat("ClothCount: {0}\n", ClothCount);
             sb.AppendFormat("ClothMaxVertices: {0}\n", ClothMaxVertices);
             sb.AppendFormat("PhysicsColliderCount: {0}\n", PhysicsColliderCount);
@@ -1082,42 +1129,81 @@ namespace VRCSDK2
             return sb.ToString();
         }
 
-        static bool ApproxLessOrEqual(float x1, float x2)
-        {
-            float r = x1 - x2;
-            return r < 0.0f || Mathf.Approximately(r, 0.0f);
-        }
+        #endregion
     }
 
     public static class AvatarPerformance
     {
-        public const int DEFAULT_DYNAMIC_BONE_MAX_AFFECTED_TRANSFORM_LIMIT = 32;
+        #region Public Constants
+
+        public const int DEFAULT_DYNAMIC_BONE_MAX_SIMULATED_BONE_LIMIT = 32;
         public const int DEFAULT_DYNAMIC_BONE_MAX_COLLIDER_CHECK_LIMIT = 8;
 
-        static System.Type _dynamicBoneType = null;
-        static System.Type _dynamicBoneColliderType = null;
-        static System.Reflection.FieldInfo _dynamicBoneRootFieldInfo = null;
-        static System.Reflection.FieldInfo _dynamicBoneExclusionsFieldInfo = null;
-        static System.Reflection.FieldInfo _dynamicBoneCollidersFieldInfo = null;
-        static bool _searchedOptionalTypes = false;
+        #if UNITY_ANDROID || UNITY_IOS
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_DEFAULT = PerformanceRating.Medium;
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_MIN = PerformanceRating.Medium;
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_MAX = PerformanceRating.Bad;
+        #else
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_DEFAULT = PerformanceRating.VeryBad;
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_MIN = PerformanceRating.Medium;
+        internal const PerformanceRating AVATAR_PERFORMANCE_RATING_MINIMUM_TO_DISPLAY_MAX = PerformanceRating.VeryBad;
+        #endif
 
-        public delegate bool IgnoreDelegate(Component comp);
-        public static IgnoreDelegate ShouldIgnoreComponent;
+        #endregion
 
-        private readonly static object initLock = new object();
+        #region Private Fields
+
+        private static readonly object initLock = new object();
+
+        private static Type _dynamicBoneType = null;
+        private static FieldInfo _dynamicBoneRootFieldInfo = null;
+        private static FieldInfo _dynamicBoneExclusionsFieldInfo = null;
+        private static FieldInfo _dynamicBoneCollidersFieldInfo = null;
+        private static FieldInfo _dynamicBoneEndLengthFieldInfo = null;
+        private static FieldInfo _dynamicBoneEndOffsetFieldInfo = null;
+        private static bool _searchedOptionalTypes = false;
+        private static readonly List<int> _triangleBuffer = new List<int>();
+        private static readonly bool INCLUDE_INACTIVE_OBJECTS_IN_STATS = true;
+
+        #endregion
+
+        #region Public Delegates
+
+        public delegate bool IgnoreDelegate(Component component);
+        public static IgnoreDelegate ShouldIgnoreComponent { get; set; }
+
+        #endregion
+
+        #region Public Methods
 
         public static AvatarPerformanceStats CalculatePerformanceStats(string avatarName, GameObject avatarObject)
         {
-            AvatarPerformanceStats stats = null;
-            IEnumerator enumerator = CalculatePerformanceStatsEnumerator(avatarName, avatarObject, (s) => stats = s);
-            while (enumerator.MoveNext()) ;
+            AvatarPerformanceStats stats = new AvatarPerformanceStats();
+            
+            Stack<IEnumerator> coroutines = new Stack<IEnumerator>();
+            coroutines.Push(CalculatePerformanceStatsEnumerator(avatarName, avatarObject, stats));
+            while(coroutines.Count > 0)
+            {
+                IEnumerator currentCoroutine = coroutines.Peek();
+                if(currentCoroutine.MoveNext())
+                {
+                    IEnumerator nestedCoroutine = currentCoroutine.Current as IEnumerator;
+                    if(nestedCoroutine != null)
+                    {
+                        coroutines.Push(nestedCoroutine);
+                    }
+                }
+                else
+                {
+                    coroutines.Pop();
+                }
+            }
+
             return stats;
         }
 
-        public static IEnumerator CalculatePerformanceStatsEnumerator(string avatarName, GameObject avatarObject, System.Action<AvatarPerformanceStats> onDone)
+        public static IEnumerator CalculatePerformanceStatsEnumerator(string avatarName, GameObject avatarObject, AvatarPerformanceStats perfStats)
         {
-            AvatarPerformanceStats perfStats = new AvatarPerformanceStats();
-
             lock (initLock)
             {
                 if (!_searchedOptionalTypes)
@@ -1127,479 +1213,608 @@ namespace VRCSDK2
                 }
             }
 
+            perfStats.Reset();
             perfStats.AvatarName = avatarName;
 
-            List<Renderer> _rendererBuffer = new List<Renderer>(16);
-            avatarObject.GetComponentsInChildren<Renderer>(_rendererBuffer);
-            if (ShouldIgnoreComponent != null)
-                _rendererBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            yield return AnalyzeGraphics(avatarObject, perfStats);
+            yield return AnalyzeAnimators(avatarObject, perfStats);
 
-            // polys / bounds
-            int polycount;
-            Bounds bounds;
-            AnalyzeGeometry(avatarObject, _rendererBuffer, out bounds, out polycount);
-
-            perfStats.PolyCount = polycount;
-            perfStats.AABB = bounds;
-
+            AnalyzeLights(avatarObject, perfStats);
             yield return null;
 
-            // renderers
-            AnalyzeRenderers(_rendererBuffer, perfStats);
-
+            AnalyzeDynamicBone(avatarObject, perfStats);
             yield return null;
 
-            // animators
-            {
-                int animatorCount = 0;
-
-                List<Animator> _animatorBuffer = new List<Animator>(16);
-                avatarObject.GetComponentsInChildren<Animator>(_animatorBuffer);
-                if (ShouldIgnoreComponent != null)
-                    _animatorBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
-                animatorCount += _animatorBuffer.Count;
-
-                yield return null;
-
-                List<Animation> _animationBuffer = new List<Animation>(16);
-                avatarObject.GetComponentsInChildren<Animation>(_animationBuffer);
-                if (ShouldIgnoreComponent != null)
-                    _animationBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
-                animatorCount += _animationBuffer.Count;
-
-                perfStats.AnimatorCount = animatorCount;
-            }
-
+            AnalyzeCloth(avatarObject, perfStats);
             yield return null;
 
-            // lights
-            {
-                List<Light> _lightBuffer = new List<Light>(16);
-                avatarObject.GetComponentsInChildren<Light>(_lightBuffer);
-                if (ShouldIgnoreComponent != null)
-                    _lightBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
-                perfStats.LightCount = _lightBuffer.Count;
-            }
+            yield return AnalyzePhysics(avatarObject, perfStats);
 
-            yield return null;
-
-            // dynamic bone
-            AnalyzeDynamicBone(avatarObject,
-                out perfStats.DynamicBoneComponentCount,
-                out perfStats.DynamicBoneAffectedTransformCount,
-                out perfStats.DynamicBoneColliderCount,
-                out perfStats.DynamicBoneCollisionCheckCount);
-
-            yield return null;
-
-            // cloth
-            {
-                int clothVerts = 0;
-
-                List<Cloth> _clothBuffer = new List<Cloth>(16);
-                avatarObject.GetComponentsInChildren<Cloth>(_clothBuffer);
-                if (ShouldIgnoreComponent != null)
-                    _clothBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
-                perfStats.ClothCount = _clothBuffer.Count;
-
-                foreach (var c in _clothBuffer)
-                {
-                    if (c == null)
-                        continue;
-
-                    var verts = c.vertices;
-                    if (verts == null)
-                        continue;
-
-                    clothVerts += verts.Length;
-                }
-
-                perfStats.ClothMaxVertices = clothVerts;
-            }
-
-            yield return null;
-
-            // physics
-            {
-                List<Collider> _colliderBuffer = new List<Collider>(16);
-                avatarObject.GetComponentsInChildren<Collider>(_colliderBuffer);
-                _colliderBuffer.RemoveAll(c => ShouldIgnorePhysicsComponent(c));
-                perfStats.PhysicsColliderCount = _colliderBuffer.Count;
-
-                yield return null;
-
-                List<Rigidbody> _rigidbodyBuffer = new List<Rigidbody>(16);
-                avatarObject.GetComponentsInChildren<Rigidbody>(_rigidbodyBuffer);
-                _rigidbodyBuffer.RemoveAll(c => ShouldIgnorePhysicsComponent(c));
-                perfStats.PhysicsRigidbodyCount = _rigidbodyBuffer.Count;
-            }
-
-            yield return null;
-
-            // audio 
-            {
-                List<AudioSource> _audioSourceBuffer = new List<AudioSource>(16);
-                avatarObject.GetComponentsInChildren<AudioSource>(_audioSourceBuffer);
-                if (ShouldIgnoreComponent != null)
-                    _audioSourceBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
-                perfStats.AudioSourceCount = _audioSourceBuffer.Count;
-            }
-
+            AnalyzeAudioSources(avatarObject, perfStats);
             yield return null;
 
             // cache performance ratings
             perfStats.CalculateAllPerformanceRatings();
-
-            onDone(perfStats);
         }
 
-        static bool ShouldIgnorePhysicsComponent(Component c)
-        {
-            if (ShouldIgnoreComponent != null && ShouldIgnoreComponent(c))
-                return true;
+        #endregion
 
-            if (c.GetComponent<VRCSDK2.VRC_Station>() != null)
+        #region Private Methods
+
+        private static bool ShouldIgnorePhysicsComponent(Component component)
+        {
+            if (ShouldIgnoreComponent != null && ShouldIgnoreComponent(component))
+            {
                 return true;
+            }
+
+            if (component.GetComponent<VRC_Station>() != null)
+            {
+                return true;
+            }
 
             return false;
         }
 
-        static int CountPolygons(Renderer r)
+        private static uint CalculateRendererPolyCount(Renderer renderer)
         {
-            int result = 0;
-
-            // SkinnedMeshRenderer
+            Mesh sharedMesh = null;
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if(skinnedMeshRenderer != null)
             {
-                SkinnedMeshRenderer smr = r as SkinnedMeshRenderer;
-                if (smr != null)
-                {
-                    if (smr.sharedMesh == null)
-                        return 0;
+                sharedMesh = skinnedMeshRenderer.sharedMesh;
+            }
 
-                    result += CountMeshPolys(smr.sharedMesh);
+            if(sharedMesh == null)
+            {
+                MeshRenderer meshRenderer = renderer as MeshRenderer;
+                if(meshRenderer != null)
+                {
+                    MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                    if (meshFilter != null)
+                    {
+                        sharedMesh = meshFilter.sharedMesh;
+                    }
                 }
             }
 
-            // MeshRenderer
+            if(sharedMesh == null)
             {
-                MeshRenderer mr = r as MeshRenderer;
-                if (mr != null)
-                {
-                    var mf = mr.GetComponent<MeshFilter>();
-                    if (mf == null || mf.sharedMesh == null)
-                        return 0;
-
-                    result += CountMeshPolys(mf.sharedMesh);
-                }
+                return 0;
             }
 
-            return result;
+            return GetMeshPolyCount(sharedMesh);
         }
 
-        static int CountMeshPolys(Mesh sourceMesh)
+        private static uint GetMeshPolyCount(Mesh sourceMesh)
         {
-            bool copiedMesh = false;
-            Mesh mesh = null;
-            if (sourceMesh.isReadable)
+            // We can't get the Triangle Count if the mesh isn't readable so just return a huge number.
+            // The SDK Control Panel should show a warning in this case.
+            if (!sourceMesh.isReadable)
             {
-                mesh = sourceMesh;
-            }
-            else
-            {
-                mesh = UnityEngine.Object.Instantiate<Mesh>(sourceMesh);
-                copiedMesh = true;
+                return uint.MaxValue;
             }
 
-            int count = 0;
-            for (int i = 0; i < mesh.subMeshCount; ++i)
-                count += mesh.GetTriangles(i).Length / 3;
-
-            if (copiedMesh)
-                UnityEngine.Object.Destroy(mesh);
+            uint count = 0;
+            for(int i = 0; i < sourceMesh.subMeshCount; i++)
+            {
+                sourceMesh.GetTriangles(_triangleBuffer, i);
+                count += (uint)_triangleBuffer.Count / 3;
+                _triangleBuffer.Clear();
+            }
 
             return count;
         }
-
-        static void AnalyzeGeometry(GameObject go, List<Renderer> renderers, out Bounds bounds, out int polycount)
+        private static IEnumerator AnalyzeGraphics(GameObject avatarObject, AvatarPerformanceStats perfStats)
         {
-            polycount = 0;
-            bounds = new Bounds(go.transform.position, Vector3.zero);
-
-            List<Renderer> _rendererIgnoreBuffer = new List<Renderer>(16);
-            List<LODGroup> _lodBuffer = new List<LODGroup>(16);
-
-            go.GetComponentsInChildren<LODGroup>(_lodBuffer);
-            foreach (var lod in _lodBuffer)
+            List<Renderer> rendererBuffer = new List<Renderer>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, rendererBuffer);
+            if(ShouldIgnoreComponent != null)
             {
-                LOD[] options = lod.GetLODs();
-
-                int highestLodPolies = 0;
-                foreach (LOD l in options)
-                {
-                    int thisLodPolies = 0;
-                    foreach (Renderer r in l.renderers)
-                    {
-                        _rendererIgnoreBuffer.Add(r);
-                        thisLodPolies += CountPolygons(r);
-                    }
-                    if (thisLodPolies > highestLodPolies)
-                        highestLodPolies = thisLodPolies;
-                }
-
-                polycount += highestLodPolies;
+                rendererBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
             }
 
-            foreach (var r in renderers)
-            {
-                if ((r as ParticleSystemRenderer) == null)
-                    bounds.Encapsulate(r.bounds);
+            AnalyzeGeometry(avatarObject, rendererBuffer, perfStats);
+            yield return null;
 
-                if (_rendererIgnoreBuffer.Contains(r) == false)
-                    polycount += CountPolygons(r);
-            }
-
-            bounds.center -= go.transform.position;
-
-            _rendererIgnoreBuffer.Clear();
-            _lodBuffer.Clear();
+            // renderers
+            AnalyzeRenderers(rendererBuffer, perfStats);
+            yield return null;
         }
 
-        static void AnalyzeRenderers(List<Renderer> renderers, AvatarPerformanceStats perfStats)
+        private static IEnumerator AnalyzeAnimators(GameObject avatarObject, AvatarPerformanceStats perfStats)
         {
-            int SkinnedMeshCount = 0;
-            int MeshCount = 0;
-            int ParticleSystemCount = 0;
-            int ParticleTotalCount = 0;
-            int ParticleTotalActiveMeshPolyCount = 0;
-            bool ParticleTrailsEnabled = false;
-            bool ParticleCollisionEnabled = false;
-            int TrailRendererCount = 0;
-            int LineRendererCount = 0;
-            int MaterialCount = 0;
-            int BoneCount = 0;
+            int animatorCount = 0;
 
-            List<Transform> _transformIgnoreBuffer = new List<Transform>(16);
-            List<Material> _materialIgnoreBuffer = new List<Material>(16); 
-
-            foreach (var r in renderers)
+            List<Animator> animatorBuffer = new List<Animator>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, animatorBuffer);
+            if(ShouldIgnoreComponent != null)
             {
-                SkinnedMeshRenderer smr = r as SkinnedMeshRenderer;
-                if (smr != null)
+                animatorBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            animatorCount += animatorBuffer.Count;
+
+            yield return null;
+
+            List<Animation> animationBuffer = new List<Animation>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, animationBuffer);
+            if(ShouldIgnoreComponent != null)
+            {
+                animationBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            animatorCount += animationBuffer.Count;
+
+            perfStats.AnimatorCount = animatorCount;
+
+            yield return null;
+        }
+
+        private static IEnumerator AnalyzePhysics(GameObject avatarObject, AvatarPerformanceStats perfStats)
+        {
+            List<Collider> colliderBuffer = new List<Collider>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, colliderBuffer);
+            colliderBuffer.RemoveAll(ShouldIgnorePhysicsComponent);
+            perfStats.PhysicsColliderCount = colliderBuffer.Count;
+
+            yield return null;
+
+            List<Rigidbody> rigidbodyBuffer = new List<Rigidbody>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, rigidbodyBuffer);
+            rigidbodyBuffer.RemoveAll(ShouldIgnorePhysicsComponent);
+            perfStats.PhysicsRigidbodyCount = rigidbodyBuffer.Count;
+
+            yield return null;
+        }
+
+        private static void AnalyzeLights(GameObject avatarObject, AvatarPerformanceStats perfStats)
+        {
+            List<Light> lightBuffer = new List<Light>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, lightBuffer);
+            if(ShouldIgnoreComponent != null)
+            {
+                lightBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            perfStats.LightCount = lightBuffer.Count;
+        }
+
+        private static void AnalyzeCloth(GameObject avatarObject, AvatarPerformanceStats perfStats)
+        {
+            int totalClothVertices = 0;
+
+            List<Cloth> clothBuffer = new List<Cloth>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, clothBuffer);
+            if(ShouldIgnoreComponent != null)
+            {
+                clothBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            perfStats.ClothCount = clothBuffer.Count;
+
+            foreach(Cloth cloth in clothBuffer)
+            {
+                if(cloth == null)
                 {
-                    if (smr.sharedMesh == null)
-                        continue;
-
-                    SkinnedMeshCount++;
-
-                    // bone count
-                    var bones = smr.bones;
-                    foreach (var bone in bones)
-                    {
-                        if (bone == null || _transformIgnoreBuffer.Contains(bone))
-                            continue;
-
-                        _transformIgnoreBuffer.Add(bone);
-                        BoneCount++;
-                    }
+                    continue;
                 }
 
-                MeshRenderer mr = r as MeshRenderer;
-                if (mr != null)
+                Vector3[] clothVertices = cloth.vertices;
+                if(clothVertices == null)
                 {
-                    var mf = mr.GetComponent<MeshFilter>();
-                    if (mf == null || mf.sharedMesh == null)
-                        continue;
-
-                    MeshCount++;
+                    continue;
                 }
 
-                ParticleSystemRenderer pr = r as ParticleSystemRenderer;
-                if (pr != null)
+                totalClothVertices += clothVertices.Length;
+            }
+
+            perfStats.ClothMaxVertices = totalClothVertices;
+        }
+
+        private static void AnalyzeAudioSources(GameObject avatarObject, AvatarPerformanceStats perfStats)
+        {
+            List<AudioSource> audioSourceBuffer = new List<AudioSource>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, audioSourceBuffer);
+            if(ShouldIgnoreComponent != null)
+            {
+                audioSourceBuffer.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            perfStats.AudioSourceCount = audioSourceBuffer.Count;
+        }
+
+        private static void AnalyzeGeometry(GameObject avatarObject, IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            ulong polyCount = 0;
+            Bounds bounds = new Bounds(avatarObject.transform.position, Vector3.zero);
+
+            List<Renderer> rendererIgnoreBuffer = new List<Renderer>(16);
+
+            List<LODGroup> lodBuffer = new List<LODGroup>(16);
+            avatarObject.GetComponentsInChildren(INCLUDE_INACTIVE_OBJECTS_IN_STATS, lodBuffer);
+            try
+            {
+                foreach (LODGroup lodGroup in lodBuffer)
                 {
-                    var ps = pr.GetComponent<ParticleSystem>();
+                    LOD[] lodLevels = lodGroup.GetLODs();
 
-                    int particleCount = ps.main.maxParticles;
-                    if (particleCount == 0)
-                        continue;
-
-                    ParticleSystemCount++;
-                    ParticleTotalCount += particleCount;
-
-                    // mesh particles
-                    if (pr.renderMode == ParticleSystemRenderMode.Mesh && pr.meshCount > 0)
+                    ulong highestLodPolyCount = 0;
+                    foreach (LOD lod in lodLevels)
                     {
-                        int highestPolyCount = 0;
-
-                        Mesh[] meshes = new Mesh[pr.meshCount];
-                        int meshCount = pr.GetMeshes(meshes);
-                        for (int mi = 0; mi < meshCount; mi++)
+                        uint thisLodPolyCount = 0;
+                        foreach (Renderer renderer in lod.renderers)
                         {
-                            var m = meshes[mi];
-                            if (m != null)
+                            rendererIgnoreBuffer.Add(renderer);
+                            checked
                             {
-                                int polyCount = CountMeshPolys(m);
-                                if (polyCount > highestPolyCount)
-                                    highestPolyCount = polyCount;
+                                thisLodPolyCount += CalculateRendererPolyCount(renderer);
                             }
                         }
-
-                        int maxActivePolys = particleCount * highestPolyCount;
-                        ParticleTotalActiveMeshPolyCount += maxActivePolys;
-                    }
-
-                    // trail
-                    ParticleTrailsEnabled = ParticleTrailsEnabled || ps.trails.enabled;
-                    if (ps.trails.enabled)
-                    {
-                        var m = pr.trailMaterial;
-                        if (m != null && !_materialIgnoreBuffer.Contains(m))
+                        if (thisLodPolyCount > highestLodPolyCount)
                         {
-                            _materialIgnoreBuffer.Add(m);
-                            MaterialCount++;
+                            highestLodPolyCount = thisLodPolyCount;
                         }
                     }
 
-                    // collision
-                    ParticleCollisionEnabled = ParticleCollisionEnabled || ps.collision.enabled;
-                }
-
-                TrailRenderer tr = r as TrailRenderer;
-                if (tr != null)
-                {
-                    TrailRendererCount++;
-                }
-
-                LineRenderer lr = r as LineRenderer;
-                if (lr != null)
-                {
-                    LineRendererCount++;
-                }
-
-                // unique materials count
-                for (int i = 0; i < r.sharedMaterials.Length; i++)
-                {
-                    var m = r.sharedMaterials[i];
-                    if (m == null || _materialIgnoreBuffer.Contains(m))
-                        continue;
-
-                    _materialIgnoreBuffer.Add(m);
-                    MaterialCount++;
+                    checked
+                    {
+                        polyCount += highestLodPolyCount;
+                    }
                 }
             }
-
-            perfStats.SkinnedMeshCount = SkinnedMeshCount;
-            perfStats.MeshCount = MeshCount;
-            perfStats.ParticleSystemCount = ParticleSystemCount;
-            perfStats.ParticleTotalCount = ParticleTotalCount;
-            perfStats.ParticleTotalActiveMeshPolyCount = ParticleTotalActiveMeshPolyCount;
-            perfStats.ParticleTrailsEnabled = ParticleTrailsEnabled;
-            perfStats.ParticleCollisionEnabled = ParticleCollisionEnabled;
-            perfStats.TrailRendererCount = TrailRendererCount;
-            perfStats.LineRendererCount = LineRendererCount;
-            perfStats.MaterialCount = MaterialCount;
-            perfStats.BoneCount = BoneCount;
-        }
-
-        static void AnalyzeDynamicBone(GameObject avatarObject, out int dynamicBoneComponentCount, out int dynamicBoneAffectedTransformCount, out int dynamicBoneColliderCount, out int dynamicBoneCollisionChecks)
-        {
-            dynamicBoneComponentCount = 0;
-            dynamicBoneAffectedTransformCount = 0;
-            dynamicBoneColliderCount = 0;
-            dynamicBoneCollisionChecks = 0;
-
-            if (_dynamicBoneType != null)
+            catch(OverflowException e)
             {
-                List<Component> dynamicBones = avatarObject.GetComponentsInChildren(_dynamicBoneType, false).ToList();
-                if (ShouldIgnoreComponent != null)
-                    dynamicBones.RemoveAll(c => ShouldIgnoreComponent(c));
-                dynamicBoneComponentCount = dynamicBones.Count;
+                polyCount = uint.MaxValue;
+            }
 
-                List<object> colliders = new List<object>();
-
-                for (int i = 0; i < dynamicBones.Count; i++)
+            foreach (Renderer renderer in renderers)
+            {
+                if ((renderer as ParticleSystemRenderer) == null)
                 {
-                    var dynamicBone = dynamicBones[i];
-
-                    int affectedTransforms = 0;
-
-                    Transform root = _dynamicBoneRootFieldInfo.GetValue(dynamicBone) as Transform;
-                    if (root != null)
-                    {
-                        List<Transform> exclusions = _dynamicBoneExclusionsFieldInfo.GetValue(dynamicBone) as List<Transform>;
-
-                        // root can't be excluded
-                        exclusions.RemoveAll(t => t == root);
-
-                        // count number of affected transforms in hierarchy
-                        affectedTransforms = CountTransformsRecursively(root, exclusions);
-                    }
-
-                    int colliderListEntryCount = 0;
-
-                    IList colliderList = _dynamicBoneCollidersFieldInfo.GetValue(dynamicBone) as IList;
-                    if (colliderList != null)
-                    {
-                        colliderListEntryCount = colliderList.Cast<object>().Where(o => o != null).Count();
-                        colliders.AddRange(colliderList.Cast<object>().Where(o => o != null));
-                    }
-
-                    dynamicBoneAffectedTransformCount += affectedTransforms;
-                    dynamicBoneCollisionChecks += affectedTransforms * colliderListEntryCount;
+                    bounds.Encapsulate(renderer.bounds);
                 }
 
-                dynamicBoneColliderCount = colliders.Distinct().Count();
+                if(rendererIgnoreBuffer.Contains(renderer))
+                {
+                    continue;
+                }
+
+                polyCount += CalculateRendererPolyCount(renderer);
             }
+
+            bounds.center -= avatarObject.transform.position;
+
+            rendererIgnoreBuffer.Clear();
+            lodBuffer.Clear();
+
+            perfStats.PolyCount = polyCount > int.MaxValue ? int.MaxValue : (int)polyCount;
+            perfStats.AABB = bounds;
         }
 
-        static void FindOptionalTypes()
+        private static void AnalyzeSkinnedMeshRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            int count = 0;
+            int materialSlots = 0;
+            int skinnedBoneCount = 0;
+
+            HashSet<Transform> transformIgnoreBuffer = new HashSet<Transform>();
+            foreach(Renderer renderer in renderers)
+            {
+                SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+                if(skinnedMeshRenderer == null)
+                {
+                    continue;
+                }
+
+                count++;
+
+                Mesh sharedMesh = skinnedMeshRenderer.sharedMesh;
+                if(sharedMesh != null)
+                {
+                    materialSlots += sharedMesh.subMeshCount;
+                }
+
+                // bone count
+                Transform[] bones = skinnedMeshRenderer.bones;
+                foreach (Transform bone in bones)
+                {
+                    if (bone == null || transformIgnoreBuffer.Contains(bone))
+                    {
+                        continue;
+                    }
+
+                    transformIgnoreBuffer.Add(bone);
+                    skinnedBoneCount++;
+                }
+            }
+            transformIgnoreBuffer.Clear();
+
+            perfStats.SkinnedMeshCount += count;
+            perfStats.MaterialCount += materialSlots;
+            perfStats.BoneCount += skinnedBoneCount;
+        }
+
+        private static void AnalyzeMeshRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            int count = 0;
+            int materialSlots = 0;
+            foreach(Renderer renderer in renderers)
+            {
+                MeshRenderer meshRenderer = renderer as MeshRenderer;
+                if(meshRenderer == null)
+                {
+                    continue;
+                }
+
+                count++;
+
+                MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                Mesh sharedMesh = meshFilter.sharedMesh;
+                if(sharedMesh != null)
+                {
+                    materialSlots += sharedMesh.subMeshCount;
+                }
+            }
+
+            perfStats.MeshCount += count;
+            perfStats.MaterialCount += materialSlots;
+        }
+
+        private static void AnalyzeTrailRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            int numTrailRenderers = renderers.Count(o => o is TrailRenderer);
+
+            perfStats.TrailRendererCount += numTrailRenderers;
+            perfStats.MaterialCount += numTrailRenderers;
+        }
+
+        private static void AnalyzeLineRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            int numLineRenderers = renderers.Count(o => o is LineRenderer);
+
+            perfStats.LineRendererCount += numLineRenderers;
+            perfStats.MaterialCount += numLineRenderers;
+        }
+
+        private static void AnalyzeParticleSystemRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            int particleSystemCount = 0;
+            ulong particleTotalCount = 0;
+            ulong particleTotalActiveMeshPolyCount = 0;
+            bool particleTrailsEnabled = false;
+            bool particleCollisionEnabled = false;
+            int materialSlots = 0;
+
+            foreach (Renderer renderer in renderers)
+            {
+                ParticleSystemRenderer particleRenderer = renderer as ParticleSystemRenderer;
+                if(particleRenderer == null)
+                {
+                    continue;
+                }
+
+                ParticleSystem particleSystem = particleRenderer.GetComponent<ParticleSystem>();
+
+                int particleCount = particleSystem.main.maxParticles;
+                if (particleCount <= 0)
+                {
+                    continue;
+                }
+
+                particleSystemCount++;
+                materialSlots++;
+                particleTotalCount += (uint)particleCount;
+
+                // mesh particles
+                if (particleRenderer.renderMode == ParticleSystemRenderMode.Mesh && particleRenderer.meshCount > 0)
+                {
+                    uint highestPolyCount = 0;
+
+                    Mesh[] meshes = new Mesh[particleRenderer.meshCount];
+                    int particleRendererMeshCount = particleRenderer.GetMeshes(meshes);
+                    for (int meshIndex = 0; meshIndex < particleRendererMeshCount; meshIndex++)
+                    {
+                        Mesh mesh = meshes[meshIndex];
+                        if(mesh == null)
+                        {
+                            continue;
+                        }
+
+                        uint polyCount = GetMeshPolyCount(mesh);
+                        if (polyCount > highestPolyCount)
+                        {
+                            highestPolyCount = polyCount;
+                        }
+                    }
+
+                    ulong maxActivePolyCount = (uint)particleCount * highestPolyCount;
+                    particleTotalActiveMeshPolyCount += maxActivePolyCount;
+                }
+
+                if(particleSystem.trails.enabled)
+                {
+                    particleTrailsEnabled = true;
+                    materialSlots++;
+                }
+
+                if(particleSystem.collision.enabled)
+                {
+                    particleCollisionEnabled = true;
+                }
+            }
+
+            perfStats.ParticleSystemCount = particleSystemCount;
+            perfStats.ParticleTotalCount = particleTotalCount > int.MaxValue ? int.MaxValue : (int)particleTotalCount;
+            perfStats.ParticleTotalActiveMeshPolyCount = particleTotalActiveMeshPolyCount > int.MaxValue ? int.MaxValue : (int)particleTotalActiveMeshPolyCount;
+            perfStats.ParticleTrailsEnabled = particleTrailsEnabled;
+            perfStats.ParticleCollisionEnabled = particleCollisionEnabled;
+            perfStats.MaterialCount += materialSlots;
+        }
+
+        private static void AnalyzeRenderers(List<Renderer> renderers, AvatarPerformanceStats perfStats)
+        {
+            AnalyzeSkinnedMeshRenderers(renderers, perfStats);
+            AnalyzeMeshRenderers(renderers, perfStats);
+            AnalyzeTrailRenderers(renderers, perfStats);
+            AnalyzeLineRenderers(renderers, perfStats);
+            AnalyzeParticleSystemRenderers(renderers, perfStats);
+        }
+
+        private static void AnalyzeDynamicBone(GameObject avatarObject, AvatarPerformanceStats perfStats)
+        {
+            int totalSimulatedBoneCount = 0;
+            int totalCollisionChecks = 0;
+
+            if(_dynamicBoneType == null)
+            {
+                return;
+            }
+
+            List<Component> dynamicBones = avatarObject.GetComponentsInChildren(_dynamicBoneType, INCLUDE_INACTIVE_OBJECTS_IN_STATS).ToList();
+            if (ShouldIgnoreComponent != null)
+            {
+                dynamicBones.RemoveAll(c => ShouldIgnoreComponent(c));
+            }
+
+            List<object> colliders = new List<object>();
+            foreach(Component dynamicBone in dynamicBones)
+            {
+                int simulatedBones = 0;
+
+                // Add extra bones to the end of each chain if end bones are being used.
+                float endLength = (float)_dynamicBoneEndLengthFieldInfo.GetValue(dynamicBone);
+                Vector3 endOffset = (Vector3)_dynamicBoneEndOffsetFieldInfo.GetValue(dynamicBone);
+                bool hasEndBones = endLength > 0 || endOffset != Vector3.zero;
+
+                Transform root = (Transform)_dynamicBoneRootFieldInfo.GetValue(dynamicBone);
+                if (root != null)
+                {
+                    List<Transform> exclusions = (List<Transform>)_dynamicBoneExclusionsFieldInfo.GetValue(dynamicBone);
+                    
+                    // Calculate number of simulated bones for the hierarchy
+                    simulatedBones = CountTransformsRecursively(root, exclusions, hasEndBones);
+                    totalSimulatedBoneCount += simulatedBones;
+                }
+
+                int colliderListEntryCount = 0;
+                IList colliderList = (IList)_dynamicBoneCollidersFieldInfo.GetValue(dynamicBone);
+                if (colliderList != null)
+                {
+                    foreach(object collider in colliderList)
+                    {
+                        colliderListEntryCount += 1;
+                        if(collider != null && !colliders.Contains(collider))
+                        {
+                            colliders.Add(collider);
+                        }
+                    }
+                }
+
+                // The root bone is skipped in collision checks.
+                totalCollisionChecks += (simulatedBones - 1) * colliderListEntryCount;
+            }
+
+            perfStats.DynamicBoneComponentCount = dynamicBones.Count;
+            perfStats.DynamicBoneSimulatedBoneCount = totalSimulatedBoneCount;
+            perfStats.DynamicBoneColliderCount = colliders.Count;
+            perfStats.DynamicBoneCollisionCheckCount = totalCollisionChecks;
+        }
+
+        private static void FindOptionalTypes()
         {
             FindDynamicBoneTypes();
         }
 
-        static void FindDynamicBoneTypes()
+        private static void FindDynamicBoneTypes()
         {
             if (_dynamicBoneType != null)
+            {
                 return;
+            }
 
-            System.Type dyBoneType = Validation.GetTypeFromName("DynamicBone");
+            Type dyBoneType = Validation.GetTypeFromName("DynamicBone");
             if (dyBoneType == null)
+            {
                 return;
+            }
 
-            System.Type dyBoneColliderType = Validation.GetTypeFromName("DynamicBoneCollider");
+            Type dyBoneColliderType = Validation.GetTypeFromName("DynamicBoneColliderBase") ?? Validation.GetTypeFromName("DynamicBoneCollider");
             if (dyBoneColliderType == null)
+            {
                 return;
+            }
 
-            var rootFieldInfo = dyBoneType.GetField("m_Root", BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo rootFieldInfo = dyBoneType.GetField("m_Root", BindingFlags.Public | BindingFlags.Instance);
             if (rootFieldInfo == null || rootFieldInfo.FieldType != typeof(Transform))
+            {
                 return;
+            }
 
-            var exclusionsFieldInfo = dyBoneType.GetField("m_Exclusions", BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo exclusionsFieldInfo = dyBoneType.GetField("m_Exclusions", BindingFlags.Public | BindingFlags.Instance);
             if (exclusionsFieldInfo == null || exclusionsFieldInfo.FieldType != typeof(List<Transform>))
+            {
                 return;
+            }
 
-            var collidersFieldInfo = dyBoneType.GetField("m_Colliders", BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo collidersFieldInfo = dyBoneType.GetField("m_Colliders", BindingFlags.Public | BindingFlags.Instance);
             if (collidersFieldInfo == null || collidersFieldInfo.FieldType.GetGenericTypeDefinition() != typeof(List<>) || collidersFieldInfo.FieldType.GetGenericArguments().Single() != dyBoneColliderType)
+            {
                 return;
+            }
+
+            FieldInfo endLengthFieldInfo = dyBoneType.GetField("m_EndLength", BindingFlags.Public | BindingFlags.Instance);
+            if (endLengthFieldInfo == null || endLengthFieldInfo.FieldType != typeof(float))
+            {
+                return;
+            }
+            
+            FieldInfo endOffsetFieldInfo = dyBoneType.GetField("m_EndOffset", BindingFlags.Public | BindingFlags.Instance);
+            if (endOffsetFieldInfo == null || endOffsetFieldInfo.FieldType != typeof(Vector3))
+            {
+                return;
+            }
 
             _dynamicBoneType = dyBoneType;
-            _dynamicBoneColliderType = dyBoneColliderType;
             _dynamicBoneRootFieldInfo = rootFieldInfo;
             _dynamicBoneExclusionsFieldInfo = exclusionsFieldInfo;
             _dynamicBoneCollidersFieldInfo = collidersFieldInfo;
+            _dynamicBoneEndLengthFieldInfo = endLengthFieldInfo;
+            _dynamicBoneEndOffsetFieldInfo = endOffsetFieldInfo;
         }
 
-        static int CountTransformsRecursively(Transform root, List<Transform> exclusions)
+        // Like DynamicBone itself exclusions only apply to children of the current bone.
+        // This means the root bone itself never excluded.
+        private static int CountTransformsRecursively(Transform transform, List<Transform> exclusions, bool addEndBones)
         {
-            if (root == null || (exclusions != null && exclusions.Contains(root)))
+            if (transform == null)
+            {
                 return 0;
+            }
 
             int count = 1;
-            foreach (Transform child in root)
+            int childCount = transform.childCount;
+            if(childCount > 0)
             {
-                count += CountTransformsRecursively(child, exclusions);
+                foreach(Transform child in transform)
+                {
+                    if(exclusions == null || !exclusions.Contains(child))
+                    {
+                        count += CountTransformsRecursively(child, exclusions, addEndBones);
+                    }
+                }
+            }
+            else
+            {
+                if(addEndBones)
+                {
+                    count++;
+                }
             }
 
             return count;
         }
+
+        #endregion
     }
 }

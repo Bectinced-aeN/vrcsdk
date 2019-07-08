@@ -22,7 +22,8 @@ namespace VRC.Core
 			Labs,
 			Playlist,
 			Shuffle,
-			Publication
+			Publication,
+			Heat
 		}
 
 		public enum SortOwnership
@@ -221,6 +222,27 @@ namespace VRC.Core
 		{
 			get;
 			set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime created_at
+		{
+			get;
+			private set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime updated_at
+		{
+			get;
+			private set;
+		}
+
+		[ApiField(Required = false)]
+		public DateTime publicationDate
+		{
+			get;
+			private set;
 		}
 
 		[DefaultValue("standalonewindows")]
@@ -506,7 +528,7 @@ namespace VRC.Core
 			}
 		}
 
-		public void Fetch(string instanceID = null, string platforms = null, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null)
+		public void Fetch(string instanceID = null, string platforms = null, Action<ApiContainer> onSuccess = null, Action<ApiContainer> onFailure = null, Dictionary<string, object> parameters = null, bool compatibleVersionsOnly = true)
 		{
 			if (string.IsNullOrEmpty(base.id))
 			{
@@ -526,12 +548,15 @@ namespace VRC.Core
 				{
 					parameters = new Dictionary<string, object>();
 				}
-				if (platforms != null)
+				if (compatibleVersionsOnly)
 				{
 					parameters["maxUnityVersion"] = VERSION.UnityVersion;
 					parameters["minUnityVersion"] = MIN_LOADABLE_VERSION.UnityVersion;
 					parameters["maxAssetVersion"] = VERSION.ApiVersion;
 					parameters["minAssetVersion"] = MIN_LOADABLE_VERSION.ApiVersion;
+				}
+				if (platforms != null)
+				{
 					parameters["platform"] = platforms;
 				}
 				if (!string.IsNullOrEmpty(instanceID))
@@ -579,7 +604,7 @@ namespace VRC.Core
 			}
 		}
 
-		public static void FetchList(Action<IEnumerable<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string[] userTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false)
+		public static void FetchList(Action<IEnumerable<ApiWorld>> successCallback, Action<string> errorCallback = null, SortHeading heading = SortHeading.Featured, SortOwnership owner = SortOwnership.Any, SortOrder order = SortOrder.Descending, int offset = 0, int count = 10, string search = "", string[] tags = null, string[] excludeTags = null, string[] userTags = null, string userId = "", ReleaseStatus releaseStatus = ReleaseStatus.Public, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false, bool compatibleVersionsOnly = true)
 		{
 			string endpoint = "worlds";
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
@@ -620,6 +645,10 @@ namespace VRC.Core
 				break;
 			case SortHeading.Labs:
 				dictionary.Add("sort", "labsPublicationDate");
+				break;
+			case SortHeading.Heat:
+				dictionary.Add("sort", "heat");
+				dictionary.Add("featured", "false");
 				break;
 			}
 			switch (owner)
@@ -666,12 +695,15 @@ namespace VRC.Core
 				dictionary.Add("notag", string.Join(",", excludeTags));
 			}
 			dictionary.Add("releaseStatus", releaseStatus.ToString().ToLower());
-			if (includePlatforms != null || excludePlatforms != null)
+			if (compatibleVersionsOnly)
 			{
 				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
 				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
 				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
 				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
+			}
+			if (includePlatforms != null || excludePlatforms != null)
+			{
 				if (includePlatforms != null)
 				{
 					dictionary.Add("platform", includePlatforms);

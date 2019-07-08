@@ -236,11 +236,13 @@ namespace VRCSDK2
             return bad;
         }
 
-        public static IEnumerator FindIllegalShadersEnumerator(GameObject target, string[] whitelist, System.Action<Shader> onFound, bool useWatch = false)
+        private static IEnumerator FindIllegalShadersEnumerator(GameObject target, string[] whitelist, System.Action<Shader> onFound, bool useWatch = false)
         {
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
             if(useWatch)
+            {
                 watch.Start();
+            }
 
             List<Material> materialCache = new List<Material>();
             Queue<GameObject> children = new Queue<GameObject>();
@@ -249,23 +251,37 @@ namespace VRCSDK2
             {
                 GameObject child = children.Dequeue();
                 if(child == null)
+                {
                     continue;
+                }
 
-                int childCount = child.transform.childCount;
                 for (int idx = 0; idx < child.transform.childCount; ++idx)
+                {
                     children.Enqueue(child.transform.GetChild(idx).gameObject);
+                }
 
                 foreach (Renderer r in child.transform.GetComponents<Renderer>())
                 {
                     if (r == null)
+                    {
                         continue;
+                    }
 
                     foreach (Material m in r.sharedMaterials)
                     {
                         if (materialCache.Any(cacheMtl => m == cacheMtl)) // did we already look at this one?
+                        {
                             continue;
+                        }
 
-                        if (!whitelist.Any(okayShaderName => m.shader.name == okayShaderName))
+                        // Skip empty material slots, or materials without shaders.
+                        // Both will end up using the magenta error shader.
+                        if(m == null || m.shader == null)
+                        {
+                            continue;
+                        }
+
+                        if (whitelist.All(okayShaderName => m.shader.name != okayShaderName))
                         {
                             onFound(m.shader);
                             yield return null;
@@ -274,11 +290,13 @@ namespace VRCSDK2
                         materialCache.Add(m);
                     }
 
-                    if (useWatch && watch.ElapsedMilliseconds > 1)
+                    if(!useWatch || watch.ElapsedMilliseconds <= 1)
                     {
-                        yield return null;
-                        watch.Reset();
+                        continue;
                     }
+
+                    yield return null;
+                    watch.Reset();
                 }
             }
         }

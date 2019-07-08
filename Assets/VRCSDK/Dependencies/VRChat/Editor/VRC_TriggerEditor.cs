@@ -292,7 +292,11 @@ namespace VRCSDK2
             Rect selectedRect = new Rect(rect.x, rect.y, rect.width / 4 * 3 - 5, rect.height);
             Rect addRect = new Rect(selectedRect.x + selectedRect.width + 5, rect.y, rect.width / 4, rect.height);
 
-            addTriggerSelectedType = VRC_EditorTools.FilteredEnumPopup(selectedRect, addTriggerSelectedType, v => (v == VRC_Trigger.TriggerType.Custom || ActiveTypes.All(t => t != v)) && (hiddenTriggerTypes.Contains(v) == false));
+            bool showStationTypes = serializedObject.targetObjects.Any(o => (o as VRC_Trigger).GetComponent<VRCSDK2.VRC_Station>() != null);
+            System.Func<VRC_Trigger.TriggerType, bool> predicate =
+                v => hiddenTriggerTypes.Contains(v) == false && (showStationTypes || (v != VRC_Trigger.TriggerType.OnStationEntered && v != VRC_Trigger.TriggerType.OnStationExited));
+
+            addTriggerSelectedType = VRC_EditorTools.FilteredEnumPopup(selectedRect, addTriggerSelectedType, predicate);
 
             if (GUI.Button(addRect, "Add"))
             {
@@ -344,12 +348,10 @@ namespace VRCSDK2
                 if (string.IsNullOrEmpty(nameProperty.stringValue))
                     nameProperty.stringValue = "Unnamed";
 
+                bool showStationTypes = serializedObject.targetObjects.Any(o => (o as VRC_Trigger).GetComponent<VRCSDK2.VRC_Station>() != null);
                 System.Func<string, string> rename = s => s == "Custom" ? s + " (" + nameProperty.stringValue + ")" : s;
                 System.Func<VRC_Trigger.TriggerType, bool> predicate =
-                    v => (v == currentType || ActiveTypes.All(t => t != v))
-                        && hiddenTriggerTypes.Contains(v) == false
-                        && !((v == VRC_Trigger.TriggerType.OnStationEntered || v == VRC_Trigger.TriggerType.OnStationExited) 
-                             && serializedObject.targetObjects.Any(o => (o as VRC_Trigger).GetComponent<VRCSDK2.VRC_Station>() == null));
+                    v => hiddenTriggerTypes.Contains(v) == false && (showStationTypes || (v != VRC_Trigger.TriggerType.OnStationEntered && v != VRC_Trigger.TriggerType.OnStationExited));
 
                 triggerTypeProperty.intValue = (int)VRC_EditorTools.FilteredEnumPopup(typeRect, currentType, predicate, rename);
                 currentType = (VRC_Trigger.TriggerType)triggerTypeProperty.intValue;

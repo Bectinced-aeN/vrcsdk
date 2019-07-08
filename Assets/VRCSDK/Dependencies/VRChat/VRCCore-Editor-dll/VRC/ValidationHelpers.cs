@@ -156,5 +156,19 @@ namespace VRC
 			}
 			return ((float)filesize / (float)num5).ToString("F2") + " " + str;
 		}
+
+		public static bool IsMobilePlatform()
+		{
+			//IL_0002: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0008: Invalid comparison between Unknown and I4
+			bool flag = true;
+			flag = ((int)EditorUserBuildSettings.get_selectedBuildTargetGroup() == 1);
+			return !flag;
+		}
+
+		public static bool IsStandalonePlatform()
+		{
+			return !IsMobilePlatform();
+		}
 	}
 }

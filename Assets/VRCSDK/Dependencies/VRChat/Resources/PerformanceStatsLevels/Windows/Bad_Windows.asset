@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f742c36dce5730f4d96e37d82c330584, type: 3}
+  m_Name: Bad_Windows
+  m_EditorClassIdentifier: 
+  PolyCount: 70000
+  AABB:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 2.5, y: 3, z: 2.5}
+  SkinnedMeshCount: 16
+  MeshCount: 24
+  MaterialCount: 32
+  AnimatorCount: 32
+  BoneCount: 400
+  LightCount: 1
+  ParticleSystemCount: 16
+  ParticleTotalCount: 5000
+  ParticleTotalActiveMeshPolyCount: 10000
+  ParticleTrailsEnabled: 1
+  ParticleCollisionEnabled: 1
+  TrailRendererCount: 8
+  LineRendererCount: 8
+  DynamicBoneComponentCount: 32
+  DynamicBoneSimulatedBoneCount: 256
+  DynamicBoneColliderCount: 32
+  DynamicBoneCollisionCheckCount: 256
+  ClothCount: 2
+  ClothMaxVertices: 500
+  PhysicsColliderCount: 8
+  PhysicsRigidbodyCount: 8
+  AudioSourceCount: 32

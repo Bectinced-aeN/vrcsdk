@@ -100,6 +100,21 @@ namespace VRCSDK2
 			}
 		}
 
+		[RPC(new VRC_EventHandler.VrcTargetType[]
+		{
+
+		})]
+		public void ResetLocalPosAndRot()
+		{
+			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0027: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
+			this.get_transform().set_localPosition(Vector3.get_zero());
+			this.get_transform().set_localRotation(Quaternion.get_identity());
+			TeleportTo(this.get_transform().get_position(), this.get_transform().get_rotation());
+		}
+
 		private void Awake()
 		{
 			if (Initialize != null)
@@ -189,6 +204,16 @@ namespace VRCSDK2
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
 			vrcEvent.ParameterInt = 0;
 			vrcEvent.ParameterString = "TeleportTo";
+			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
+			{
+				this.get_gameObject()
+			};
+			list.Add(vrcEvent);
+			vrcEvent = new VRC_EventHandler.VrcEvent();
+			vrcEvent.Name = "ResetLocalPosAndRot";
+			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
+			vrcEvent.ParameterInt = 0;
+			vrcEvent.ParameterString = "ResetLocalPosAndRot";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
 				this.get_gameObject()

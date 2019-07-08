@@ -28,7 +28,7 @@ namespace VRC.Core
 		public int Code
 		{
 			get;
-			private set;
+			set;
 		}
 
 		public string Text
@@ -89,6 +89,18 @@ namespace VRC.Core
 		public ApiContainer()
 		{
 			CreatedAt = string.Empty;
+		}
+
+		public void setFromContainer(ApiContainer container)
+		{
+			Cookies = container.Cookies;
+			IsValid = container.IsValid;
+			Code = container.Code;
+			Text = container.Text;
+			Data = container.Data;
+			DataTimestamp = container.DataTimestamp;
+			CreatedAt = container.CreatedAt;
+			responseError = container.responseError;
 		}
 
 		protected virtual bool Validate(bool success, Func<byte[]> readData, Func<string> readTextData)

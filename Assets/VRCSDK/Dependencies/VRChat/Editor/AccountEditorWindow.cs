@@ -1,8 +1,8 @@
+#define ENABLE_2FA_SUPPORT
 using UnityEngine;
 using UnityEditor;
 using VRC.Core;
-using System.Linq;
-using System.Collections.Generic;
+using System;
 
 namespace VRC
 {
@@ -16,6 +16,7 @@ namespace VRC
 		static string error = null;
 
         static AccountEditorWindow window = null;
+        static Enter2faCodeEditorWindow enter2faWindow = null;
 
         public static bool FutureProofPublishEnabled { get { return UnityEditor.EditorPrefs.GetBool("futureProofPublish", DefaultFutureProofPublishEnabled); } }
         public static bool DefaultFutureProofPublishEnabled { get { return !SDKClientUtilities.IsInternalSDK();  } }
@@ -149,7 +150,10 @@ namespace VRC
             if (isInitialized)
                 return;
 
-			if(!APIUser.IsLoggedInWithCredentials && ApiCredentials.Load() )
+            // make sure the api url is set correctly before attempting to log in
+            RefreshApiUrlSetting();
+
+            if (!APIUser.IsLoggedInWithCredentials && ApiCredentials.Load() )
 				APIUser.FetchCurrentUser((c) => AnalyticsSDK.LoggedInUserChanged(c.Model as APIUser), null );
 
             clientInstallPath = SDKClientUtilities.GetSavedVRCInstallPath();
@@ -415,6 +419,124 @@ namespace VRC
             }
         }
 
+        private static void OnAuthenticationCompleted()
+        {
+            Login();
+        }
+
+        private static void Login()
+        {
+            APIUser.Login(username, password,
+                delegate (ApiModelContainer<APIUser> c)
+                {
+                    APIUser user = c.Model as APIUser;
+                    if (c.Cookies.ContainsKey("auth"))
+                    {
+                        ApiCredentials.Set(user.username, username, "vrchat", c.Cookies["auth"]);
+                    }
+                    else
+                        ApiCredentials.SetHumanName(user.username);
+                    signingIn = false;
+                    error = null;
+                    storedUsername = username;
+                    storedPassword = password;
+                    AnalyticsSDK.LoggedInUserChanged(user);
+
+                    if (!APIUser.CurrentUser.canPublishAllContent)
+                    {
+                        if (UnityEditor.SessionState.GetString("HasShownContentPublishPermissionsDialogForUser", "") != user.id)
+                        {
+                            UnityEditor.SessionState.SetString("HasShownContentPublishPermissionsDialogForUser", user.id);
+                            VRC_SdkControlPanel.ShowContentPublishPermissionsDialog();
+                        }
+                    }
+
+                    refreshWindow = true;
+                },
+                delegate (ApiModelContainer<APIUser> c)
+                {
+                    Logout();
+                    error = c.Error;
+                    VRC.Core.Logger.Log("Error logging in: " + error);
+                },
+                delegate (ApiModelContainer<API2FA> c)
+                {
+                    API2FA model2FA = c.Model as API2FA;
+                    if (c.Cookies.ContainsKey("auth"))
+                    {
+                        ApiCredentials.Set(username, username, "vrchat", c.Cookies["auth"]);
+                    }
+                    enter2faWindow = EditorWindow.GetWindow<Enter2faCodeEditorWindow>("VRChat 2FA");
+                    enter2faWindow.SetCredentialsAndVerificationHandling(username, password, OnAuthenticationCompleted);
+                    enter2faWindow.Show();
+                }
+            );
+        }
+
+        private static void AttemptLogin()
+        {
+            if (ApiCredentials.Load())
+            {
+                System.Action<bool> onAuthed = delegate (bool isSuccess) {
+                    if (isSuccess)
+                    {
+                        refreshWindow = true;
+                    }
+                    else
+                    {
+                        Login();
+                    }
+                };
+
+                switch (ApiCredentials.GetAuthTokenProvider())
+                {
+                    case "vrchat":
+                        AuthenticateWithVRChat(onAuthed);
+                        break;
+                }
+            }
+            else
+            {
+                Login();
+            }
+        }
+
+        private static void AuthenticateWithVRChat(System.Action<bool> onAuthed = null)
+        {
+            System.Action<ApiModelContainer<APIUser>> loginSuccessDelegate = (c) =>
+            {
+                if (c.Model == null || string.IsNullOrEmpty(c.Model.id))
+                {
+                    VRC.Core.Logger.LogError(string.Format("Failed to call login: invalid id received"));
+                    Logout();
+                }
+                else
+                {
+                    VRC.Core.Logger.Log(
+                        "User Authenticated: " + APIUser.CurrentUser.displayName + Environment.NewLine
+                        );
+                }
+                signingIn = false;
+                if (onAuthed != null)
+                    onAuthed(APIUser.IsLoggedInWithCredentials);
+            };
+            System.Action<ApiModelContainer<APIUser>> loginFailureDelegate = (c) =>
+            {
+                VRC.Core.Logger.LogError(string.Format("Failed to call login: {0}", (c != null) ? c.Error : "error"));
+                if (c != null) VRC.Core.Logger.Log(c.ToString());
+                // Unauthorized? Expired token.
+                if ((c == null) || (c.Code == 401))
+                {
+                    APIUser.Logout();
+                }
+                signingIn = false;
+                if (onAuthed != null)
+                    onAuthed(APIUser.IsLoggedInWithCredentials);
+            };
+
+            APIUser.FetchCurrentUser(loginSuccessDelegate, loginFailureDelegate);
+        }
+
         private static object syncObject = new object();
         private static void SignIn(bool explicitAttempt)
         {
@@ -430,42 +552,18 @@ namespace VRC
             }
 
             Init();
+            AttemptLogin();
+        }
 
-            APIUser.Login(username, password,
-                delegate (ApiModelContainer<APIUser> c)
-                {
-                    APIUser user = c.Model as APIUser;
-                    if (c.Cookies.ContainsKey("auth"))
-                        ApiCredentials.Set(user.username, username, "vrchat", c.Cookies["auth"]);
-                    signingIn = false;
-                    error = null;
-                    storedUsername = username;
-                    storedPassword = password;
-                    AnalyticsSDK.LoggedInUserChanged(user);
-
-                    if (!APIUser.CurrentUser.canPublishAllContent)
-                    {
-                        if (UnityEditor.SessionState.GetString("HasShownContentPublishPermissionsDialogForUser", "") != user.id)
-                        {
-                            UnityEditor.SessionState.SetString("HasShownContentPublishPermissionsDialogForUser", user.id);
-                            VRC_SdkControlPanel.ShowContentPublishPermissionsDialog();
-                        } 
-                    }
-
-					refreshWindow = true;
-				},
-                delegate (ApiModelContainer<APIUser> c)
-                {
-                    signingIn = false;
-                    storedUsername = null;
-                    storedPassword = null;
-                    error = c.Error;
-                    VRC.Tools.ClearCookies();
-                    APIUser.Logout();
-					refreshWindow = true;
-                    VRC.Core.Logger.Log("Error logging in: " + error);
-                }
-            );
+        public static void Logout()
+        {
+            signingIn = false;
+            storedUsername = null;
+            storedPassword = null;
+            VRC.Tools.ClearCookies();
+            APIUser.Logout();
+            ApiCredentials.Clear();
+            refreshWindow = true;
         }
 
         private void OnDestroy()

@@ -145,7 +145,11 @@ public class VRCContentManagerWindow : EditorWindow
             ApiAvatar.SortOrder.Descending,
             null,
             null, 
-            true);
+            true,
+            false,
+            null,
+            false
+            );
     }
 
     static void FetchWorlds(int offset = 0)
@@ -188,7 +192,8 @@ public class VRCContentManagerWindow : EditorWindow
             ApiWorld.ReleaseStatus.All,
             null,
             null, 
-            true);
+            true,
+            false);
     }
 
     static void SetupWorldData(List<ApiWorld> worlds)

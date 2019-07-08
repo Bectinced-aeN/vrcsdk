@@ -32,6 +32,7 @@ namespace VRC.Core
 			Public,
 			Mine,
 			Developer,
+			Licensed,
 			Any
 		}
 
@@ -174,8 +175,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[DefaultValue("standalonewindows")]
 		[ApiField(Required = false)]
+		[DefaultValue("standalonewindows")]
 		public string platform
 		{
 			get;
@@ -275,59 +276,72 @@ namespace VRC.Core
 			});
 		}
 
-		public static void FetchList(Action<IEnumerable<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false, bool areFavorites = false, string tags = null)
+		public static void FetchList(Action<IEnumerable<ApiAvatar>> successCallback, Action<string> errorCallback, Owner owner, ReleaseStatus relStatus = ReleaseStatus.All, string search = null, int number = 10, int offset = 0, SortHeading heading = SortHeading.None, SortOrder order = SortOrder.Descending, string includePlatforms = null, string excludePlatforms = null, bool disableCache = false, bool areFavorites = false, string tags = null, bool compatibleVersionsOnly = true)
 		{
+			string endpoint = "avatars";
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
-			if (owner == Owner.Mine)
+			if (owner == Owner.Licensed)
 			{
-				dictionary.Add("user", "me");
+				dictionary.Add("n", number);
+				dictionary.Add("offset", offset);
+				endpoint = "avatars/licensed";
 			}
-			if (owner == Owner.Public)
+			else
 			{
-				dictionary.Add("featured", "true");
-			}
-			if (owner == Owner.Developer)
-			{
-				dictionary.Add("tag", "admin_developer");
-			}
-			dictionary.Add("releaseStatus", relStatus.ToString().ToLower());
-			if (search != null)
-			{
-				dictionary.Add("search", search);
-			}
-			dictionary.Add("n", number);
-			dictionary.Add("offset", offset);
-			if (heading != 0)
-			{
-				dictionary.Add("sort", heading.ToString().ToLower());
-			}
-			switch (order)
-			{
-			case SortOrder.Ascending:
-				dictionary.Add("order", "ascending");
-				break;
-			case SortOrder.Descending:
-				dictionary.Add("order", "descending");
-				break;
-			}
-			if (includePlatforms != null || excludePlatforms != null)
-			{
-				dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
-				dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
-				dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
-				dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
-				if (includePlatforms != null)
+				if (areFavorites)
 				{
-					dictionary.Add("platform", includePlatforms);
+					endpoint = "avatars/favorites";
 				}
-				if (excludePlatforms != null)
+				if (owner == Owner.Mine)
 				{
-					dictionary.Add("noplatform", excludePlatforms);
+					dictionary.Add("user", "me");
 				}
-			}
-			if (tags != null)
-			{
-				dictionary.Add("tag", tags);
+				if (owner == Owner.Public)
+				{
+					dictionary.Add("featured", "true");
+				}
+				if (owner == Owner.Developer)
+				{
+					dictionary.Add("tag", "admin_developer");
+				}
+				dictionary.Add("releaseStatus", relStatus.ToString().ToLower());
+				if (search != null)
+				{
+					dictionary.Add("search", search);
+				}
+				dictionary.Add("n", number);
+				dictionary.Add("offset", offset);
+				if (heading != 0)
+				{
+					dictionary.Add("sort", heading.ToString().ToLower());
+				}
+				switch (order)
+				{
+				case SortOrder.Ascending:
+					dictionary.Add("order", "ascending");
+					break;
+				case SortOrder.Descending:
+					dictionary.Add("order", "descending");
+					break;
+				}
+				if (compatibleVersionsOnly)
+				{
+					dictionary.Add("maxUnityVersion", VERSION.UnityVersion);
+					dictionary.Add("minUnityVersion", MIN_LOADABLE_VERSION.UnityVersion);
+					dictionary.Add("maxAssetVersion", VERSION.ApiVersion);
+					dictionary.Add("minAssetVersion", MIN_LOADABLE_VERSION.ApiVersion);
+				}
+				if (includePlatforms != null || excludePlatforms != null)
+				{
+					if (includePlatforms != null)
+					{
+						dictionary.Add("platform", includePlatforms);
+					}
+					if (excludePlatforms != null)
+					{
+						dictionary.Add("noplatform", excludePlatforms);
+					}
+				}
 			}
 			ApiModelListContainer<ApiAvatar> apiModelListContainer = new ApiModelListContainer<ApiAvatar>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)
@@ -346,7 +360,6 @@ namespace VRC.Core
 				}
 			};
 			ApiModelListContainer<ApiAvatar> responseContainer = apiModelListContainer;
-			string endpoint = (!areFavorites) ? "avatars" : "avatars/favorites";
 			API.SendRequest(endpoint, HTTPMethods.Get, responseContainer, dictionary, authenticationRequired: true, disableCache, 180f);
 		}
 

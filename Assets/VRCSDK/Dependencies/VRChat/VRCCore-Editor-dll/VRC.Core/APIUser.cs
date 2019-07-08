@@ -201,8 +201,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField]
 		[DefaultValue(DeveloperType.None)]
+		[ApiField]
 		public DeveloperType developerType
 		{
 			get;
@@ -391,8 +391,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField(Required = false)]
 		[Obsolete("No.")]
+		[ApiField(Required = false)]
 		private string networkSessionId
 		{
 			get;
@@ -458,6 +458,20 @@ namespace VRC.Core
 
 		[ApiField(Required = false)]
 		public List<string> friendGroupNames
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public bool twoFactorAuthEnabled
+		{
+			get;
+			protected set;
+		}
+
+		[ApiField(Required = false)]
+		public Dictionary<string, object> twoFactorAuthMethods
 		{
 			get;
 			protected set;
@@ -1332,16 +1346,42 @@ namespace VRC.Core
 			else
 			{
 				Logger.Log("Fetching user", DebugLevel.API);
-				ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
-				apiModelContainer.OnSuccess = delegate(ApiContainer c)
+				ApiDictContainer apiDictContainer = new ApiDictContainer();
+				apiDictContainer.OnSuccess = delegate(ApiContainer c)
 				{
-					CurrentUser = (c.Model as APIUser);
-					if (onSuccess != null)
+					ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
+					apiModelContainer.setFromContainer(c);
+					if (apiModelContainer.ValidModelData())
 					{
-						onSuccess(c as ApiModelContainer<APIUser>);
+						CurrentUser = (apiModelContainer.Model as APIUser);
+						if (onSuccess != null)
+						{
+							onSuccess(apiModelContainer);
+						}
+					}
+					else
+					{
+						ApiModelContainer<API2FA> apiModelContainer2 = new ApiModelContainer<API2FA>();
+						apiModelContainer2.setFromContainer(c);
+						bool flag = apiModelContainer2.ValidModelData();
+						if (onError != null)
+						{
+							if (flag)
+							{
+								onError(new ApiModelContainer<APIUser>
+								{
+									Error = "2FA login required.",
+									Code = 401
+								});
+							}
+							else
+							{
+								onError(c as ApiModelContainer<APIUser>);
+							}
+						}
 					}
 				};
-				apiModelContainer.OnError = delegate(ApiContainer c)
+				apiDictContainer.OnError = delegate(ApiContainer c)
 				{
 					Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.API);
 					if (onError != null)
@@ -1349,7 +1389,7 @@ namespace VRC.Core
 						onError(c as ApiModelContainer<APIUser>);
 					}
 				};
-				ApiModelContainer<APIUser> responseContainer = apiModelContainer;
+				ApiDictContainer responseContainer = apiDictContainer;
 				API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f);
 			}
 		}
@@ -1425,28 +1465,75 @@ namespace VRC.Core
 			}, dictionary);
 		}
 
-		public static void Login(string usernameOrEmail, string password, Action<ApiModelContainer<APIUser>> successCallback = null, Action<ApiModelContainer<APIUser>> errorCallback = null)
+		public static void Login(string usernameOrEmail, string password, Action<ApiModelContainer<APIUser>> successCallback = null, Action<ApiModelContainer<APIUser>> errorCallback = null, Action<ApiModelContainer<API2FA>> twoFactorAuthenticationRequiredCallback = null)
 		{
 			Logger.Log("Logging in", DebugLevel.API);
-			ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
-			apiModelContainer.OnSuccess = delegate(ApiContainer c)
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
 			{
-				CurrentUser = (c.Model as APIUser);
-				if (successCallback != null)
+				ApiModelContainer<APIUser> apiModelContainer2 = new ApiModelContainer<APIUser>();
+				apiModelContainer2.setFromContainer(c);
+				if (apiModelContainer2.ValidModelData())
 				{
-					successCallback(c as ApiModelContainer<APIUser>);
+					CurrentUser = (apiModelContainer2.Model as APIUser);
+					if (successCallback != null)
+					{
+						successCallback(apiModelContainer2);
+					}
+				}
+				else
+				{
+					ApiModelContainer<API2FA> apiModelContainer3 = new ApiModelContainer<API2FA>();
+					apiModelContainer3.setFromContainer(c);
+					bool flag = apiModelContainer3.ValidModelData();
+					if (twoFactorAuthenticationRequiredCallback != null)
+					{
+						twoFactorAuthenticationRequiredCallback(apiModelContainer3);
+					}
 				}
 			};
-			apiModelContainer.OnError = delegate(ApiContainer c)
+			apiDictContainer.OnError = delegate(ApiContainer c)
 			{
+				ApiModelContainer<APIUser> apiModelContainer = new ApiModelContainer<APIUser>();
+				apiModelContainer.setFromContainer(c);
 				Logger.LogWarning("NOT Authenticated: " + c.Error, DebugLevel.API);
 				if (errorCallback != null)
 				{
-					errorCallback(c as ApiModelContainer<APIUser>);
+					errorCallback(apiModelContainer);
 				}
 			};
-			ApiModelContainer<APIUser> responseContainer = apiModelContainer;
+			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f, new API.CredentialsBundle
+			{
+				Username = usernameOrEmail,
+				Password = password
+			});
+		}
+
+		public static void VerifyTwoFactorAuthCode(string authCode, string authCodeType, string usernameOrEmail, string password, Action<ApiDictContainer> successCallback = null, Action<string> errorCallback = null)
+		{
+			Logger.Log("Verifying two-factor authentication code for type: " + authCodeType, DebugLevel.API);
+			Dictionary<string, object> dictionary = new Dictionary<string, object>();
+			dictionary.Add("code", authCode);
+			Dictionary<string, object> requestParams = dictionary;
+			ApiDictContainer apiDictContainer = new ApiDictContainer();
+			apiDictContainer.OnSuccess = delegate(ApiContainer c)
+			{
+				if (successCallback != null)
+				{
+					successCallback(c as ApiDictContainer);
+				}
+			};
+			apiDictContainer.OnError = delegate(ApiContainer c)
+			{
+				Debug.LogError((object)("Two-factor authentication code for type: " + authCodeType + " verification failed: " + c.Error));
+				if (errorCallback != null)
+				{
+					errorCallback(c.Error);
+				}
+			};
+			ApiDictContainer responseContainer = apiDictContainer;
+			API.SendPostRequest("auth/twofactorauth/" + authCodeType + "/verify", responseContainer, requestParams, new API.CredentialsBundle
 			{
 				Username = usernameOrEmail,
 				Password = password
@@ -1727,27 +1814,6 @@ namespace VRC.Core
 			});
 		}
 
-		public static void SendFriendRequest(string userId, Action<ApiNotification> successCallback, Action<string> errorCallback)
-		{
-			ApiModelContainer<ApiNotification> apiModelContainer = new ApiModelContainer<ApiNotification>();
-			apiModelContainer.OnSuccess = delegate(ApiContainer c)
-			{
-				if (successCallback != null)
-				{
-					successCallback(c.Model as ApiNotification);
-				}
-			};
-			apiModelContainer.OnError = delegate(ApiContainer c)
-			{
-				if (errorCallback != null)
-				{
-					errorCallback(c.Error);
-				}
-			};
-			ApiModelContainer<ApiNotification> responseContainer = apiModelContainer;
-			API.SendPostRequest("user/" + userId + "/friendRequest", responseContainer);
-		}
-
 		public static void AttemptVerification()
 		{
 			API.SendPostRequest("auth/user/resendEmail", new ApiContainer());
@@ -1809,48 +1875,6 @@ namespace VRC.Core
 					}
 				}
 			}, dictionary);
-		}
-
-		public static void AcceptFriendRequest(string notificationId, Action successCallback, Action<string> errorCallback)
-		{
-			API.SendPutRequest("/auth/user/notifications/" + notificationId + "/accept", new ApiContainer
-			{
-				OnSuccess = delegate
-				{
-					if (successCallback != null)
-					{
-						successCallback();
-					}
-				},
-				OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				}
-			});
-		}
-
-		public static void DeclineFriendRequest(string notificationId, Action successCallback, Action<string> errorCallback)
-		{
-			API.SendPutRequest("/auth/user/notifications/" + notificationId + "/hide", new ApiContainer
-			{
-				OnSuccess = delegate
-				{
-					if (successCallback != null)
-					{
-						successCallback();
-					}
-				},
-				OnError = delegate(ApiContainer c)
-				{
-					if (errorCallback != null)
-					{
-						errorCallback(c.Error);
-					}
-				}
-			});
 		}
 
 		public static void UnfriendUser(string userId, Action successCallback, Action<string> errorCallback)

@@ -130,7 +130,46 @@ namespace VRCSDK2
 
             GUILayout.Label(
     @"Changelog:
-2019.1.4p4
+2019.2.4-SDK1
+- Removed upload-preventing polygon limits for avatars in SDK.
+- This does not change behavior in the client. Although
+you can upload content that goes beyond client limits 
+(for example, the Quest polygon limit), it will not render
+in VRChat according to the Minimum Performance Rank setting
+
+2019.2.4
+- Implemented Quest Avatar limits. If your avatar is
+ranked as Very Poor, you will not be able to upload
+the avatar.
+- If you do upload an avatar beyond the Very Poor
+limits, it will not render in VRChat Quest regardless
+
+2019.2.3
+- Added a VRChat/Mobile/Standard Lite for use on
+Oculus Quest avatars
+- Standard Lite offers slots for Diffuse, Normal maps,
+Metallic+Smoothness maps, and optional Emission maps
+- Standard Lite uses a simplified version of BRDF for
+lighting
+
+2019.2.2
+- Added links to the splash screen leading users to our
+Quest documentation
+- Added Quest shaders to SDK, available under the VRChat
+category
+- Quest will only support these shaders on avatars. If 
+you use any other shader, you'll get a warning in the
+SDK. If you try to use the shader anyways, it will
+fail to load in the client. You can read more about
+these shaders in our documentation
+- Added warnings when attempting to use unsupported
+shaders on Quest
+- Added errors when you attempt to upload content
+too large for Quest (50mb for worlds, 10mb for
+avatars). Build size is determined after package is
+created. This will also be enforced in-client for Quest
+
+2019.1.4p2
 - Fixed an issue causing redundant error messaging when 
 informing the user that there are objects that share the 
 same path

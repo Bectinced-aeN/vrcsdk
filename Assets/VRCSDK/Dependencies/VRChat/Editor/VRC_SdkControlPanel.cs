@@ -403,7 +403,6 @@ public class VRC_SdkControlPanel : EditorWindow
 
         switch (value)
         {
-            case PerformanceRating.None:
             case PerformanceRating.VeryGood:
                 return _perfIcon_VeryGood;
             case PerformanceRating.Good:
@@ -412,6 +411,7 @@ public class VRC_SdkControlPanel : EditorWindow
                 return _perfIcon_Medium;
             case PerformanceRating.Bad:
                 return _perfIcon_Bad;
+            case PerformanceRating.None:
             case PerformanceRating.VeryBad:
                 return _perfIcon_VeryBad;
         }
@@ -1033,7 +1033,7 @@ public class VRC_SdkControlPanel : EditorWindow
         IEnumerable<Shader> illegalShaders = VRCSDK2.AvatarValidation.FindIllegalShaders(avatar.gameObject);
         foreach (Shader s in illegalShaders)
         {
-            OnGUIError(avatar, "Avatar uses unsupported shader '" + s.name + "'.");
+            OnGUIError(avatar, "Avatar uses unsupported shader '" + s.name + "'. You can only use the shaders provided in 'VRChat/Mobile' for Quest avatars.");
         }
 #endif
 

@@ -725,7 +725,7 @@ namespace VRCSDK2
                             if (renderer.renderMode == ParticleSystemRenderMode.Mesh)
                             {
                                 Mesh[] meshes = new Mesh[0];
-                                int heighestPoly = 0;
+                                int highestPoly = 0;
                                 renderer.GetMeshes(meshes);
                                 if (meshes.Length == 0 && renderer.mesh != null)
                                 {
@@ -736,31 +736,25 @@ namespace VRCSDK2
                                 {
                                     if (m.isReadable)
                                     {
-                                        if (m.triangles.Length / 3 > heighestPoly)
+                                        if (m.triangles.Length / 3 > highestPoly)
                                         {
-                                            heighestPoly = m.triangles.Length / 3;
+                                            highestPoly = m.triangles.Length / 3;
                                         }
                                     }
                                     else
                                     {
-                                        if (1000 > heighestPoly)
+                                        if (1000 > highestPoly)
                                         {
-                                            heighestPoly = 1000;
+                                            highestPoly = int.MaxValue;
                                         }
                                     }
                                 }
-                                if (heighestPoly > 0)
+                                if (highestPoly > 0)
                                 {
-                                    heighestPoly = Mathf.Clamp(heighestPoly / ps_mesh_particle_divider, 1, heighestPoly);
-                                    if (heighestPoly < realtime_max)
-                                    {
-                                        realtime_max = realtime_max / heighestPoly;
-                                    }
-                                    else
-                                    {
-                                        realtime_max = 1;
-                                    }
-                                    if (heighestPoly > ps_mesh_particle_poly_limit)
+                                    highestPoly = Mathf.Clamp(highestPoly / ps_mesh_particle_divider, 1, highestPoly);
+                                    realtime_max = Mathf.FloorToInt((float)realtime_max / highestPoly);
+
+                                    if (highestPoly > ps_mesh_particle_poly_limit)
                                     {
                                         Debug.LogError("Particle system named " + ps.gameObject.name + " breached polygon limits, it has been deleted");
                                         Validation.RemoveComponent(ps);

@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Linq;
 using UnityEngine.Rendering;
+using VRCSDK2;
 
 /// <summary>
 /// Setup up SDK env on editor launch
@@ -184,6 +185,8 @@ public class EnvConfig
             VRC.Core.API.SetOnlineMode(true, "vrchat");
             VRC.Core.RemoteConfig.Init();
         }
+
+        LoadEditorResources();
 
         return true;
     }
@@ -395,11 +398,24 @@ public class EnvConfig
 
                 if (property != null && property.name == "m_Devices")
                 {
-                    property.ClearArray();
-                    property.arraySize = (sdkNames != null) ? sdkNames.Length : 0;
-                    for (int j = 0; j < property.arraySize; j++)
+                    bool overwrite = true;
+                    if (property.arraySize == sdkNames.Length)
                     {
-                        property.GetArrayElementAtIndex(j).stringValue = sdkNames[j];
+                        overwrite = false;
+                        for (int e = 0; e < sdkNames.Length; ++e)
+                        {
+                            if (property.GetArrayElementAtIndex(e).stringValue != sdkNames[e])
+                                overwrite = true;
+                        }
+                    }
+                    if (overwrite)
+                    {
+                        property.ClearArray();
+                        property.arraySize = (sdkNames != null) ? sdkNames.Length : 0;
+                        for (int j = 0; j < property.arraySize; j++)
+                        {
+                            property.GetArrayElementAtIndex(j).stringValue = sdkNames[j];
+                        }
                     }
                 }
             }
@@ -663,5 +679,10 @@ public class EnvConfig
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 #endif
+    }
+
+    private static void LoadEditorResources()
+    {
+        AvatarPerformanceStats.Initialize();
     }
 }

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f742c36dce5730f4d96e37d82c330584, type: 3}
+  m_Name: Bad_Quest
+  m_EditorClassIdentifier: 
+  PolyCount: 10000
+  AABB:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 2.5, y: 3, z: 2.5}
+  SkinnedMeshCount: 2
+  MeshCount: 2
+  MaterialCount: 4
+  AnimatorCount: 2
+  BoneCount: 150
+  LightCount: 0
+  ParticleSystemCount: 2
+  ParticleTotalCount: 200
+  ParticleTotalActiveMeshPolyCount: 400
+  ParticleTrailsEnabled: 1
+  ParticleCollisionEnabled: 1
+  TrailRendererCount: 1
+  LineRendererCount: 1
+  DynamicBoneComponentCount: 0
+  DynamicBoneSimulatedBoneCount: 0
+  DynamicBoneColliderCount: 0
+  DynamicBoneCollisionCheckCount: 0
+  ClothCount: 0
+  ClothMaxVertices: 0
+  PhysicsColliderCount: 0
+  PhysicsRigidbodyCount: 0
+  AudioSourceCount: 2
