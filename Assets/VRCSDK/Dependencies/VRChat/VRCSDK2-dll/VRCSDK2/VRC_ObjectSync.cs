@@ -22,6 +22,8 @@ namespace VRCSDK2
 
 		public static TeleportDelegate TeleportHandler;
 
+		public static Action<VRC_ObjectSync> RespawnHandler;
+
 		public static Func<VRC_ObjectSync, bool> GetUseGravity;
 
 		public static Func<VRC_ObjectSync, bool> GetIsKinematic;
@@ -104,15 +106,12 @@ namespace VRCSDK2
 		{
 
 		})]
-		public void ResetLocalPosAndRot()
+		public void Respawn()
 		{
-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0027: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0032: Unknown result type (might be due to invalid IL or missing references)
-			this.get_transform().set_localPosition(Vector3.get_zero());
-			this.get_transform().set_localRotation(Quaternion.get_identity());
-			TeleportTo(this.get_transform().get_position(), this.get_transform().get_rotation());
+			if (RespawnHandler != null)
+			{
+				RespawnHandler(this);
+			}
 		}
 
 		private void Awake()
@@ -210,10 +209,10 @@ namespace VRCSDK2
 			};
 			list.Add(vrcEvent);
 			vrcEvent = new VRC_EventHandler.VrcEvent();
-			vrcEvent.Name = "ResetLocalPosAndRot";
+			vrcEvent.Name = "Respawn";
 			vrcEvent.EventType = VRC_EventHandler.VrcEventType.SendRPC;
 			vrcEvent.ParameterInt = 0;
-			vrcEvent.ParameterString = "ResetLocalPosAndRot";
+			vrcEvent.ParameterString = "Respawn";
 			vrcEvent.ParameterObjects = (GameObject[])new GameObject[1]
 			{
 				this.get_gameObject()

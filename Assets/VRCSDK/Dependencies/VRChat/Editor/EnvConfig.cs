@@ -635,7 +635,7 @@ public class EnvConfig
         }
         else
         {
-            config.numRealVoices = 63;
+            config.numRealVoices = 32;
             config.numVirtualVoices = 63;
         }
         AudioSettings.Reset(config);

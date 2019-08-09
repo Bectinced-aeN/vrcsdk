@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿#define SUPPORT_DEPRECATED_ONSP
+
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -69,6 +71,7 @@ namespace VRCSDK2
 #if UNITY_STANDALONE
             "UnityEngine.AudioSource",
             "ONSPAudioSource",
+            "VRCSDK2.VRC_SpatialAudioSource",
 #endif
             "AvatarCustomAudioLimiter",
             "UnityEngine.EllipsoidParticleEmitter",
@@ -166,71 +169,70 @@ namespace VRCSDK2
                     if (au == null)
                         continue;
 
+                    var vrcsp = au.gameObject.GetComponent<VRC_SpatialAudioSource>();
+
 #if VRC_CLIENT
                     au.outputAudioMixerGroup = VRCAudioManager.GetAvatarGroup();
-#endif
-
-                    if (au.volume > 0.9f)
-                        au.volume = 0.9f;
-
-#if VRC_CLIENT
-                    // someone mucked with the sdk forced settings, shame on them!
-                    if (au.spatialize == false)
-                        au.volume = 0;
-#else
-                    au.spatialize = true;
-#endif
-
                     au.priority = Mathf.Clamp(au.priority, 200, 255);
-                    au.bypassEffects = false;
-                    au.bypassListenerEffects = false;
-                    au.spatialBlend = 1f;
-                    au.spread = 0;
-
-                    au.minDistance = Mathf.Clamp(au.minDistance, 0, 2);
-                    au.maxDistance = Mathf.Clamp(au.maxDistance, 0, 30);
-
-                    float range = au.maxDistance - au.minDistance;
-                    float min = au.minDistance;
-                    float max = au.maxDistance;
-                    float mult = 50.0f / range;
-
-                    // setup a custom rolloff curve
-                    Keyframe[] keys = new Keyframe[7];
-                    keys[0] = new Keyframe(0, 1);
-                    keys[1] = new Keyframe(min, 1, 0, -0.4f * mult);
-                    keys[2] = new Keyframe(min + 0.022f * range, 0.668f, -0.2f * mult, -0.2f * mult);
-                    keys[3] = new Keyframe(min + 0.078f * range, 0.359f, -0.05f * mult, -0.05f * mult);
-                    keys[4] = new Keyframe(min + 0.292f * range, 0.102f, -0.01f * mult, -0.01f * mult);
-                    keys[5] = new Keyframe(min + 0.625f * range, 0.025f, -0.002f * mult, -0.002f * mult);
-                    keys[6] = new Keyframe(max, 0);
-                    AnimationCurve curve = new AnimationCurve(keys);
-
-                    au.rolloffMode = AudioRolloffMode.Custom;
-                    au.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curve);
-
-                    // if we have an onsp component, also configure that
-                    ONSPAudioSource oa = au.GetComponent<ONSPAudioSource>();
-                    if (oa)
+                    if (vrcsp != null)
                     {
-                        if (oa.Gain > 10f) oa.Gain = 10f;
-#if VRC_CLIENT
-                        // someone mucked with the sdk forced settings, shame on them!
-                        if (oa.enabled == false || oa.EnableSpatialization == false)
-                        {
-                            oa.Gain = 0f;
-                            au.volume = 0f;
-                        }
-#else
-                        oa.enabled = true;
-                        oa.EnableSpatialization = true;
-#endif
-                        oa.UseInvSqr = true; // This is the ENABLED value for OCULUS ATTENUATION
-                        oa.EnableRfl = false;
-                        if (oa.Near > 2f) oa.Near = 2f;
-                        if (oa.Far > 30f) oa.Far = 30f;
-                        oa.VolumetricRadius = 0f;
+                        // copy the values into the onsp component
+                        var onsp = au.gameObject.GetOrAddComponent<ONSPAudioSource>();
+                        onsp.Gain = vrcsp.Gain;
+                        onsp.Near = vrcsp.Near;
+                        onsp.Far = vrcsp.Far;
+                        onsp.VolumetricRadius = vrcsp.VolumetricRadius;
+                        onsp.EnableSpatialization = vrcsp.EnableSpatialization;
+                        onsp.UseInvSqr = !vrcsp.UseAudioSourceVolumeCurve;
+                        if (!vrcsp.EnableSpatialization)
+                            au.spatialize = false;
                     }
+#else
+                    // these are SDK only, we rely on AvatarAudioSourceLimiter to enforce
+                    // values at runtime
+
+#if SUPPORT_DEPRECATED_ONSP
+                    ONSPAudioSource[] allOnsp = au.gameObject.GetComponents<ONSPAudioSource>();
+                    if (allOnsp != null && allOnsp.Length > 0)
+                    {
+                        ONSPAudioSource onsp = allOnsp[0];
+                        if (vrcsp == null)
+                            vrcsp = au.gameObject.AddComponent<VRC_SpatialAudioSource>();
+                        vrcsp.Gain = Mathf.Min(onsp.Gain, VRCSDK2.AudioManagerSettings.AvatarAudioMaxGain);
+                        vrcsp.Far = Mathf.Min(onsp.Far, VRCSDK2.AudioManagerSettings.AvatarAudioMaxRange);
+                        vrcsp.VolumetricRadius = Mathf.Min(onsp.Far, VRCSDK2.AudioManagerSettings.AvatarAudioMaxRange);
+                        vrcsp.Near = Mathf.Min(onsp.Near, onsp.Far);
+                        vrcsp.EnableSpatialization = onsp.EnableSpatialization;
+                        vrcsp.UseAudioSourceVolumeCurve = !onsp.UseInvSqr;
+                        Debug.LogWarningFormat("ONSPAudioSource found on {0}. converted to VRC_SpatialAudioSource.", child.name);
+                        foreach (var o in allOnsp)
+                            Component.DestroyImmediate(o, true);
+                    }
+#endif
+                    if (vrcsp == null)
+                    {
+                        // user has not yet added VRC_SpatialAudioSource (or ONSP)
+                        // so set up some defaults
+                        vrcsp = au.gameObject.AddComponent<VRC_SpatialAudioSource>();
+                        vrcsp.Gain = VRCSDK2.AudioManagerSettings.AvatarAudioMaxGain;
+                        vrcsp.Far = VRCSDK2.AudioManagerSettings.AvatarAudioMaxRange;
+                        vrcsp.Near = 0f;
+                        vrcsp.VolumetricRadius = 0f;
+                        vrcsp.EnableSpatialization = true;
+                        vrcsp.enabled = true;
+                        au.spatialize = true;
+                        au.priority = Mathf.Clamp(au.priority, 200, 255);
+                        au.bypassEffects = false;
+                        au.bypassListenerEffects = false;
+                        au.spatialBlend = 1f;
+                        au.spread = 0;
+
+                        // user is allowed to change, but for now put a safe default
+                        au.maxDistance = VRCSDK2.AudioManagerSettings.AvatarAudioMaxRange;
+                        au.minDistance = au.maxDistance/500f;
+                        au.rolloffMode = AudioRolloffMode.Logarithmic;
+                    }
+#endif //!VRC_CLIENT
 
                     onFound(au);
 
@@ -268,8 +270,12 @@ namespace VRCSDK2
 
             foreach (KeyValuePair<ParticleSystem, int> kp in particleSystems)
             {
+                if (kp.Key == null)
+                    continue;
+
                 if (!kp.Key.isPlaying && !includeDisabled)
                     continue;
+
                 ps = kp.Key;
                 max = kp.Value;
                 em_penalty = 1;
@@ -324,7 +330,7 @@ namespace VRCSDK2
                     totalEmission += emission;
                     if ((emission > ps_max_emission || totalEmission > ps_max_total_emission) && stopSystems)
                     {
-                        kp.Key.Stop();
+                        kp.Key.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                         // Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle emission limits, it has been stopped");
                     }
                 }
@@ -333,7 +339,7 @@ namespace VRCSDK2
                     ParticleSystem.MainModule psm = ps.main;
                     psm.maxParticles = Mathf.Clamp(psm.maxParticles, 1, max);
                     if (stopSystems)
-                        kp.Key.Stop();
+                        kp.Key.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                     Debug.LogWarning("Particle system named " + kp.Key.gameObject.name + " breached particle limits, it has been limited");
                 }
             }
@@ -718,10 +724,9 @@ namespace VRCSDK2
                         var main = ps.main;
                         var emission = ps.emission;
 
-
-                        if (ps.GetComponent<ParticleSystemRenderer>())
+                        ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
+                        if (renderer != null)
                         {
-                            ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
                             if (renderer.renderMode == ParticleSystemRenderMode.Mesh)
                             {
                                 Mesh[] meshes = new Mesh[0];
@@ -851,7 +856,7 @@ namespace VRCSDK2
         {
             foreach (KeyValuePair<ParticleSystem, int> kp in particleSystems)
             {
-                if (kp.Key.isPlaying)
+                if (kp.Key != null && kp.Key.isPlaying)
                     return true;
             }
 
@@ -862,9 +867,9 @@ namespace VRCSDK2
         {
             foreach (KeyValuePair<ParticleSystem, int> kp in particleSystems)
             {
-                if (kp.Key.isPlaying)
+                if (kp.Key != null && kp.Key.isPlaying)
                 {
-                    kp.Key.Stop();
+                    kp.Key.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 }
             }
         }

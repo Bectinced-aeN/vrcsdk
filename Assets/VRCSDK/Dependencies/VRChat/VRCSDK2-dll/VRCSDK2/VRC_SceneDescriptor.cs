@@ -44,12 +44,6 @@ namespace VRCSDK2
 
 		public bool ForbidUserPortals;
 
-		public bool UseCustomVoiceFalloffRange;
-
-		public float VoiceFalloffRangeNear = 4f;
-
-		public float VoiceFalloffRangeFar = 350f;
-
 		[HideInInspector]
 		public bool autoSpatializeAudioSources = true;
 
@@ -83,8 +77,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string Name;
 
-		[Obsolete("Property is not used.")]
 		[HideInInspector]
+		[Obsolete("Property is not used.")]
 		public bool NSFW;
 
 		[HideInInspector]

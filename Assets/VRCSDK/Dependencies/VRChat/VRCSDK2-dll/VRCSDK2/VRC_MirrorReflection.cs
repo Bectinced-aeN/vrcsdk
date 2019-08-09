@@ -40,8 +40,8 @@ namespace VRCSDK2
 		[Tooltip("Only objects on the selected layers will be rendered in the mirror. Objects on the Water layer are never rendered in mirrors.")]
 		public LayerMask m_ReflectLayers = LayerMask.op_Implicit(-1);
 
-		[Tooltip("Rendering resolution of the mirror (per eye in VR). Auto renders at the same resolution as the user's HMD or monitor up to the maximum.")]
 		[SerializeField]
+		[Tooltip("Rendering resolution of the mirror (per eye in VR). Auto renders at the same resolution as the user's HMD or monitor up to the maximum.")]
 		private Dimension mirrorResolution;
 
 		[Tooltip("The mirror will use this shader instead of the default shader if one is provided.")]

@@ -315,6 +315,8 @@ namespace VRCSDK2
 
                 triggersAry.FindPropertyRelative("TriggerType").intValue = (int)addTriggerSelectedType;
                 triggersAry.FindPropertyRelative("BroadcastType").intValue = (int)VRC_EventHandler.VrcBroadcastType.AlwaysBufferOne;
+                triggersAry.FindPropertyRelative("TriggerIndividuals").boolValue = true;
+                triggersAry.FindPropertyRelative("Layers").intValue = LayerMask.GetMask("Default");
             }
 
             EditorGUILayout.EndHorizontal();

@@ -1,10 +1,6 @@
 /************************************************************************************
-
-Filename    :   OculusSpatializerUserParamsEditor.cs
+Filename    :   ONSPAudioSourceEditor.cs
 Content     :   This script adds editor functionality to OculusSpatializerUserParams script.
-Created     :   December 14, 2015
-Authors     :   Peter Giokaris
-
 Copyright   :   Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
 
 Licensed under the Oculus SDK Version 3.5 (the "License"); 
@@ -48,6 +44,7 @@ public class OculusSpatializerUserParamsEditor : Editor
 		Undo.RecordObject(m_Component, "OculusSpatializerUserParams");
 		
 		{
+            EditorGUILayout.HelpBox("Please use a VRC_SpatialAudioSource in the future.", MessageType.Error);
 			#if CUSTOM_LAYOUT
 			m_Component.EnableSpatialization = EditorGUILayout.Toggle("Spatialization Enabled", m_Component.EnableSpatialization);
 			m_Component.EnableRfl  = EditorGUILayout.Toggle("Reflections Enabled", m_Component.EnableRfl);

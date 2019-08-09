@@ -342,6 +342,10 @@ namespace VRC.Core
 						dictionary.Add("noplatform", excludePlatforms);
 					}
 				}
+				if (tags != null)
+				{
+					dictionary.Add("tag", tags);
+				}
 			}
 			ApiModelListContainer<ApiAvatar> apiModelListContainer = new ApiModelListContainer<ApiAvatar>();
 			apiModelListContainer.OnSuccess = delegate(ApiContainer c)

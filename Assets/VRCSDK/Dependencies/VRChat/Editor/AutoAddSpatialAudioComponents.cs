@@ -1,14 +1,17 @@
-﻿using UnityEngine;
+﻿#define SUPPORT_DEPRECATED_ONSP
+
+using UnityEngine;
 using System.Collections;
 using UnityEditor;
+using VRCSDK2;
 
 [InitializeOnLoad]
-public class AutoAddONSPAudioSourceComponents
+public class AutoAddSpatialAudioComponents
 {
 
     public static bool Enabled = true;
 
-    static AutoAddONSPAudioSourceComponents()
+    static AutoAddSpatialAudioComponents()
     {
         EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
 		EditorApplication.projectWindowChanged += OnProjectWindowChanged;
@@ -23,7 +26,7 @@ public class AutoAddONSPAudioSourceComponents
             return;
         }
 
-        TryAddONSPToAllAudioSources(true, false);
+        TryToAddSpatializationToAllAudioSources(true, false);
     }
 
 	static void OnProjectWindowChanged()
@@ -40,15 +43,68 @@ public class AutoAddONSPAudioSourceComponents
 	public static void VRCSDKControlPanel_EnableSpatialization()
 	{
 		Debug.Log("Enabling spatialization on AudioSources...");
-		TryAddONSPToAllAudioSources(false, true);
+		TryToAddSpatializationToAllAudioSources(false, true);
 	}
 
-    public static void TryAddONSPToAllAudioSources(bool newAudioSourcesOnly, bool includeInactive)
+    // this duplicates the same function in VRCAudioManager, but alas, it's not available in the SDK
+    static bool ApplyDefaultSpatializationToAudioSource(AudioSource audioSrc, bool force = false)
+    {
+        if (audioSrc == null)
+            return false;
+
+        // don't spatialize non-full 3D sounds
+        if (!force && audioSrc.spatialBlend < 0.99f)
+            return false;
+
+        var vrcsp = audioSrc.gameObject.GetComponent<VRCSDK2.VRC_SpatialAudioSource>();
+
+        bool setValues = force;
+
+#if SUPPORT_DEPRECATED_ONSP
+        var onsp = audioSrc.GetComponent<ONSPAudioSource>();
+        if (onsp != null)
+        {
+            if (vrcsp == null)
+            {
+                // copy the values from deprecated component
+                vrcsp = audioSrc.gameObject.AddComponent<VRCSDK2.VRC_SpatialAudioSource>();
+                vrcsp.Gain = onsp.Gain;
+                vrcsp.Near = onsp.Near;
+                vrcsp.Far = onsp.Far;
+                vrcsp.UseAudioSourceVolumeCurve = !onsp.UseInvSqr;
+            }
+
+            Component.DestroyImmediate(onsp);
+        }
+#endif
+        if (vrcsp == null)
+        {
+            vrcsp = audioSrc.gameObject.AddComponent<VRCSDK2.VRC_SpatialAudioSource>();
+            setValues = true;
+        }
+
+        audioSrc.spatialize = true;
+        vrcsp.enabled = true;
+
+        if (setValues)
+        {
+            bool isAvatar = audioSrc.GetComponentInParent<VRCSDK2.VRC_AvatarDescriptor>();
+
+            vrcsp.Gain = isAvatar ? VRCSDK2.AudioManagerSettings.AvatarAudioMaxGain : VRCSDK2.AudioManagerSettings.RoomAudioGain;
+            vrcsp.Near = 0;
+            vrcsp.Far = isAvatar ? VRCSDK2.AudioManagerSettings.AvatarAudioMaxRange : VRCSDK2.AudioManagerSettings.RoomAudioMaxRange;
+            vrcsp.UseAudioSourceVolumeCurve = false;
+        }
+
+        return true;
+    }
+
+    public static void TryToAddSpatializationToAllAudioSources(bool newAudioSourcesOnly, bool includeInactive)
     {
         AudioSource[] allAudioSources = includeInactive ? Resources.FindObjectsOfTypeAll<AudioSource>() : Object.FindObjectsOfType<AudioSource>();
         foreach (AudioSource src in allAudioSources)
         {
-            if (src == null || src.gameObject == null || !src.enabled || src.gameObject.scene != UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene())
+            if (src == null || src.gameObject == null || src.gameObject.scene != UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene())
             {
                 continue;
             }
@@ -67,9 +123,9 @@ public class AutoAddONSPAudioSourceComponents
                 }
             }
 
-            if (AddONSPAudioSourceComponent.ApplyDefaultSpatializationToAudioSource(src))
+            if (ApplyDefaultSpatializationToAudioSource(src, false))
             {
-                Debug.Log("Automatically added ONSPAudioSource component and enabled spatialized audio to " + GetGameObjectPath(src.gameObject) + "!");
+                Debug.Log("Automatically added VRC_SpatialAudioSource component and enabled spatialized audio to " + GetGameObjectPath(src.gameObject) + "!");
             }
         }
     }

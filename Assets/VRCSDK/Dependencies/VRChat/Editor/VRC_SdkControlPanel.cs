@@ -566,10 +566,10 @@ public class VRC_SdkControlPanel : EditorWindow
             }
         }
 
-        scene.autoSpatializeAudioSources = EditorGUILayout.ToggleLeft("Apply 3D spatialization to AudioSources automatically at runtime (override settings by adding an ONSPAudioSource component to game object)", scene.autoSpatializeAudioSources);
+        scene.autoSpatializeAudioSources = EditorGUILayout.ToggleLeft("Apply 3D spatialization to AudioSources automatically at runtime (override settings by adding an VRC_SpatialAudioSource component to game object)", scene.autoSpatializeAudioSources);
         if (GUILayout.Button("Enable 3D spatialization on all 3D AudioSources in scene now"))
         {
-            bool doIt = EditorUtility.DisplayDialog("Enable Spatialization", "This will add an ONSPAudioSource script to every 3D AudioSource in the current scene, and enable default settings for spatialization.  Are you sure you want to continue?", "Do it!", "Don't do it");
+            bool doIt = EditorUtility.DisplayDialog("Enable Spatialization", "This will add a VRC_SpatialAudioSource script to every 3D AudioSource in the current scene, and enable default settings for spatialization.  Are you sure you want to continue?", "Do it!", "Don't do it");
             if (doIt)
             {
                 if (_EnableSpatialization != null)

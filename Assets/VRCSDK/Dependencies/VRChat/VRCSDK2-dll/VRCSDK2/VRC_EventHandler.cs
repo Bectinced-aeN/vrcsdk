@@ -109,8 +109,8 @@ namespace VRCSDK2
 			[SerializeField]
 			public byte[] ParameterBytes;
 
-			[SerializeField]
 			[HideInInspector]
+			[SerializeField]
 			public int? ParameterBytesVersion;
 
 			public bool TakeOwnershipOfTarget;

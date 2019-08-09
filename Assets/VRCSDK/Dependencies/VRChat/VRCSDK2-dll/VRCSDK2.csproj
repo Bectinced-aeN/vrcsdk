@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{05B081DD-BB5C-4B75-8179-7577A6EEAFBD}</ProjectGuid>
+    <ProjectGuid>{CB38E83E-A412-48A0-86A4-D1665F7C957B}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -94,6 +94,7 @@
     <Compile Include="VRCSDK2\VRC_PhysicsRoot.cs" />
     <Compile Include="VRCSDK2\VRC_Pickup.cs" />
     <Compile Include="VRCSDK2\VRC_PlayerApi.cs" />
+    <Compile Include="VRCSDK2\VRC_PlayerAudioOverride.cs" />
     <Compile Include="VRCSDK2\VRC_PlayerMods.cs" />
     <Compile Include="VRCSDK2\VRC_PortalMarker.cs" />
     <Compile Include="VRCSDK2\VRC_PropApi.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="VRCSDK2\VRC_SceneSmoothShift.cs" />
     <Compile Include="VRCSDK2\VRC_Serialization.cs" />
     <Compile Include="VRCSDK2\VRC_SlideShow.cs" />
+    <Compile Include="VRCSDK2\VRC_SpatialAudioSource.cs" />
     <Compile Include="VRCSDK2\VRC_SpecialLayer.cs" />
     <Compile Include="VRCSDK2\VRC_Station.cs" />
     <Compile Include="VRCSDK2\VRC_StationApi.cs" />

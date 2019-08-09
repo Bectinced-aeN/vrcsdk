@@ -40,12 +40,14 @@ namespace VRCSDK2
             "VRCSDK2.VRC_Pickup",
             "VRCSDK2.VRC_PortalMarker",
             "VRCSDK2.VRC_SlideShow",
+            "VRCSDK2.VRC_SpatialAudioSource",
             "VRCSDK2.VRC_StationInput",
             "VRCSDK2.VRC_SyncAnimation",
             "VRCSDK2.VRC_SyncVideoPlayer",
             "VRCSDK2.VRC_SyncVideoStream",
             "VRCSDK2.VRC_VideoScreen",
             "VRCSDK2.VRC_VideoSpeaker",
+            "VRCSDK2.VRC_PlayerAudioOverride",
             "VRC_YouTubeSync", // TODO: this is deprecated and should be removed
             "VRCSDK2.VRC_MirrorReflection",
 #if UNITY_STANDALONE

@@ -1,8 +1,6 @@
 /************************************************************************************
 Filename    :   ONSPAudioSource.cs
 Content     :   Interface into the Oculus Native Spatializer Plugin
-Created     :   September 14, 2015
-Authors     :   Peter Giokaris
 Copyright   :   Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
 
 Licensed under the Oculus SDK Version 3.5 (the "License"); 
@@ -89,7 +87,7 @@ public class ONSPAudioSource : MonoBehaviour
 	}
 
 	[SerializeField]
-	private float near = 1.0f;
+	private float near = 0.25f;
 	public float Near
 	{
 		get
@@ -103,7 +101,7 @@ public class ONSPAudioSource : MonoBehaviour
 	}
 
 	[SerializeField]
-	private float far = 10.0f;
+	private float far = 250.0f;
 	public float Far
 	{
 		get
@@ -144,7 +142,6 @@ public class ONSPAudioSource : MonoBehaviour
         }
     }
 
-
     [SerializeField]
 	private bool enableRfl = false;
 	public  bool EnableRfl
@@ -158,6 +155,7 @@ public class ONSPAudioSource : MonoBehaviour
 			enableRfl = value;
 		}
 	}
+
 
     /// VRCHAT: We need to reset the params after avatar loading and viseme setup
     public void Reset()
@@ -197,7 +195,7 @@ public class ONSPAudioSource : MonoBehaviour
 	/// <summary>
 	/// Update this instance.
 	/// </summary>
-    void Update()
+    void LateUpdate()
     {
 		// We might iterate through multiple sources / game object
 		var source = GetComponent<AudioSource>();
@@ -232,7 +230,7 @@ public class ONSPAudioSource : MonoBehaviour
         }
         else
         {
-            SetParameters(ref source);	
+            SetParameters(ref source);
         }
     }
 
@@ -258,38 +256,41 @@ public class ONSPAudioSource : MonoBehaviour
     /// <param name="source">Source.</param>
     public void SetParameters(ref AudioSource source)
 	{
-        // jnuccio: added try here to catch unknown exception reported in analytics
-        try
-        {
-            if (source == null)
-                return;
+    // VRCHAT: indentation is weird intentionally, for easier diff
+    // jnuccio: added try here to catch unknown exception reported in analytics
+    try
+    {
+        if (source == null)
+            return;
 
-            // See if we should enable spatialization
-            source.spatialize = enableSpatialization;
+        // See if we should enable spatialization
+        source.spatialize = enableSpatialization;
+		
+        source.SetSpatializerFloat((int)Parameters.P_GAIN, gain);
+		// All inputs are floats; convert bool to 0.0 and 1.0
+		if(useInvSqr == true)
+            source.SetSpatializerFloat((int)Parameters.P_USEINVSQR, 1.0f);
+		else
+            source.SetSpatializerFloat((int)Parameters.P_USEINVSQR, 0.0f);
 
-            source.SetSpatializerFloat((int)Parameters.P_GAIN, gain);
-            // All inputs are floats; convert bool to 0.0 and 1.0
-            if(useInvSqr == true)
-                source.SetSpatializerFloat((int)Parameters.P_USEINVSQR, 1.0f);
-            else
-                source.SetSpatializerFloat((int)Parameters.P_USEINVSQR, 0.0f);
+        source.SetSpatializerFloat((int)Parameters.P_NEAR, near);
+        source.SetSpatializerFloat((int)Parameters.P_FAR, far);
 
-            source.SetSpatializerFloat((int)Parameters.P_NEAR, near);
-            source.SetSpatializerFloat((int)Parameters.P_FAR, far);
+        source.SetSpatializerFloat((int)Parameters.P_RADIUS, volumetricRadius);
 
-            source.SetSpatializerFloat((int)Parameters.P_RADIUS, volumetricRadius);
+		if(enableRfl == true)
+            source.SetSpatializerFloat((int)Parameters.P_DISABLE_RFL, 0.0f);
+		else
+            source.SetSpatializerFloat((int)Parameters.P_DISABLE_RFL, 1.0f);
 
-            if(enableRfl == true)
-                source.SetSpatializerFloat((int)Parameters.P_DISABLE_RFL, 0.0f);
-            else
-                source.SetSpatializerFloat((int)Parameters.P_DISABLE_RFL, 1.0f);
+        source.SetSpatializerFloat((int)Parameters.P_SENDLEVEL, reverbSend);
 
-            source.SetSpatializerFloat((int)Parameters.P_SENDLEVEL, reverbSend);
-        }
-        catch (Exception)
-        {
-            // not sure why this throws sometimes
-        }
+    // VRCHAT: indentation is weird intentionally, for easier diff
+    }
+    catch (Exception)
+    {
+        // not sure why this throws sometimes
+    }
 	}
 
     private static ONSPAudioSource RoomReflectionGizmoAS = null; 
