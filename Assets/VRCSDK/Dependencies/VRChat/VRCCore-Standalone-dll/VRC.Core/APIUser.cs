@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Networking;
 using VRC.Core.BestHTTP;
 
 namespace VRC.Core
@@ -1506,8 +1505,8 @@ namespace VRC.Core
 			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f, new API.CredentialsBundle
 			{
-				Username = UnityWebRequest.EscapeURL(usernameOrEmail),
-				Password = UnityWebRequest.EscapeURL(password)
+				Username = Uri.EscapeDataString(usernameOrEmail),
+				Password = Uri.EscapeDataString(password)
 			});
 		}
 
@@ -1536,8 +1535,8 @@ namespace VRC.Core
 			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendPostRequest("auth/twofactorauth/" + authCodeType + "/verify", responseContainer, requestParams, new API.CredentialsBundle
 			{
-				Username = UnityWebRequest.EscapeURL(usernameOrEmail),
-				Password = UnityWebRequest.EscapeURL(password)
+				Username = Uri.EscapeDataString(usernameOrEmail),
+				Password = Uri.EscapeDataString(password)
 			});
 		}
 
