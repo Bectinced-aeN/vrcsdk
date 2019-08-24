@@ -19,6 +19,11 @@ namespace VRCSDK2
 
         private void OnEnable()
         {
+            if(EditorGUIUtility.isProSkin)
+                dialogTextColor = Color.white;
+            else
+                dialogTextColor = Color.black;
+
             clIconGraphic = Resources.Load("vrcSdkClDialogNewIcon") as Texture2D;
         }
 

@@ -42,7 +42,7 @@ RenderSettings:
 --- !u!157 &4
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 11
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -54,7 +54,7 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
-    serializedVersion: 8
+    serializedVersion: 9
     m_Resolution: 1
     m_BakeResolution: 50
     m_TextureWidth: 1024
@@ -77,18 +77,21 @@ LightmapSettings:
     m_PVRDirectSampleCount: 32
     m_PVRSampleCount: 500
     m_PVRBounces: 2
-    m_PVRFiltering: 0
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
     m_PVRFilteringMode: 1
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
     m_PVRFilteringGaussRadiusAO: 2
-    m_PVRFilteringAtrousColorSigma: 1
-    m_PVRFilteringAtrousNormalSigma: 1
-    m_PVRFilteringAtrousPositionSigma: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 112000000, guid: e46539a801a77ea43ac559071f83c632,
     type: 2}
-  m_ShadowMaskMode: 2
+  m_UseShadowmask: 1
 --- !u!196 &5
 NavMeshSettings:
   serializedVersion: 2
@@ -108,6 +111,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    debug:
+      m_Flags: 0
   m_NavMeshData: {fileID: 0}
 --- !u!1 &521582
 GameObject:
@@ -161,6 +166,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -176,6 +182,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 959540478}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -214,9 +221,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &521586
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -226,6 +230,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -241,6 +246,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -367,7 +373,7 @@ Transform:
   - {fileID: 1804223441}
   - {fileID: 1071231291}
   m_Father: {fileID: 0}
-  m_RootOrder: 17
+  m_RootOrder: 16
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &43142392
 GameObject:
@@ -565,6 +571,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -580,6 +587,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1879316300}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -625,6 +633,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -635,9 +644,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1879316300}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &56032995
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -648,6 +655,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -663,6 +671,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -744,6 +753,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 2
@@ -758,6 +768,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 1071231287}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Test
     Others: []
     Key: 0
@@ -802,6 +813,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -812,9 +824,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1071231287}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &61866715
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -824,6 +834,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -839,6 +850,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -964,7 +976,7 @@ Transform:
   - {fileID: 797062209}
   - {fileID: 1879316301}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &94104893
 GameObject:
@@ -1299,8 +1311,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!54 &136469808
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1325,6 +1335,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1340,6 +1351,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -1408,7 +1420,7 @@ Transform:
   - {fileID: 1180828218}
   - {fileID: 717552225}
   m_Father: {fileID: 0}
-  m_RootOrder: 11
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &144019219
 GameObject:
@@ -1552,6 +1564,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 7
@@ -1567,6 +1580,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 517451988}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: OnHealed
     Others: []
     Key: 0
@@ -1605,9 +1619,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!1 &173754747
 GameObject:
   m_ObjectHideFlags: 0
@@ -1860,7 +1871,7 @@ GameObject:
   - component: {fileID: 207564266}
   - component: {fileID: 207564265}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: Point light-04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2153,8 +2164,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!54 &238848000
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2179,6 +2188,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2194,6 +2204,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -2273,6 +2284,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -2287,6 +2299,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 717552224}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -2331,6 +2344,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -2341,9 +2355,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &240726548
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2353,6 +2365,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2368,6 +2381,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -2478,7 +2492,7 @@ GameObject:
   m_Component:
   - component: {fileID: 261567471}
   m_Layer: 0
-  m_Name: Missing Prefab (Dummy)
+  m_Name: Missing Prefab (Dummy)-01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2549,6 +2563,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -2564,6 +2579,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 238847997}
       ParameterBytes: 0001000000ffffffff010000000000000010010000000100000009020000000c030000000b556e697479456e67696e65050200000013556e697479456e67696e652e566563746f72340400000001780179017a0177000000000b0b0b0b0300000000000000cdcc4c3ecdcc4cbe000000000b
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -2602,9 +2618,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &268368273
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2614,6 +2627,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2629,6 +2643,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -2945,6 +2960,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -2959,6 +2975,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 61866711}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -3003,6 +3020,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -3013,9 +3031,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1071231287}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &294730118
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3025,6 +3041,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3040,6 +3057,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -3283,6 +3301,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 0
@@ -3297,6 +3316,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 0}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: SpawnObject
     Others: []
     Key: 0
@@ -3335,9 +3355,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!1 &347673980
 GameObject:
   m_ObjectHideFlags: 0
@@ -3436,7 +3453,7 @@ Transform:
   - {fileID: 522904880}
   - {fileID: 1956284151}
   m_Father: {fileID: 0}
-  m_RootOrder: 26
+  m_RootOrder: 25
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &395577273
 GameObject:
@@ -3654,6 +3671,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 7
@@ -3669,6 +3687,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1392750395}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: OnDamaged
     Others: []
     Key: 0
@@ -3707,9 +3726,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!1 &422882450
 GameObject:
   m_ObjectHideFlags: 0
@@ -3762,6 +3778,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -3777,6 +3794,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1956284150}
       ParameterBytes: 0001000000ffffffff010000000000000010010000000100000009020000000c030000000b556e697479456e67696e65050200000013556e697479456e67696e652e566563746f72340400000001780179017a0177000000000b0b0b0b03000000000000000000003f00000000000000000b
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -3815,9 +3833,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &422882454
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3827,6 +3842,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3842,6 +3858,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -4165,7 +4182,7 @@ GameObject:
   - component: {fileID: 461417736}
   - component: {fileID: 461417737}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: Point light-03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4413,7 +4430,7 @@ Transform:
   - {fileID: 2042057873}
   - {fileID: 238847998}
   m_Father: {fileID: 0}
-  m_RootOrder: 25
+  m_RootOrder: 24
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &502496753
 GameObject:
@@ -4467,6 +4484,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -4481,6 +4499,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 1583666648}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -4525,6 +4544,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -4535,6 +4555,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1583666648}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: shouldSpin
@@ -4545,6 +4566,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 502496753}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: 
@@ -4555,9 +4577,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 502496753}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &502496757
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4567,6 +4587,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -4582,6 +4603,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -4753,9 +4775,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!114 &517451991
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4775,6 +4794,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -4790,6 +4810,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 517451988}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: UpdateHealthBar
     Others: []
     Key: 0
@@ -4830,8 +4851,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!114 &517451994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4863,6 +4882,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onDestructedTrigger: {fileID: 0}
   onDestructedEvent:
     Name: 
@@ -4875,6 +4895,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onHealedTrigger: {fileID: 160792793}
   onHealedEvent:
     Name: 
@@ -4887,6 +4908,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onFullHealedTrigger: {fileID: 0}
   onFullHealedEvent:
     Name: 
@@ -4899,6 +4921,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnDamagedTrigger: {fileID: 0}
   spawnerOnDamagedEvent:
     Name: 
@@ -4911,6 +4934,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnDestructedTrigger: {fileID: 0}
   spawnerOnDestructedEvent:
     Name: 
@@ -4923,6 +4947,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnHealedTrigger: {fileID: 0}
   spawnerOnHealedEvent:
     Name: 
@@ -4935,6 +4960,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnFullHealedTrigger: {fileID: 0}
   spawnerOnFullHealedEvent:
     Name: 
@@ -4947,6 +4973,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
 --- !u!23 &517451995
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4957,6 +4984,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -4972,6 +5000,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -5292,7 +5321,7 @@ Transform:
   - {fileID: 478450105}
   - {fileID: 1810437977}
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &560932091
 GameObject:
@@ -5914,6 +5943,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -5929,6 +5959,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -6225,7 +6256,7 @@ GameObject:
   - component: {fileID: 634048615}
   - component: {fileID: 634048614}
   m_Layer: 0
-  m_Name: Canvas
+  m_Name: Canvas-00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6335,7 +6366,7 @@ Transform:
   - {fileID: 1900367357}
   - {fileID: 503082518}
   m_Father: {fileID: 0}
-  m_RootOrder: 22
+  m_RootOrder: 21
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &640412005
 GameObject:
@@ -6532,6 +6563,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -6547,6 +6579,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1810437976}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -6585,9 +6618,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &653199278
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6597,6 +6627,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -6612,6 +6643,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -6765,6 +6797,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -6780,6 +6813,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1981732520}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -6818,9 +6852,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &668413376
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6830,6 +6861,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -6845,6 +6877,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -6882,7 +6915,7 @@ GameObject:
   - component: {fileID: 671255402}
   - component: {fileID: 671255403}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: Point light-01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7229,7 +7262,7 @@ Transform:
   - {fileID: 2087165026}
   - {fileID: 2133665269}
   m_Father: {fileID: 0}
-  m_RootOrder: 16
+  m_RootOrder: 15
   m_LocalEulerAnglesHint: {x: 0, y: 87.8975, z: 0}
 --- !u!1 &717552224
 GameObject:
@@ -7273,6 +7306,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -7288,6 +7322,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -7324,10 +7359,13 @@ ParticleSystem:
   serializedVersion: 5
   lengthInSec: 0.1
   simulationSpeed: 1
+  stopAction: 0
   looping: 0
   prewarm: 0
   playOnAwake: 0
+  useUnscaledTime: 0
   autoRandomSeed: 1
+  useRigidbodyForVelocity: 1
   startDelay:
     serializedVersion: 2
     minMaxState: 0
@@ -7813,14 +7851,29 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
   ShapeModule:
-    serializedVersion: 4
+    serializedVersion: 5
     enabled: 1
     type: 2
     angle: 25
     length: 5
-    boxX: 1
-    boxY: 1
-    boxZ: 1
+    boxThickness: {x: 0, y: 0, z: 0}
+    radiusThickness: 1
+    donutRadius: 0.2
+    m_Position: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 0, y: 0, z: 0}
+    m_Scale: {x: 1, y: 1, z: 1}
+    placementMode: 0
+    m_MeshMaterialIndex: 0
+    m_MeshNormalOffset: 0
+    m_Mesh: {fileID: 0}
+    m_MeshRenderer: {fileID: 0}
+    m_SkinnedMeshRenderer: {fileID: 0}
+    m_UseMeshMaterialIndex: 0
+    m_UseMeshColors: 1
+    alignToDirection: 0
+    randomDirectionAmount: 0
+    sphericalDirectionAmount: 0
+    randomPositionAmount: 0
     radius:
       value: 1
       mode: 0
@@ -7911,18 +7964,6 @@ ParticleSystem:
           m_PreInfinity: 2
           m_PostInfinity: 2
           m_RotationOrder: 4
-    placementMode: 0
-    m_Mesh: {fileID: 0}
-    m_MeshRenderer: {fileID: 0}
-    m_SkinnedMeshRenderer: {fileID: 0}
-    m_MeshMaterialIndex: 0
-    m_MeshNormalOffset: 0
-    m_MeshScale: 1
-    m_UseMeshMaterialIndex: 0
-    m_UseMeshColors: 1
-    alignToDirection: 0
-    randomDirectionAmount: 0
-    sphericalDirectionAmount: 0
   EmissionModule:
     enabled: 1
     serializedVersion: 4
@@ -8010,9 +8051,49 @@ ParticleSystem:
         m_RotationOrder: 4
     m_BurstCount: 1
     m_Bursts:
-    - time: 0
-      minCount: 100
-      maxCount: 100
+    - serializedVersion: 2
+      time: 0
+      countCurve:
+        serializedVersion: 2
+        minMaxState: 0
+        scalar: 100
+        minScalar: 100
+        maxCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 2
+            time: 0
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - serializedVersion: 2
+            time: 1
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        minCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 2
+            time: 0
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - serializedVersion: 2
+            time: 1
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       cycleCount: 1
       repeatInterval: 0.01
   SizeModule:
@@ -8334,6 +8415,7 @@ ParticleSystem:
         m_NumAlphaKeys: 2
   UVModule:
     enabled: 0
+    mode: 0
     frameOverTime:
       serializedVersion: 2
       minMaxState: 1
@@ -8425,6 +8507,8 @@ ParticleSystem:
     flipU: 0
     flipV: 0
     randomRow: 1
+    sprites:
+    - sprite: {fileID: 0}
   VelocityModule:
     enabled: 0
     x:
@@ -8544,6 +8628,47 @@ ParticleSystem:
         - serializedVersion: 2
           time: 1
           value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    speedModifier:
+      serializedVersion: 2
+      minMaxState: 0
+      scalar: 1
+      minScalar: 1
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 1
           inSlope: 0
           outSlope: 0
           tangentMode: 0
@@ -8893,7 +9018,50 @@ ParticleSystem:
         m_RotationOrder: 4
     separateAxis: 0
     inWorldSpace: 0
+    multiplyDragByParticleSize: 1
+    multiplyDragByParticleVelocity: 1
     dampen: 0.05
+    drag:
+      serializedVersion: 2
+      minMaxState: 0
+      scalar: 0
+      minScalar: 0
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   NoiseModule:
     enabled: 0
     strength:
@@ -9191,6 +9359,129 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     remapEnabled: 0
+    positionAmount:
+      serializedVersion: 2
+      minMaxState: 0
+      scalar: 1
+      minScalar: 1
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    rotationAmount:
+      serializedVersion: 2
+      minMaxState: 0
+      scalar: 0
+      minScalar: 0
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    sizeAmount:
+      serializedVersion: 2
+      minMaxState: 0
+      scalar: 0
+      minScalar: 0
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   SizeBySpeedModule:
     enabled: 0
     curve:
@@ -9516,6 +9807,10 @@ ParticleSystem:
     serializedVersion: 3
     type: 0
     collisionMode: 0
+    colliderForce: 0
+    multiplyColliderForceByParticleSize: 0
+    multiplyColliderForceByParticleSpeed: 0
+    multiplyColliderForceByCollisionAngle: 1
     plane0: {fileID: 0}
     plane1: {fileID: 0}
     plane2: {fileID: 0}
@@ -9674,7 +9969,8 @@ ParticleSystem:
     serializedVersion: 2
     enabled: 0
     subEmitters:
-    - emitter: {fileID: 0}
+    - serializedVersion: 2
+      emitter: {fileID: 0}
       type: 0
       properties: 0
   LightsModule:
@@ -9770,6 +10066,7 @@ ParticleSystem:
     maxLights: 20
   TrailModule:
     enabled: 0
+    mode: 0
     ratio: 1
     lifetime:
       serializedVersion: 2
@@ -9814,11 +10111,14 @@ ParticleSystem:
         m_RotationOrder: 4
     minVertexDistance: 0.2
     textureMode: 0
+    ribbonCount: 1
     worldSpace: 0
     dieWithParticles: 1
     sizeAffectsWidth: 1
     sizeAffectsLifetime: 0
     inheritParticleColor: 1
+    generateLightingData: 0
+    splitSubEmitterRibbons: 0
     colorOverLifetime:
       serializedVersion: 2
       minMaxState: 0
@@ -10053,6 +10353,7 @@ ParticleSystem:
         m_Mode: 0
         m_NumColorKeys: 2
         m_NumAlphaKeys: 2
+    colorLabel0: Color
     vector0_0:
       serializedVersion: 2
       minMaxState: 0
@@ -10094,6 +10395,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel0_0: X
     vector0_1:
       serializedVersion: 2
       minMaxState: 0
@@ -10135,6 +10437,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel0_1: Y
     vector0_2:
       serializedVersion: 2
       minMaxState: 0
@@ -10176,6 +10479,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel0_2: Z
     vector0_3:
       serializedVersion: 2
       minMaxState: 0
@@ -10217,6 +10521,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel0_3: W
     mode1: 0
     vectorComponentCount1: 4
     color1:
@@ -10282,6 +10587,7 @@ ParticleSystem:
         m_Mode: 0
         m_NumColorKeys: 2
         m_NumAlphaKeys: 2
+    colorLabel1: Color
     vector1_0:
       serializedVersion: 2
       minMaxState: 0
@@ -10323,6 +10629,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel1_0: X
     vector1_1:
       serializedVersion: 2
       minMaxState: 0
@@ -10364,6 +10671,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel1_1: Y
     vector1_2:
       serializedVersion: 2
       minMaxState: 0
@@ -10405,6 +10713,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel1_2: Z
     vector1_3:
       serializedVersion: 2
       minMaxState: 0
@@ -10446,9 +10755,10 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+    vectorLabel1_3: W
 --- !u!199 &717552230
 ParticleSystemRenderer:
-  serializedVersion: 3
+  serializedVersion: 4
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
@@ -10456,6 +10766,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 1
@@ -10472,6 +10783,7 @@ ParticleSystemRenderer:
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -10497,6 +10809,7 @@ ParticleSystemRenderer:
   m_Mesh1: {fileID: 0}
   m_Mesh2: {fileID: 0}
   m_Mesh3: {fileID: 0}
+  m_MaskInteraction: 0
 --- !u!1 &721063507
 GameObject:
   m_ObjectHideFlags: 0
@@ -10623,6 +10936,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -10638,6 +10952,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 724804978}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -10686,6 +11001,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -10696,9 +11012,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &724804982
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10708,6 +11022,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -10723,6 +11038,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -10867,6 +11183,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 7
@@ -10882,6 +11199,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1157514235}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: OnDamaged
     Others: []
     Key: 0
@@ -10920,9 +11238,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!1 &737541904
 GameObject:
   m_ObjectHideFlags: 0
@@ -11247,6 +11562,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -11262,6 +11578,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 627483604}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -11300,9 +11617,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &748180680
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11312,6 +11626,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -11327,6 +11642,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -11554,6 +11870,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -11568,6 +11885,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 1648823321}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -11612,6 +11930,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -11622,6 +11941,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1648823321}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: shouldSpin
@@ -11632,6 +11952,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 785962069}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: 
@@ -11642,9 +11963,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 785962069}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &785962074
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11654,6 +11973,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -11669,6 +11989,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -11748,6 +12069,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -11763,6 +12085,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 2133665268}
       ParameterBytes: 0001000000ffffffff01000000000000001001000000000000000b
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -11801,9 +12124,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &792921666
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11813,6 +12133,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -11828,6 +12149,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -12119,7 +12441,7 @@ Transform:
   - {fileID: 724804979}
   - {fileID: 1145105757}
   m_Father: {fileID: 0}
-  m_RootOrder: 19
+  m_RootOrder: 18
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &823301733
 GameObject:
@@ -12190,34 +12512,6 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 823301733}
---- !u!1 &834347454
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 100180, guid: e7a426720128e984b820ea72c74be48b, type: 2}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 834347455}
-  m_Layer: 0
-  m_Name: Spawn1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &834347455
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 400180, guid: e7a426720128e984b820ea72c74be48b, type: 2}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 834347454}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &842759642
 GameObject:
   m_ObjectHideFlags: 0
@@ -12458,156 +12752,8 @@ Transform:
   - {fileID: 1708178661}
   - {fileID: 1157514236}
   m_Father: {fileID: 0}
-  m_RootOrder: 28
+  m_RootOrder: 27
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
---- !u!1 &872619114
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 100000, guid: e7a426720128e984b820ea72c74be48b, type: 2}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 872619118}
-  - component: {fileID: 872619117}
-  - component: {fileID: 872619116}
-  m_Layer: 0
-  m_Name: VRCWorld
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &872619116
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 872619114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de9057326f1ed4cd497b362f8812f0da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  launchedFromSDKPipeline: 0
-  completedSDKPipeline: 0
-  blueprintId: 
-  contentType: 1
-  assetBundleUnityVersion: 5.6.0p3
---- !u!114 &872619117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 11400000, guid: e7a426720128e984b820ea72c74be48b,
-    type: 2}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 872619114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -941107182, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawns:
-  - {fileID: 834347455}
-  spawnOrder: 2
-  spawnOrientation: 0
-  ReferenceCamera: {fileID: 0}
-  RespawnHeightY: -100
-  ObjectBehaviourAtRespawnHeight: 1
-  ForbidUserPortals: 0
-  UseCustomVoiceFalloffRange: 0
-  VoiceFalloffRangeNear: 4
-  VoiceFalloffRangeFar: 350
-  useAssignedLayers: 1
-  autoSpatializeAudioSources: 1
-  gravity: {x: 0, y: -9.81, z: 0}
-  layerCollisionArr: 01010101010001010101010100010001010101010101010101010101010101010101010101000101010101010001000101010101010101010101010101010101010101010100010101010101000100010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101000101010101010001000101010101010101010101010101010101000000010000010100000000000000000000000000000101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100010101010101000100010101010101010101010101010101010101010101010001010100000100000000000001010101010101010101010101010101010101000101010000010000000000000101010101010101010101010101010101010100010101010101000100010101010101010101010101010101010100000001000001010000000000000000000000000000010101010101010101010101010101000101010000010001010101010000000001010101010101010101000000010000010100000000000100000000000000000101010101010101010101010101010001010100000100010001010101010101010101010101010101010101010101000101010000010001000101010101010101010101010101010101010101010100010101000001000100010101010101010101010101010101010101010101010001010101010100000001010101010101010101010101010101010101010101000101010101010000000101010101010101010101010101010101010101010100010101010101000000010101010101010101010101010101010101010101010001010101010100000001010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101
-  capacity: 16
-  contentSex: 0
-  contentViolence: 0
-  contentGore: 0
-  contentOther: 0
-  releasePublic: 0
-  unityVersion: 5.6.3p1
-  Name: Sample Environment
-  NSFW: 0
-  SpawnPosition: {x: 0, y: 0, z: 0}
-  SpawnLocation: {fileID: 834347455}
-  DrawDistance: 1000
-  DynamicPrefabs:
-  - {fileID: 1397695816633726, guid: 20951a249466f6449882e950bfd20724, type: 2}
-  - {fileID: 0}
-  DynamicMaterials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-  - {fileID: 2100000, guid: b6099d83d6f02e34ea589e768df4173b, type: 2}
-  - {fileID: 10301, guid: 0000000000000000f000000000000000, type: 0}
-  - {fileID: 2100000, guid: eae9c11350249284e8400a100179e0b2, type: 2}
-  - {fileID: 2100000, guid: c815f7613a04b724089c206857e57c6a, type: 2}
-  - {fileID: 2100000, guid: 4a04f8d3981104848915e66f7a02ec72, type: 2}
-  - {fileID: 2100000, guid: 45ad7d65a659f4adaa95c017f788b513, type: 2}
-  - {fileID: 2100000, guid: 26803b57669325843a97b0ae43031082, type: 2}
-  - {fileID: 2100000, guid: 4876fc9dc009bbe4493553020a561611, type: 2}
-  - {fileID: 2100000, guid: 1ab66d94bde8cce46bb35638099bfd31, type: 2}
-  - {fileID: 2100000, guid: 5aa95b3fa56e28f43a84e301c3d19e08, type: 2}
-  - {fileID: 2100000, guid: 799167b062f9e2944a302eea855166b4, type: 2}
-  - {fileID: 2100000, guid: 7a2568654af4bef4cad7a3dfa02c31b2, type: 2}
-  - {fileID: 2100000, guid: b6099d83d6f02e34ea589e768df4173b, type: 2}
-  UpdateTimeInMS: 50
-  LightMapsNear:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  LightMapsFar:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  LightMode: 2
-  RenderAmbientEquatorColor: {r: 0, g: 0, b: 0, a: 0}
-  RenderAmbientGroundColor: {r: 0, g: 0, b: 0, a: 0}
-  RenderAmbientIntensity: 0
-  RenderAmbientLight: {r: 0.2, g: 0.2, b: 0.2, a: 1}
-  RenderAmbientMode: 0
-  RenderAmbientSkyColor: {r: 0, g: 0, b: 0, a: 0}
-  RenderFog: 0
-  RenderFogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  RenderFogMode: 3
-  RenderFogDensity: 0.01
-  RenderFogLinearStart: 0
-  RenderFogLinearEnd: 300
-  RenderHaloStrength: 0
-  RenderFlareFadeSpeed: 0
-  RenderFlareStrength: 0
-  RenderCustomReflection: {fileID: 0}
-  RenderDefaultReflectionMode: 0
-  RenderDefaultReflectionResolution: 0
-  RenderReflectionBounces: 0
-  RenderReflectionIntensity: 0
-  RenderSkybox: {fileID: 0}
---- !u!4 &872619118
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 400000, guid: e7a426720128e984b820ea72c74be48b, type: 2}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 872619114}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &881784053
 GameObject:
   m_ObjectHideFlags: 0
@@ -13028,16 +13174,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 959540478}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e503ea6418d27594caa33b93cac1b06a, type: 3}
+  m_Script: {fileID: 1125178822, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableSpatialization: 1
-  gain: 10
-  useInvSqr: 1
-  near: 1
-  far: 2000
-  volumetricRadius: 0
-  enableRfl: 0
+  disableSpatialization: 1
+  Gain: 10
+  Far: 50
+  Near: 0
+  VolumetricRadius: 0
+  EnableSpatialization: 1
+  UseAudioSourceVolumeCurve: 0
 --- !u!82 &959540481
 AudioSource:
   m_ObjectHideFlags: 0
@@ -13130,7 +13276,7 @@ GameObject:
   - component: {fileID: 964886559}
   - component: {fileID: 964886558}
   m_Layer: 0
-  m_Name: Panel
+  m_Name: Panel-01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13360,7 +13506,7 @@ Transform:
   - {fileID: 1588566297}
   - {fileID: 959540479}
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &996205478
 GameObject:
@@ -13414,6 +13560,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -13429,6 +13576,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1981732520}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -13467,9 +13615,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &996205482
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -13479,6 +13624,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -13494,6 +13640,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -13636,8 +13783,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!54 &1003338204
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -13662,6 +13807,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -13677,6 +13823,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -14151,6 +14298,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 0
     BroadcastType: 7
@@ -14166,6 +14314,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1190090226}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: OnDamaged
     Others: []
     Key: 0
@@ -14204,9 +14353,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!1 &1051157622
 GameObject:
   m_ObjectHideFlags: 0
@@ -14542,6 +14688,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -14557,6 +14704,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -14849,6 +14997,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -14864,6 +15013,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -15156,7 +15306,7 @@ Transform:
   - {fileID: 2041153147}
   - {fileID: 517451989}
   m_Father: {fileID: 0}
-  m_RootOrder: 29
+  m_RootOrder: 28
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!1 &1157514235
 GameObject:
@@ -15206,9 +15356,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!114 &1157514238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15228,6 +15375,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -15243,6 +15391,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 0}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: UpdateHealthBar
     Others: []
     Key: 0
@@ -15279,6 +15428,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -15294,6 +15444,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -15610,9 +15761,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!114 &1190090229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15632,6 +15780,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -15647,6 +15796,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1190090226}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: UpdateHealthBar
     Others: []
     Key: 0
@@ -15687,8 +15837,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 0
   AllowCollisionTransfer: 0
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!114 &1190090233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15720,6 +15868,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onDestructedTrigger: {fileID: 0}
   onDestructedEvent:
     Name: 
@@ -15732,6 +15881,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onHealedTrigger: {fileID: 0}
   onHealedEvent:
     Name: 
@@ -15744,6 +15894,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   onFullHealedTrigger: {fileID: 0}
   onFullHealedEvent:
     Name: 
@@ -15756,6 +15907,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnDamagedTrigger: {fileID: 0}
   spawnerOnDamagedEvent:
     Name: 
@@ -15768,6 +15920,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnDestructedTrigger: {fileID: 0}
   spawnerOnDestructedEvent:
     Name: 
@@ -15780,6 +15933,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnHealedTrigger: {fileID: 0}
   spawnerOnHealedEvent:
     Name: 
@@ -15792,6 +15946,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   spawnerOnFullHealedTrigger: {fileID: 0}
   spawnerOnFullHealedEvent:
     Name: 
@@ -15804,6 +15959,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
 --- !u!23 &1190090234
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -15814,6 +15970,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -15829,6 +15986,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -16029,7 +16187,7 @@ Transform:
   - {fileID: 1752672956}
   - {fileID: 738987889}
   m_Father: {fileID: 0}
-  m_RootOrder: 20
+  m_RootOrder: 19
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1234718154
 GameObject:
@@ -16071,6 +16229,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -16086,6 +16245,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -16124,7 +16284,7 @@ GameObject:
   - component: {fileID: 1234754700}
   - component: {fileID: 1234754699}
   m_Layer: 0
-  m_Name: Panel
+  m_Name: Panel-00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16212,7 +16372,7 @@ Transform:
   - {fileID: 136469806}
   - {fileID: 1814065486}
   m_Father: {fileID: 0}
-  m_RootOrder: 23
+  m_RootOrder: 22
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1245869491
 GameObject:
@@ -16254,6 +16414,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -16269,6 +16430,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -16448,7 +16610,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1269659440}
   m_Layer: 0
-  m_Name: Missing Prefab (Dummy)
+  m_Name: Missing Prefab (Dummy)-01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16593,6 +16755,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 2
@@ -16608,6 +16771,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 329967262}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -16646,9 +16810,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1275087604
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -16658,6 +16819,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -16673,6 +16835,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -17061,7 +17224,7 @@ GameObject:
   - component: {fileID: 1353637211}
   - component: {fileID: 1353637212}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: Point light-02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17226,6 +17389,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -17241,6 +17405,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -17617,9 +17782,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!114 &1392750398
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17639,6 +17801,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 4
@@ -17654,6 +17817,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 0}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: UpdateHealthBar
     Others: []
     Key: 0
@@ -17690,6 +17854,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -17705,6 +17870,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -17868,6 +18034,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -17883,6 +18050,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -18150,6 +18318,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 11
     BroadcastType: 0
@@ -18165,6 +18334,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 230146669}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -18203,9 +18373,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1427158214
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -18215,6 +18382,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -18230,6 +18398,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -18671,7 +18840,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1467152894}
   m_Layer: 0
-  m_Name: Missing Prefab (Dummy)
+  m_Name: Missing Prefab (Dummy)-00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19361,7 +19530,7 @@ Transform:
   - {fileID: 1537476851}
   - {fileID: 1583666649}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1545968197
 GameObject:
@@ -19625,6 +19794,52 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1001 &1554781523
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 416072, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 161904, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+      propertyPath: m_Name
+      value: VRCWorld
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: 9cb1e183d39ba432db5c583c4548819c, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &1556928269
 GameObject:
   m_ObjectHideFlags: 0
@@ -19969,7 +20184,7 @@ Transform:
   - {fileID: 1405818966}
   - {fileID: 1981732519}
   m_Father: {fileID: 0}
-  m_RootOrder: 15
+  m_RootOrder: 14
   m_LocalEulerAnglesHint: {x: 0, y: 87.8975, z: 0}
 --- !u!1 &1583666648
 GameObject:
@@ -20029,6 +20244,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -20044,6 +20260,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -20344,7 +20561,7 @@ Transform:
   - {fileID: 1957802294}
   - {fileID: 1407165818}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1594642457
 GameObject:
@@ -20661,7 +20878,7 @@ Transform:
   - {fileID: 1918514491}
   - {fileID: 329967263}
   m_Father: {fileID: 0}
-  m_RootOrder: 12
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 87.8975, z: 0}
 --- !u!1 &1626668856
 GameObject:
@@ -20866,6 +21083,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -20881,6 +21099,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -21026,8 +21245,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!114 &1683202024
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21039,13 +21256,14 @@ MonoBehaviour:
   m_Script: {fileID: 394927577, guid: f78c4655b33cb5741983dc02e08899cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MomentumTransferMethod: 0
   DisallowTheft: 0
-  physicalRoot: {fileID: 0}
   ExactGun: {fileID: 0}
   ExactGrip: {fileID: 0}
   allowManipulationWhenEquipped: 0
   orientation: 0
   AutoHold: 1
+  InteractionText: 
   UseText: Use
   useEventBroadcastType: 0
   UseDownEventName: 
@@ -21059,10 +21277,6 @@ MonoBehaviour:
   currentLocalPlayer: {fileID: 0}
   pickupable: 1
   proximity: 2
-  originalKinematic: 0
-  originalGravity: 1
-  originalTrigger: 0
-  originalParent: {fileID: 0}
 --- !u!54 &1683202025
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -21096,6 +21310,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 8
     BroadcastType: 2
@@ -21111,6 +21326,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1683202021}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -21149,9 +21365,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1683202028
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -21161,6 +21374,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -21176,6 +21390,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -21593,6 +21808,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -21608,6 +21824,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1003338201}
       ParameterBytes: 0001000000ffffffff010000000000000010010000000100000009020000000c030000000b556e697479456e67696e65050200000013556e697479456e67696e652e566563746f72340400000001780179017a0177000000000b0b0b0b03000000000000000000003f000000bf000000000b
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -21646,9 +21863,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1746122659
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -21658,6 +21872,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -21673,6 +21888,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -21872,7 +22088,7 @@ Transform:
   - {fileID: 1545968198}
   - {fileID: 627483605}
   m_Father: {fileID: 0}
-  m_RootOrder: 18
+  m_RootOrder: 17
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1750765352
 GameObject:
@@ -22020,6 +22236,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -22035,6 +22252,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1752672955}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -22073,9 +22291,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1752672959
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -22085,6 +22300,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -22100,6 +22316,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -22209,7 +22426,7 @@ GameObject:
   - component: {fileID: 1762733321}
   - component: {fileID: 1762733322}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: Point light-00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22431,7 +22648,7 @@ Transform:
   - {fileID: 173754748}
   - {fileID: 1392750396}
   m_Father: {fileID: 0}
-  m_RootOrder: 30
+  m_RootOrder: 29
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!1 &1804223440
 GameObject:
@@ -22583,6 +22800,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -22598,6 +22816,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -22665,6 +22884,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -22680,6 +22900,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -22736,7 +22957,7 @@ Transform:
   - {fileID: 1683202022}
   - {fileID: 2134088644}
   m_Father: {fileID: 0}
-  m_RootOrder: 21
+  m_RootOrder: 20
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1832102694
 GameObject:
@@ -22769,7 +22990,7 @@ Transform:
   - {fileID: 580784893}
   - {fileID: 1648823322}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1835662543
 GameObject:
@@ -22876,7 +23097,7 @@ Transform:
   - {fileID: 1327660160}
   - {fileID: 1003338202}
   m_Father: {fileID: 0}
-  m_RootOrder: 24
+  m_RootOrder: 23
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1851073639
 GameObject:
@@ -22930,6 +23151,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -22944,6 +23166,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 1407165817}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -22988,6 +23211,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -22998,9 +23222,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1407165817}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &1851073644
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -23010,6 +23232,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -23025,6 +23248,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -23355,6 +23579,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -23370,6 +23595,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -23525,6 +23751,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -23540,6 +23767,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1981732520}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -23578,9 +23806,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1886667064
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -23590,6 +23815,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -23605,6 +23831,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -23684,6 +23911,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -23699,6 +23927,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 136469805}
       ParameterBytes: 0001000000ffffffff010000000000000010010000000100000009020000000c030000000b556e697479456e67696e65050200000013556e697479456e67696e652e566563746f72340400000001780179017a0177000000000b0b0b0b0300000000000000000000000000a0410000803f0b
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -23737,9 +23966,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1890652808
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -23749,6 +23975,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -23764,6 +23991,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -23831,6 +24059,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -23846,6 +24075,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -23926,6 +24156,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -23941,6 +24172,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 855226414}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -23979,9 +24211,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1900367360
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -23991,6 +24220,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -24006,6 +24236,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -24085,6 +24316,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -24100,6 +24332,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1467152893}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -24138,9 +24371,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &1908497353
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -24150,6 +24380,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -24165,6 +24396,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -24221,7 +24453,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxPlayerHealth: 100
   respawnOnDeath: 1
-  respawnPoint: {fileID: 834347455}
+  respawnPoint: {fileID: 0}
   respawnTime: 3
   resetHealthOnRespawn: 1
   visualDamagePrefab: {fileID: 0}
@@ -24245,7 +24477,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1918514490
 GameObject:
@@ -24369,7 +24601,7 @@ Transform:
   - {fileID: 1964247904}
   - {fileID: 1190090227}
   m_Father: {fileID: 0}
-  m_RootOrder: 27
+  m_RootOrder: 26
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!1 &1938582354
 GameObject:
@@ -24585,8 +24817,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SynchronizePhysics: 1
   AllowCollisionTransfer: 1
-  PlaymakerSyncState: 0
-  PlaymakerSyncVariables: 1
 --- !u!54 &1956284153
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -24611,6 +24841,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -24626,6 +24857,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -24870,7 +25102,7 @@ Transform:
   - {fileID: 1439155068}
   - {fileID: 230146670}
   m_Father: {fileID: 0}
-  m_RootOrder: 13
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 87.8975, z: 0}
 --- !u!1 &1964247903
 GameObject:
@@ -25032,7 +25264,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1981732521}
   m_Layer: 0
-  m_Name: Missing Prefab (Dummy)
+  m_Name: Missing Prefab (Dummy)-00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -25172,6 +25404,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -25187,6 +25420,7 @@ MonoBehaviour:
       ParameterObjects:
       - {fileID: 1648823321}
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: Unnamed
     Others: []
     Key: 0
@@ -25225,9 +25459,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Events: []
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
 --- !u!23 &2002633102
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -25237,6 +25468,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -25252,6 +25484,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -26209,6 +26442,7 @@ MonoBehaviour:
   isHidden: 0
   UsesAdvancedOptions: 1
   ShowHelp: 1
+  TakesOwnershipIfNecessary: 0
   Triggers:
   - TriggerType: 17
     BroadcastType: 0
@@ -26223,6 +26457,7 @@ MonoBehaviour:
       ParameterObject: {fileID: 1648823321}
       ParameterObjects: []
       ParameterBytes: 
+      TakeOwnershipOfTarget: 0
     Name: 
     Others: []
     Key: 0
@@ -26267,6 +26502,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 0}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 10
     ParameterString: 
@@ -26277,6 +26513,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 1648823321}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: shouldSpin
@@ -26287,6 +26524,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 2120336266}
     ParameterObjects: []
     ParameterBytes: 
+    TakeOwnershipOfTarget: 0
   - Name: 
     EventType: 2
     ParameterString: 
@@ -26297,9 +26535,7 @@ MonoBehaviour:
     ParameterObject: {fileID: 2120336266}
     ParameterObjects: []
     ParameterBytes: 
-  CombinedNetworkId: -1
-  _dispatcher: {fileID: 0}
-  _registered: 0
+    TakeOwnershipOfTarget: 0
 --- !u!23 &2120336271
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -26309,6 +26545,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -26324,6 +26561,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -26616,7 +26854,7 @@ GameObject:
   - component: {fileID: 2134088646}
   - component: {fileID: 2134088645}
   m_Layer: 0
-  m_Name: Canvas
+  m_Name: Canvas-01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26727,7 +26965,7 @@ Transform:
   - {fileID: 144019220}
   - {fileID: 1467152892}
   m_Father: {fileID: 0}
-  m_RootOrder: 14
+  m_RootOrder: 13
   m_LocalEulerAnglesHint: {x: 0, y: 87.8975, z: 0}
 --- !u!1 &2146236555
 GameObject:

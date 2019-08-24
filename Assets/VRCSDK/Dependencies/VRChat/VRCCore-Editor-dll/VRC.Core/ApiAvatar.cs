@@ -175,8 +175,8 @@ namespace VRC.Core
 			set;
 		}
 
-		[ApiField(Required = false)]
 		[DefaultValue("standalonewindows")]
+		[ApiField(Required = false)]
 		public string platform
 		{
 			get;

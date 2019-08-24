@@ -90,21 +90,34 @@ public class VRC_SdkBuilder : MonoBehaviour
 		}
 	}
 
+	private static void RemoveEditorOnlyElementsFromObject(GameObject objectToRemoveElementsFrom)
+	{
+		Transform[] componentsInChildren = objectToRemoveElementsFrom.GetComponentsInChildren<Transform>(true);
+		Transform[] array = componentsInChildren;
+		foreach (Transform val in array)
+		{
+			if (val.get_tag() == "EditorOnly")
+			{
+				Object.DestroyImmediate(val.get_gameObject());
+			}
+		}
+	}
+
 	private static void ExportCurrentAvatarResource(GameObject avatarResource = null)
 	{
 		//IL_009b: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00ed: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00fe: Unknown result type (might be due to invalid IL or missing references)
-		//IL_016b: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01be: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01c3: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01c5: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01ca: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01de: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01e0: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0180: Unknown result type (might be due to invalid IL or missing references)
 		//IL_01e6: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0225: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0227: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01eb: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01ed: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01f2: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0206: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0208: Unknown result type (might be due to invalid IL or missing references)
+		//IL_020e: Unknown result type (might be due to invalid IL or missing references)
+		//IL_024d: Unknown result type (might be due to invalid IL or missing references)
+		//IL_024f: Unknown result type (might be due to invalid IL or missing references)
 		if (avatarResource != null)
 		{
 			Selection.set_activeObject(avatarResource);
@@ -137,7 +150,10 @@ public class VRC_SdkBuilder : MonoBehaviour
 					EditorUtility.SetDirty(component2);
 					EditorSceneManager.MarkSceneDirty(component2.get_gameObject().get_scene());
 					EditorSceneManager.SaveScene(component2.get_gameObject().get_scene());
-					PrefabUtility.CreatePrefab("Assets/_CustomAvatar.prefab", Selection.get_activeObject() as GameObject);
+					GameObject val = Object.Instantiate(Selection.get_activeObject()) as GameObject;
+					RemoveEditorOnlyElementsFromObject(val);
+					PrefabUtility.CreatePrefab("Assets/_CustomAvatar.prefab", val);
+					Object.DestroyImmediate(val);
 					if (shouldBuildUnityPackage)
 					{
 						List<string> list = new List<string>();
@@ -149,19 +165,20 @@ public class VRC_SdkBuilder : MonoBehaviour
 					{
 						AssetExporter.CleanupUnityPackageExport();
 					}
-					AssetBundleBuild val = default(AssetBundleBuild);
-					val.assetNames = new string[1]
+					AssetBundleBuild val2 = default(AssetBundleBuild);
+					val2.assetNames = new string[1]
 					{
 						"Assets/_CustomAvatar.prefab"
 					};
-					val.assetBundleName = "customAvatar.unity3d";
-					string sourceFileName = Application.get_temporaryCachePath() + "/" + val.assetBundleName;
+					val2.assetBundleName = "customAvatar.unity3d";
+					val2.assetBundleName = val2.assetBundleName.ToLower();
+					string sourceFileName = Application.get_temporaryCachePath() + "/" + val2.assetBundleName;
 					vrcPath = Application.get_temporaryCachePath() + "/custom.vrca";
 					BuildTargetGroup selectedBuildTargetGroup = EditorUserBuildSettings.get_selectedBuildTargetGroup();
 					BuildTarget activeBuildTarget = EditorUserBuildSettings.get_activeBuildTarget();
 					BuildPipeline.BuildAssetBundles(Application.get_temporaryCachePath(), (AssetBundleBuild[])new AssetBundleBuild[1]
 					{
-						val
+						val2
 					}, 0, EditorUserBuildSettings.get_activeBuildTarget());
 					if (File.Exists(vrcPath))
 					{
@@ -402,7 +419,7 @@ public class VRC_SdkBuilder : MonoBehaviour
 		EditorAssemblies.AddOnAssemblyReloadCallback("VRC.AssetExporter", "FinishExportCurrentSceneResourceWithPlugin");
 	}
 
-	[MenuItem("VRChat SDK/Clear Cache and PlayerPrefs")]
+	[MenuItem("VRChat SDK/Utilities/Clear Cache and PlayerPrefs")]
 	private static void ClearPlayerPrefs()
 	{
 		Tools.ClearUserData();

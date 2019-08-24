@@ -283,19 +283,7 @@ namespace VRC
 			while (FindPrefabReferencesOnPrefabs(ref prefabs))
 			{
 			}
-			if (desc.DynamicMaterials != null && desc.DynamicMaterials.Count > 0)
-			{
-				materials.AddRange(from m in desc.DynamicMaterials
-				where !materials.Contains(m)
-				select m);
-			}
 			desc.DynamicMaterials = materials;
-			if (desc.DynamicPrefabs != null && desc.DynamicPrefabs.Count > 0)
-			{
-				prefabs.AddRange(from p in desc.DynamicPrefabs
-				where !prefabs.Contains(p)
-				select p);
-			}
 			desc.DynamicPrefabs = prefabs;
 			Debug.LogFormat("Found {0} prefabs and {1} materials", new object[2]
 			{
@@ -441,6 +429,22 @@ namespace VRC
 						if (val3 != null && !prefabs.Contains(val3))
 						{
 							prefabs.Add(val3);
+						}
+					}
+					foreach (VrcEvent item2 in from evt in trigger.Events
+					where (int)evt.EventType == 10 && 0 != (int)evt.ParameterBoolOp
+					select evt)
+					{
+						if (item2.ParameterObjects != null)
+						{
+							GameObject[] parameterObjects = item2.ParameterObjects;
+							foreach (GameObject val4 in parameterObjects)
+							{
+								if (!(null == val4) && !prefabs.Contains(val4))
+								{
+									prefabs.Add(val4);
+								}
+							}
 						}
 					}
 				}

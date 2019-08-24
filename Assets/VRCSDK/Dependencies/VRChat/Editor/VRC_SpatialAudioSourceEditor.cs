@@ -37,18 +37,20 @@ namespace VRCSDK2
             EditorGUILayout.PropertyField(gainProperty, new GUIContent("Gain"));
             EditorGUILayout.PropertyField(farProperty, new GUIContent("Far"));
             showAdvancedOptions = EditorGUILayout.Foldout(showAdvancedOptions, "Advanced Options");
+            bool enableSp = enableSpatialProperty.boolValue;
             if (showAdvancedOptions)
             {
                 EditorGUILayout.PropertyField(nearProperty, new GUIContent("Near"));
                 EditorGUILayout.PropertyField(volRadiusProperty, new GUIContent("Volumetric Radius"));
-                EditorGUILayout.PropertyField(useCurveProperty, new GUIContent("Use AudioSource Volume Curve"));
                 EditorGUILayout.PropertyField(enableSpatialProperty, new GUIContent("Enable Spatialization"));
+                if (enableSp)
+                    EditorGUILayout.PropertyField(useCurveProperty, new GUIContent("Use AudioSource Volume Curve"));
             }
 
             EditorGUILayout.EndVertical();
 
             if (source != null)
-                source.spatialize = enableSpatialProperty.boolValue;
+                source.spatialize = enableSp;
             serializedObject.ApplyModifiedProperties();
         }
     }

@@ -18,6 +18,8 @@ public class SDKDLLMaker
 
 	public const string FILE_SDK_DLL = "VRCSDK2.dll";
 
+	public const string FILE_SDKGUI_DLL = "VRCSDK2-GUI.dll";
+
 	public const string SOURCE_PATH = "Assets/WebPlayerTemplates/VRC/Source";
 
 	public static string CORE_SOURCE_FULL_PATH = Application.get_dataPath() + "/WebPlayerTemplates/VRC/Source";
@@ -36,6 +38,7 @@ public class SDKDLLMaker
 		TryMakeCoreStrippedDLL(debug, isInternal, noGraphics);
 		TryMakeCoreStandaloneDLL(debug, isInternal, noGraphics);
 		TryMakeSdkDll(debug, isInternal, noGraphics);
+		TryMakeSdkGuiDll(debug, isInternal, noGraphics);
 		TryMakeDllMakerDll(debug, isInternal, noGraphics);
 		AssetDatabase.Refresh();
 	}
@@ -174,6 +177,29 @@ public class SDKDLLMaker
 		}
 	}
 
+	private static void TryMakeSdkGuiDll(bool debug, bool isInternal, bool noGraphics)
+	{
+		try
+		{
+			CompilerResults compilerResults = MakeSDKGuiDLL(debug, isInternal);
+			if (!HandleErrors("VRCSDK2-GUI.dll", compilerResults, noGraphics))
+			{
+				Obfuscate(compilerResults.PathToAssembly, debug);
+			}
+		}
+		catch (Exception ex)
+		{
+			Debug.LogError((object)("Error - " + ex.Message + "\n" + ex.StackTrace));
+			if (!noGraphics)
+			{
+				EditorUtility.DisplayDialog("DLL build fail", "Could not build VRCSDK2-GUI.dll. Please see console errors for details.", "OK");
+			}
+			goto end_IL_0031;
+			IL_0072:
+			end_IL_0031:;
+		}
+	}
+
 	private static void TryMakeSdkDll(bool debug, bool isInternal, bool noGraphics)
 	{
 		try
@@ -195,6 +221,27 @@ public class SDKDLLMaker
 			IL_0072:
 			end_IL_0031:;
 		}
+	}
+
+	public static CompilerResults MakeSDKGuiDLL(bool debug, bool isInternal)
+	{
+		DLLMaker dLLMaker = new DLLMaker();
+		dLLMaker.debug = debug;
+		dLLMaker.strongNameKeyFile = "VRCSDK2.snk";
+		dLLMaker.sourcePaths = new List<string>();
+		dLLMaker.sourcePaths.Add(CORE_SOURCE_FULL_PATH + "/VRCSDK-Gui/Scripts");
+		dLLMaker.DllDependencies = new List<string>();
+		dLLMaker.DllDependencies.Add(DLLMaker.UnityExtensionDLLDirectoryPath + "GUISystem" + Path.DirectorySeparatorChar + "UnityEngine.UI.dll");
+		dLLMaker.DllDependencies.Add(DLLMaker.UnityDLLDirectoryPath + "UnityEditor.dll");
+		dLLMaker.DllDependencies.Add(SDK_OUTPUT_FULL_PATH + "/VRCCore-Editor.dll");
+		dLLMaker.DllDependencies.Add(SDK_OUTPUT_FULL_PATH + "/VRCSDK2.dll");
+		if (isInternal)
+		{
+			dLLMaker.defines.Add("INTERNAL_SDK");
+		}
+		dLLMaker.BuildTargetDir = SDK_OUTPUT_FULL_PATH;
+		dLLMaker.BuildTargetFile = "VRCSDK2-GUI.dll";
+		return dLLMaker.CreateDLL();
 	}
 
 	public static CompilerResults MakeSDKDLL(bool debug, bool isInternal)

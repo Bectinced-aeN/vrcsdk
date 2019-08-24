@@ -9,6 +9,9 @@ namespace VRCSDK2
 	{
 		public delegate void InitializationDelegate(VRC_SpatialAudioSource obj);
 
+		[Tooltip("If disabled, this source performs like a normally spatialized audio source.")]
+		public bool disableSpatialization;
+
 		[Tooltip("Loudness increase in decibels, can be negative.")]
 		public float Gain = 10f;
 
@@ -38,35 +41,38 @@ namespace VRCSDK2
 
 		private void Awake()
 		{
-			_source = this.GetComponent<AudioSource>();
-			if (_source == null)
+			if (!disableSpatialization)
 			{
-				Debug.LogErrorFormat("[{0}:VRC_SpatialAudioSource without an AudioSource component!", new object[1]
+				_source = this.GetComponent<AudioSource>();
+				if (_source == null)
 				{
-					this.get_gameObject().get_name()
-				});
-			}
-			if (Initialize != null)
-			{
-				Initialize(this);
+					Debug.LogErrorFormat("[{0}:VRC_SpatialAudioSource without an AudioSource component!", new object[1]
+					{
+						this.get_gameObject().get_name()
+					});
+				}
+				if (Initialize != null)
+				{
+					Initialize(this);
+				}
 			}
 		}
 
 		private void OnDrawGizmosSelected()
 		{
-			//IL_003b: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0047: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0063: Unknown result type (might be due to invalid IL or missing references)
+			//IL_0053: Unknown result type (might be due to invalid IL or missing references)
 			//IL_006f: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00af: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00bf: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00db: Unknown result type (might be due to invalid IL or missing references)
+			//IL_007b: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00bb: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00cb: Unknown result type (might be due to invalid IL or missing references)
 			//IL_00e7: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0127: Unknown result type (might be due to invalid IL or missing references)
+			//IL_00f3: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0133: Unknown result type (might be due to invalid IL or missing references)
-			//IL_014f: Unknown result type (might be due to invalid IL or missing references)
+			//IL_013f: Unknown result type (might be due to invalid IL or missing references)
 			//IL_015b: Unknown result type (might be due to invalid IL or missing references)
-			if (!UseAudioSourceVolumeCurve)
+			//IL_0167: Unknown result type (might be due to invalid IL or missing references)
+			if (!disableSpatialization && !UseAudioSourceVolumeCurve)
 			{
 				Color color = default(Color);
 				color.r = 1f;

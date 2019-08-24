@@ -95,8 +95,10 @@ namespace VRCSDK2.scripts.Scenes
 				yield return (object)www;
 				if (www.get_error() == null)
 				{
-					panoramas[index].texture = www.get_texture();
+					panoramas[index].texture = new Texture2D(www.get_texture().get_width(), www.get_texture().get_height());
+					www.LoadImageIntoTexture(panoramas[index].texture);
 				}
+				www.Dispose();
 			}
 			if (currentlyShown == index)
 			{

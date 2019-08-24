@@ -408,7 +408,10 @@ namespace VRCSDK2
 
         void OnUploadedWorld()
         {
-            string uploadedWorldURL = "https://vrchat.com/home/world/" + pipelineManager.blueprintId;
+            const string devUrl = "https://dev-api.vrchat.cloud";
+            const string releaseUrl = "https://vrchat.com";
+            
+            string uploadedWorldURL = (API.IsDevApi() ? devUrl : releaseUrl) + "/home/world/" + pipelineManager.blueprintId;
             OnSDKPipelineComplete(uploadedWorldURL);
         }
 

@@ -29,8 +29,6 @@ namespace VRC.Core
 
 		public const string devApiUrl = "https://dev-api.vrchat.cloud/api/1/";
 
-		public const string betaApiUrl = "https://beta-api.vrchat.cloud/api/1/";
-
 		public const string releaseApiUrl = "https://api.vrchat.cloud/api/1/";
 
 		public const float ResponseCacheLifetime = 3600f;
@@ -189,8 +187,6 @@ namespace VRC.Core
 			{
 			case ApiServerEnvironment.Dev:
 				return "https://dev-api.vrchat.cloud/api/1/";
-			case ApiServerEnvironment.Beta:
-				return "https://beta-api.vrchat.cloud/api/1/";
 			case ApiServerEnvironment.Release:
 				return "https://api.vrchat.cloud/api/1/";
 			default:
@@ -538,10 +534,6 @@ namespace VRC.Core
 			if (GetApiUrl() == "https://api.vrchat.cloud/api/1/")
 			{
 				return ApiServerEnvironment.Release;
-			}
-			if (GetApiUrl() == "https://beta-api.vrchat.cloud/api/1/")
-			{
-				return ApiServerEnvironment.Beta;
 			}
 			if (GetApiUrl() == "https://dev-api.vrchat.cloud/api/1/")
 			{

@@ -225,6 +225,11 @@ namespace VRCSDK2
 			}
 		}
 
+		public static bool IsReceiverRequiredForEventType(VrcEventType eventType)
+		{
+			return eventType != VrcEventType.AddDamage && eventType != VrcEventType.AddHealth;
+		}
+
 		public void TriggerEvent(VrcEvent e, VrcBroadcastType broadcast, GameObject instagator = null, float fastForward = 0f)
 		{
 			if (e == null)
@@ -266,7 +271,14 @@ namespace VRCSDK2
 							e.ParameterObject = parameterObject;
 							try
 							{
-								InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
+								if (null == e.ParameterObject && IsReceiverRequiredForEventType(e.EventType))
+								{
+									Debug.LogWarning((object)("Null object in parameter objects to receive event " + e.Name + " of type " + e.EventType + ", trigger event ignored."));
+								}
+								else
+								{
+									InternalTriggerEvent(e, broadcast, instagatorId, fastForward);
+								}
 							}
 							finally
 							{

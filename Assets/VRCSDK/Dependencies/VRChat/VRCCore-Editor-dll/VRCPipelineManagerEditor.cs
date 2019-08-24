@@ -19,13 +19,17 @@ public class VRCPipelineManagerEditor : Editor
 
 	public override void OnInspectorGUI()
 	{
-		//IL_01a9: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01bf: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01b5: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01cb: Unknown result type (might be due to invalid IL or missing references)
 		PipelineManager pipeline = (PipelineManager)this.get_target();
 		EditorGUILayout.LabelField("Unity Version", Application.get_unityVersion(), (GUILayoutOption[])new GUILayoutOption[0]);
 		if (!loggingIn)
 		{
-			bool flag = ApiCredentials.Load();
+			bool flag = ApiCredentials.IsLoaded();
+			if (!flag)
+			{
+				flag = ApiCredentials.Load();
+			}
 			if (!APIUser.IsLoggedInWithCredentials && flag)
 			{
 				API.SetOnlineMode(online: true);

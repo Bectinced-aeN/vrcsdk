@@ -45,7 +45,7 @@ namespace VRCSDK2
 		public bool ForbidUserPortals;
 
 		[HideInInspector]
-		public bool autoSpatializeAudioSources = true;
+		public bool autoSpatializeAudioSources;
 
 		[HideInInspector]
 		public Vector3 gravity = new Vector3(0f, -9.81f, 0f);
@@ -73,8 +73,8 @@ namespace VRCSDK2
 
 		public string unityVersion;
 
-		[Obsolete("Property is not used.")]
 		[HideInInspector]
+		[Obsolete("Property is not used.")]
 		public string Name;
 
 		[HideInInspector]

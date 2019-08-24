@@ -50,6 +50,8 @@ namespace VRCSDK2
 
 		public AutoHoldMode AutoHold;
 
+		public string InteractionText = string.Empty;
+
 		public string UseText = "Use";
 
 		[HideInInspector]
@@ -64,16 +66,16 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string UseUpEventName;
 
-		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
+		[HideInInspector]
 		public VRC_EventHandler.VrcBroadcastType pickupDropEventBroadcastType;
 
 		[HideInInspector]
 		[Obsolete("Please use a VRC_Trigger", false)]
 		public string PickupEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string DropEventName;
 
 		public float ThrowVelocityBoostMinSpeed = 1f;

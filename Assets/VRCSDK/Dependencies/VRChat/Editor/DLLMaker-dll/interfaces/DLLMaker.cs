@@ -16,7 +16,7 @@ namespace interfaces
 
 		public static readonly string UnityExtensionDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "UnityExtensions/Unity/");
 
-		private static readonly string UnityDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "Managed/");
+		public static readonly string UnityDLLDirectoryPath = Path.Combine(EditorApplication.get_applicationContentsPath(), "Managed/");
 
 		private static readonly string TempBuildDir = Application.get_dataPath() + "/../Temp/DllMaker";
 

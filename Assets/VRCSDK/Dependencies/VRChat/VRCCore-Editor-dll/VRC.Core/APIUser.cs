@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
 using VRC.Core.BestHTTP;
 
 namespace VRC.Core
@@ -201,8 +202,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[DefaultValue(DeveloperType.None)]
 		[ApiField]
+		[DefaultValue(DeveloperType.None)]
 		public DeveloperType developerType
 		{
 			get;
@@ -391,8 +392,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[Obsolete("No.")]
 		[ApiField(Required = false)]
+		[Obsolete("No.")]
 		private string networkSessionId
 		{
 			get;
@@ -1505,12 +1506,12 @@ namespace VRC.Core
 			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendGetRequest("auth/user", responseContainer, null, disableCache: true, 0f, new API.CredentialsBundle
 			{
-				Username = usernameOrEmail,
-				Password = password
+				Username = UnityWebRequest.EscapeURL(usernameOrEmail),
+				Password = UnityWebRequest.EscapeURL(password)
 			});
 		}
 
-		public static void VerifyTwoFactorAuthCode(string authCode, string authCodeType, string usernameOrEmail, string password, Action<ApiDictContainer> successCallback = null, Action<string> errorCallback = null)
+		public static void VerifyTwoFactorAuthCode(string authCode, string authCodeType, string usernameOrEmail, string password, Action<ApiDictContainer> successCallback = null, Action<ApiContainer> errorCallback = null)
 		{
 			Logger.Log("Verifying two-factor authentication code for type: " + authCodeType, DebugLevel.API);
 			Dictionary<string, object> dictionary = new Dictionary<string, object>();
@@ -1529,14 +1530,14 @@ namespace VRC.Core
 				Debug.LogError((object)("Two-factor authentication code for type: " + authCodeType + " verification failed: " + c.Error));
 				if (errorCallback != null)
 				{
-					errorCallback(c.Error);
+					errorCallback(c);
 				}
 			};
 			ApiDictContainer responseContainer = apiDictContainer;
 			API.SendPostRequest("auth/twofactorauth/" + authCodeType + "/verify", responseContainer, requestParams, new API.CredentialsBundle
 			{
-				Username = usernameOrEmail,
-				Password = password
+				Username = UnityWebRequest.EscapeURL(usernameOrEmail),
+				Password = UnityWebRequest.EscapeURL(password)
 			});
 		}
 

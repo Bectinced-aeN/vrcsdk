@@ -4,10 +4,9 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System;
-using System.Reflection;
 using System.Linq;
 using UnityEngine.Rendering;
-using VRCSDK2;
+using VRCSDK2.Validation.Performance.Stats;
 
 /// <summary>
 /// Setup up SDK env on editor launch
@@ -258,7 +257,7 @@ public class EnvConfig
         }
     }
 
-    [MenuItem("VRChat SDK/Force Configure Player Settings")]
+    [MenuItem("VRChat SDK/Utilities/Force Configure Player Settings")]
     public static void ConfigurePlayerSettings()
     {
         Debug.Log("Setting required PlayerSettings...");
