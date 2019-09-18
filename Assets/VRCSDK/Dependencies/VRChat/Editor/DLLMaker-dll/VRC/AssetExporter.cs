@@ -280,6 +280,9 @@ namespace VRC
 			FindDynamicPrefabsInScene(ref prefabs);
 			FindMaterialsAndPrefabsInScene(ref prefabs, ref materials);
 			FindMaterialsOnObjects(prefabs, ref prefabs, ref materials);
+			List<GameObject> prefabs2 = new List<GameObject>();
+			FindPrefabsThatCanBeToggledActiveInScene(ref prefabs2);
+			FindMaterialsOnObjects(prefabs2, ref prefabs, ref materials);
 			while (FindPrefabReferencesOnPrefabs(ref prefabs))
 			{
 			}
@@ -431,18 +434,37 @@ namespace VRC
 							prefabs.Add(val3);
 						}
 					}
-					foreach (VrcEvent item2 in from evt in trigger.Events
+				}
+			}
+		}
+
+		private static void FindPrefabsThatCanBeToggledActiveInScene(ref List<GameObject> prefabs, GameObject rootObj = null)
+		{
+			if (rootObj != null)
+			{
+				for (int i = 0; i < rootObj.get_transform().get_childCount(); i++)
+				{
+					FindPrefabsThatCanBeToggledActiveInScene(ref prefabs, rootObj.get_transform().GetChild(i).get_gameObject());
+				}
+			}
+			VRC_Trigger[] array = (!(rootObj != null)) ? Tools.FindSceneObjectsOfTypeAll<VRC_Trigger>() : rootObj.GetComponents<VRC_Trigger>();
+			VRC_Trigger[] array2 = array;
+			foreach (VRC_Trigger val in array2)
+			{
+				foreach (TriggerEvent trigger in val.Triggers)
+				{
+					foreach (VrcEvent item in from evt in trigger.Events
 					where (int)evt.EventType == 10 && 0 != (int)evt.ParameterBoolOp
 					select evt)
 					{
-						if (item2.ParameterObjects != null)
+						if (item.ParameterObjects != null)
 						{
-							GameObject[] parameterObjects = item2.ParameterObjects;
-							foreach (GameObject val4 in parameterObjects)
+							GameObject[] parameterObjects = item.ParameterObjects;
+							foreach (GameObject val2 in parameterObjects)
 							{
-								if (!(null == val4) && !prefabs.Contains(val4))
+								if (!(null == val2) && !prefabs.Contains(val2))
 								{
-									prefabs.Add(val4);
+									prefabs.Add(val2);
 								}
 							}
 						}
