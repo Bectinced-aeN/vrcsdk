@@ -287,6 +287,12 @@ namespace VRC
 			{
 			}
 			desc.DynamicMaterials = materials;
+			if (desc.DynamicPrefabs != null && desc.DynamicPrefabs.Count > 0)
+			{
+				prefabs.AddRange(from p in desc.DynamicPrefabs
+				where !prefabs.Contains(p)
+				select p);
+			}
 			desc.DynamicPrefabs = prefabs;
 			Debug.LogFormat("Found {0} prefabs and {1} materials", new object[2]
 			{

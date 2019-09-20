@@ -17,11 +17,13 @@ namespace VRC
 {
 	public static class Tools
 	{
-		private static bool? _isClient;
+		private static bool? _isClient = null;
 
-		private static string _clientVersion;
+		private static string _clientVersion = null;
 
-		private static string _platform;
+		private static UnityVersion _unityVersion = new UnityVersion(0, 0, 0, 0);
+
+		private static string _platform = null;
 
 		public static bool isClient
 		{
@@ -53,6 +55,18 @@ namespace VRC
 					}
 				}
 				return _clientVersion;
+			}
+		}
+
+		public static UnityVersion UnityVersion
+		{
+			get
+			{
+				if (_unityVersion.major == 0)
+				{
+					_unityVersion = UnityVersion.Parse(Application.get_unityVersion());
+				}
+				return _unityVersion;
 			}
 		}
 

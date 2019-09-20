@@ -9,9 +9,6 @@ namespace VRCSDK2
 	{
 		public delegate void InitializationDelegate(VRC_SpatialAudioSource obj);
 
-		[Tooltip("If disabled, this source performs like a normally spatialized audio source.")]
-		public bool disableSpatialization;
-
 		[Tooltip("Loudness increase in decibels, can be negative.")]
 		public float Gain = 10f;
 
@@ -41,19 +38,20 @@ namespace VRCSDK2
 
 		private void Awake()
 		{
-			if (!disableSpatialization)
+			_source = this.GetComponent<AudioSource>();
+			if (_source == null)
 			{
-				_source = this.GetComponent<AudioSource>();
-				if (_source == null)
+				Debug.LogErrorFormat("[{0}:VRC_SpatialAudioSource without an AudioSource component!", new object[1]
 				{
-					Debug.LogErrorFormat("[{0}:VRC_SpatialAudioSource without an AudioSource component!", new object[1]
-					{
-						this.get_gameObject().get_name()
-					});
-				}
-				if (Initialize != null)
+					this.get_gameObject().get_name()
+				});
+			}
+			else if (Initialize != null)
+			{
+				Initialize(this);
+				if (!EnableSpatialization)
 				{
-					Initialize(this);
+					_source.set_spatialize(false);
 				}
 			}
 		}
@@ -72,7 +70,7 @@ namespace VRCSDK2
 			//IL_013f: Unknown result type (might be due to invalid IL or missing references)
 			//IL_015b: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0167: Unknown result type (might be due to invalid IL or missing references)
-			if (!disableSpatialization && !UseAudioSourceVolumeCurve)
+			if (EnableSpatialization && !UseAudioSourceVolumeCurve)
 			{
 				Color color = default(Color);
 				color.r = 1f;

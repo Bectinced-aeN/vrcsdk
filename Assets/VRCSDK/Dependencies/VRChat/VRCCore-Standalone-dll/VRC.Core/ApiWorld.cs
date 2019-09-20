@@ -245,8 +245,8 @@ namespace VRC.Core
 			private set;
 		}
 
-		[DefaultValue("standalonewindows")]
 		[ApiField(Required = false)]
+		[DefaultValue("standalonewindows")]
 		public string platform
 		{
 			get;
@@ -411,7 +411,7 @@ namespace VRC.Core
 		private void ReadUnityPackage(object dict)
 		{
 			Dictionary<string, object> dictionary = dict as Dictionary<string, object>;
-			if (dictionary.ContainsKey("platform"))
+			if (dictionary.ContainsKey("platform") && dictionary.ContainsKey("unityVersion"))
 			{
 				string text = dictionary["platform"].ToString();
 				switch (text)
@@ -423,7 +423,8 @@ namespace VRC.Core
 					supportedPlatforms |= SupportedPlatforms.StandaloneWindows;
 					break;
 				}
-				if (text == Tools.Platform)
+				UnityVersion unityVersion;
+				if (UnityVersion.TryParse(dictionary["unityVersion"].ToString(), out unityVersion) && text == Tools.Platform && Tools.UnityVersion.CompareTo(unityVersion) >= 0)
 				{
 					if (dictionary.ContainsKey("assetUrl"))
 					{
@@ -433,6 +434,7 @@ namespace VRC.Core
 					{
 						pluginUrl = dictionary["pluginUrl"].ToString();
 					}
+					this.unityVersion = dictionary["unityVersion"].ToString();
 				}
 			}
 		}
@@ -441,6 +443,9 @@ namespace VRC.Core
 		{
 			switch (fieldName)
 			{
+			case "assetUrl":
+			case "pluginUrl":
+				return true;
 			case "instances":
 			{
 				List<object> source = data as List<object>;

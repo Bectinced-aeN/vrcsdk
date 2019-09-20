@@ -15,8 +15,8 @@ MonoBehaviour:
   aabb:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 2, y: 2, z: 2}
-  skinnedMeshCount: 1
-  meshCount: 4
+  skinnedMeshCount: 2
+  meshCount: 8
   materialCount: 8
   animatorCount: 4
   boneCount: 150

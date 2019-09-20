@@ -137,7 +137,7 @@ namespace VRCSDK2.Validation
             //This is really verbose for some SDK scenes, eg.
             //If they don't have FinalIK installed
 #if VRC_CLIENT && UNITY_EDITOR
-                Debug.LogError("Could not find type " + name);
+                Debug.LogWarningFormat("Could not find type {0}", name);
 #endif
             _typeCache[name] = null;
             return null;

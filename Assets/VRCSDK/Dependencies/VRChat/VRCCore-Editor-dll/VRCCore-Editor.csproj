@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{EC6BF9AF-F735-4780-9FD4-FDFD6516BD62}</ProjectGuid>
+    <ProjectGuid>{8A21D13D-939B-4A02-8295-052D73AB9CE6}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
@@ -1000,6 +1000,7 @@
     <Compile Include="VRC.Core\RemoteConfig.cs" />
     <Compile Include="VRC.Core\SDKClientUtilities.cs" />
     <Compile Include="VRC.Core\ThreadDispatcher.cs" />
+    <Compile Include="VRC.Core\UnityVersion.cs" />
     <Compile Include="VRC.Core\UpdateDelegator.cs" />
     <Compile Include="VRC.Core\VRCEvent.cs" />
     <Compile Include="VRCPipelineManagerEditor.cs" />

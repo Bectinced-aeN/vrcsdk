@@ -15,7 +15,7 @@ namespace VRCSDK2.Validation.Performance
     {
         public AbstractPerformanceScanner[] performanceScanners;
 
-        public IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public void RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
             foreach(AbstractPerformanceScanner performanceScanner in performanceScanners)
             {
@@ -23,8 +23,21 @@ namespace VRCSDK2.Validation.Performance
                 {
                     continue;
                 }
-                
-                yield return performanceScanner.RunPerformanceScan(avatarObject, perfStats, shouldIgnoreComponent);
+
+                performanceScanner.RunPerformanceScan(avatarObject, perfStats, shouldIgnoreComponent);
+            }
+        }
+
+        public IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        {
+            foreach(AbstractPerformanceScanner performanceScanner in performanceScanners)
+            {
+                if(performanceScanner == null)
+                {
+                    continue;
+                }
+
+                yield return performanceScanner.RunPerformanceScanEnumerator(avatarObject, perfStats, shouldIgnoreComponent);
             }
         }
     }

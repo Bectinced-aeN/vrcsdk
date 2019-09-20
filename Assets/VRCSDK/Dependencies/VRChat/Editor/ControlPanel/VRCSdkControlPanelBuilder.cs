@@ -1217,7 +1217,8 @@ public partial class VRCSdkControlPanel : EditorWindow
             OnGUIWarning(avatar, ValidationHelpers.GetAssetBundleOverSizeLimitMessageSDKWarning(ContentType.Avatar, fileSize), delegate () { Selection.activeObject = avatar.gameObject; }, null);
         }
 
-        AvatarPerformanceStats perfStats = AvatarPerformance.CalculatePerformanceStats(avatar.Name, avatar.gameObject);
+        AvatarPerformanceStats perfStats = new AvatarPerformanceStats();
+        AvatarPerformance.CalculatePerformanceStats(avatar.Name, avatar.gameObject, perfStats);
 
         OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.Overall);
         OnGUIPerformanceInfo(avatar, perfStats, AvatarPerformanceCategory.PolyCount);

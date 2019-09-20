@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance
@@ -36,50 +37,30 @@ namespace VRCSDK2.Validation.Performance
 
         #region Public Methods
 
-        public static AvatarPerformanceStats CalculatePerformanceStats(string avatarName, GameObject avatarObject)
+        public static void CalculatePerformanceStats(string avatarName, GameObject avatarObject, AvatarPerformanceStats perfStats)
         {
-            AvatarPerformanceStats stats = new AvatarPerformanceStats();
+            perfStats.Reset();
+            perfStats.avatarName = avatarName;
 
-            Stack<IEnumerator> coroutines = new Stack<IEnumerator>();
-            coroutines.Push(CalculatePerformanceStatsEnumerator(avatarName, avatarObject, stats));
-            while(coroutines.Count > 0)
+            PerformanceScannerSet performanceScannerSet = GetPerformanceScannerSet();
+            if(performanceScannerSet != null)
             {
-                IEnumerator currentCoroutine = coroutines.Peek();
-                if(currentCoroutine.MoveNext())
-                {
-                    IEnumerator nestedCoroutine = currentCoroutine.Current as IEnumerator;
-                    if(nestedCoroutine != null)
-                    {
-                        coroutines.Push(nestedCoroutine);
-                    }
-                }
-                else
-                {
-                    coroutines.Pop();
-                }
+                performanceScannerSet.RunPerformanceScan(avatarObject, perfStats, ShouldIgnoreComponentInternal);
             }
 
-            return stats;
+            // cache performance ratings
+            perfStats.CalculateAllPerformanceRatings();
         }
 
         public static IEnumerator CalculatePerformanceStatsEnumerator(string avatarName, GameObject avatarObject, AvatarPerformanceStats perfStats)
         {
-            PerformanceScannerSet performanceScannerSet;
-            if(VRC.ValidationHelpers.IsStandalonePlatform())
-            {
-                performanceScannerSet = Resources.Load<PerformanceScannerSet>("Validation/Performance/ScannerSets/PerformanceScannerSet_Windows");
-            }
-            else
-            {
-                performanceScannerSet = Resources.Load<PerformanceScannerSet>("Validation/Performance/ScannerSets/PerformanceScannerSet_Quest");
-            }
-
             perfStats.Reset();
             perfStats.avatarName = avatarName;
 
+            PerformanceScannerSet performanceScannerSet = GetPerformanceScannerSet();
             if(performanceScannerSet != null)
             {
-                yield return performanceScannerSet.RunPerformanceScan(avatarObject, perfStats, ShouldIgnoreComponentInternal);
+                yield return performanceScannerSet.RunPerformanceScanEnumerator(avatarObject, perfStats, ShouldIgnoreComponentInternal);
             }
 
             // cache performance ratings
@@ -94,27 +75,20 @@ namespace VRCSDK2.Validation.Performance
                 yield break;
             }
 
-            PerformanceFilterSet performanceFilterSet;
-            if(VRC.ValidationHelpers.IsStandalonePlatform())
+            PerformanceFilterSet performanceFilterSet = GetPerformanceFilterSet();
+            if(performanceFilterSet == null)
             {
-                performanceFilterSet = Resources.Load<PerformanceFilterSet>("Validation/Performance/FilterSets/PerformanceFilterSet_Windows");
-            }
-            else
-            {
-                performanceFilterSet = Resources.Load<PerformanceFilterSet>("Validation/Performance/FilterSets/PerformanceFilterSet_Quest");
+                yield break;
             }
 
             bool avatarBlocked = false;
-            if(performanceFilterSet != null)
-            {
-                yield return performanceFilterSet.ApplyPerformanceFilters(
-                    avatarObject,
-                    perfStats,
-                    minPerfRating,
-                    ShouldIgnoreComponentInternal,
-                    () => { avatarBlocked = true; }
-                );
-            }
+            yield return performanceFilterSet.ApplyPerformanceFilters(
+                avatarObject,
+                perfStats,
+                minPerfRating,
+                ShouldIgnoreComponentInternal,
+                () => { avatarBlocked = true; }
+            );
 
             if(!avatarBlocked)
             {
@@ -134,6 +108,36 @@ namespace VRCSDK2.Validation.Performance
         #endregion
 
         #region Private Methods
+
+        private static PerformanceScannerSet GetPerformanceScannerSet()
+        {
+            PerformanceScannerSet performanceScannerSet;
+            if(VRC.ValidationHelpers.IsStandalonePlatform())
+            {
+                performanceScannerSet = Resources.Load<PerformanceScannerSet>("Validation/Performance/ScannerSets/PerformanceScannerSet_Windows");
+            }
+            else
+            {
+                performanceScannerSet = Resources.Load<PerformanceScannerSet>("Validation/Performance/ScannerSets/PerformanceScannerSet_Quest");
+            }
+
+            return performanceScannerSet;
+        }
+
+        private static PerformanceFilterSet GetPerformanceFilterSet()
+        {
+            PerformanceFilterSet performanceFilterSet;
+            if(VRC.ValidationHelpers.IsStandalonePlatform())
+            {
+                performanceFilterSet = Resources.Load<PerformanceFilterSet>("Validation/Performance/FilterSets/PerformanceFilterSet_Windows");
+            }
+            else
+            {
+                performanceFilterSet = Resources.Load<PerformanceFilterSet>("Validation/Performance/FilterSets/PerformanceFilterSet_Quest");
+            }
+
+            return performanceFilterSet;
+        }
 
         private static bool ShouldIgnoreComponentInternal(Component component)
         {

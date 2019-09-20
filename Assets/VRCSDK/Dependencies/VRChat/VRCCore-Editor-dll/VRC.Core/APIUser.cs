@@ -201,8 +201,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField]
 		[DefaultValue(DeveloperType.None)]
+		[ApiField]
 		public DeveloperType developerType
 		{
 			get;
@@ -391,8 +391,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField(Required = false)]
 		[Obsolete("No.")]
+		[ApiField(Required = false)]
 		private string networkSessionId
 		{
 			get;

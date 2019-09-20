@@ -201,8 +201,8 @@ namespace VRC.Core
 			protected set;
 		}
 
-		[ApiField]
 		[DefaultValue(DeveloperType.None)]
+		[ApiField]
 		public DeveloperType developerType
 		{
 			get;

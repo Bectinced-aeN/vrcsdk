@@ -34,7 +34,7 @@ namespace VRC.Core
 			yellow
 		}
 
-		private static List<int> enabledDebugLevels;
+		private static readonly HashSet<int> enabledDebugLevels = new HashSet<int>();
 
 		private static Dictionary<int, float> _timeLastLogPrintedForHash = new Dictionary<int, float>();
 
@@ -117,7 +117,8 @@ namespace VRC.Core
 
 		public static void SetDebugLevels(IEnumerable<int> levels)
 		{
-			enabledDebugLevels = levels.ToList();
+			enabledDebugLevels.Clear();
+			enabledDebugLevels.UnionWith(levels);
 		}
 
 		public static void AddDebugLevel(DebugLevel level)
@@ -127,11 +128,10 @@ namespace VRC.Core
 
 		public static void AddDebugLevel(int level)
 		{
-			if (enabledDebugLevels == null)
+			if (!enabledDebugLevels.Contains(level))
 			{
-				enabledDebugLevels = new List<int>();
+				enabledDebugLevels.Add(level);
 			}
-			enabledDebugLevels.Add(level);
 		}
 
 		public static void RemoveDebugLevel(DebugLevel level)
@@ -141,11 +141,10 @@ namespace VRC.Core
 
 		public static void RemoveDebugLevel(int level)
 		{
-			if (enabledDebugLevels == null)
+			if (enabledDebugLevels.Contains(level))
 			{
-				enabledDebugLevels = new List<int>();
+				enabledDebugLevels.Remove(level);
 			}
-			enabledDebugLevels.Remove(level);
 		}
 
 		public static bool DebugLevelIsEnabled(DebugLevel level)
@@ -155,7 +154,7 @@ namespace VRC.Core
 
 		public static bool DebugLevelIsEnabled(int level)
 		{
-			return (enabledDebugLevels != null && enabledDebugLevels.Contains(7)) || level == 0 || (enabledDebugLevels != null && enabledDebugLevels.Contains(level));
+			return enabledDebugLevels.Contains(7) || level == 0 || enabledDebugLevels.Contains(level);
 		}
 
 		public static void Log(string message, DebugLevel debugLevel = DebugLevel.Always, Object context = null)

@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 using VRCSDK2;
 
+[RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(VRC_EventHandler))]
 [RequireComponent(typeof(VRC_SyncVideoPlayer))]
-[RequireComponent(typeof(AudioSource))]
 public class VRC_YouTubeSync : MonoBehaviour
 {
 	[HideInInspector]

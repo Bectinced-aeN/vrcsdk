@@ -105,12 +105,12 @@ namespace VRCSDK2
 			[SerializeField]
 			public GameObject[] ParameterObjects;
 
-			[HideInInspector]
 			[SerializeField]
+			[HideInInspector]
 			public byte[] ParameterBytes;
 
-			[HideInInspector]
 			[SerializeField]
+			[HideInInspector]
 			public int? ParameterBytesVersion;
 
 			public bool TakeOwnershipOfTarget;

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
@@ -12,23 +13,23 @@ namespace VRCSDK2.Validation.Performance.Scanners
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/MeshPerformanceScanner"
     )]
     #endif
-    public class MeshPerformanceScanner : AbstractPerformanceScanner
+    public sealed class MeshPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            List<Renderer> renderers = new List<Renderer>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, renderers);
+            // Renderers
+            List<Renderer> rendererBuffer = new List<Renderer>(16);
+            yield return ScanAvatarForComponentsOfType(avatarObject, rendererBuffer);
             if(shouldIgnoreComponent != null)
             {
-                renderers.RemoveAll(c => shouldIgnoreComponent(c));
+                rendererBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            AnalyzeGeometry(avatarObject, renderers, perfStats);
-            AnalyzeMeshRenderers(renderers, perfStats);
-            AnalyzeSkinnedMeshRenderers(renderers, perfStats);
+            yield return AnalyzeGeometry(avatarObject, rendererBuffer, perfStats);
+            AnalyzeMeshRenderers(rendererBuffer, perfStats);
+            AnalyzeSkinnedMeshRenderers(rendererBuffer, perfStats);
+
+
             yield return null;
         }
 
@@ -75,7 +76,7 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
                 return meshFilter.sharedMesh != null;
             }
-            
+
             SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
             if(skinnedMeshRenderer != null)
             {
@@ -85,14 +86,15 @@ namespace VRCSDK2.Validation.Performance.Scanners
             return false;
         }
 
-        private void AnalyzeGeometry(GameObject avatarObject, IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        private IEnumerator AnalyzeGeometry(GameObject avatarObject, IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
         {
+            List<Renderer> lodGroupRendererIgnoreBuffer = new List<Renderer>(16);
+            List<LODGroup> lodBuffer = new List<LODGroup>(16);
+
             ulong polyCount = 0;
             Bounds bounds = new Bounds(avatarObject.transform.position, Vector3.zero);
-            List<Renderer> rendererIgnoreBuffer = new List<Renderer>(16);
-
-            List<LODGroup> lodBuffer = new List<LODGroup>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, lodBuffer);
+            
+            yield return ScanAvatarForComponentsOfType(avatarObject, lodBuffer);
             try
             {
                 foreach(LODGroup lodGroup in lodBuffer)
@@ -105,7 +107,7 @@ namespace VRCSDK2.Validation.Performance.Scanners
                         uint thisLodPolyCount = 0;
                         foreach(Renderer renderer in lod.renderers)
                         {
-                            rendererIgnoreBuffer.Add(renderer);
+                            lodGroupRendererIgnoreBuffer.Add(renderer);
                             checked
                             {
                                 thisLodPolyCount += CalculateRendererPolyCount(renderer);
@@ -129,47 +131,57 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 polyCount = uint.MaxValue;
             }
 
+            Profiler.BeginSample("Calculate Total Polygon Count and Bounds");
             foreach(Renderer renderer in renderers)
             {
+                Profiler.BeginSample("Single Renderer");
                 if(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)
                 {
                     if(!RendererHasMesh(renderer))
                     {
+                        Profiler.EndSample();
                         continue;
                     }
 
                     bounds.Encapsulate(renderer.bounds);
                 }
 
-                if(rendererIgnoreBuffer.Contains(renderer))
+                if(lodGroupRendererIgnoreBuffer.Contains(renderer))
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
                 polyCount += CalculateRendererPolyCount(renderer);
+                Profiler.EndSample();
             }
+
+            Profiler.EndSample();
 
             bounds.center -= avatarObject.transform.position;
 
-            rendererIgnoreBuffer.Clear();
+            lodGroupRendererIgnoreBuffer.Clear();
             lodBuffer.Clear();
 
             perfStats.polyCount = polyCount > int.MaxValue ? int.MaxValue : (int)polyCount;
             perfStats.aabb = bounds;
         }
 
-        private static void AnalyzeSkinnedMeshRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
+        private void AnalyzeSkinnedMeshRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
         {
+            Profiler.BeginSample("AnalyzeSkinnedMeshRenderers");
             int count = 0;
             int materialSlots = 0;
             int skinnedBoneCount = 0;
-
             HashSet<Transform> transformIgnoreBuffer = new HashSet<Transform>();
+
             foreach(Renderer renderer in renderers)
             {
+                Profiler.BeginSample("Analyze SkinnedMeshRenderer");
                 SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
                 if(skinnedMeshRenderer == null)
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
@@ -182,20 +194,29 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 }
 
                 // bone count
+                Profiler.BeginSample("Count Bones");
                 Transform[] bones = skinnedMeshRenderer.bones;
                 foreach(Transform bone in bones)
                 {
+                    Profiler.BeginSample("Count Bone");
                     if(bone == null || transformIgnoreBuffer.Contains(bone))
                     {
+                        Profiler.EndSample();
                         continue;
                     }
 
                     transformIgnoreBuffer.Add(bone);
                     skinnedBoneCount++;
+                    Profiler.EndSample();
                 }
+
+                Profiler.EndSample();
+
+                Profiler.EndSample();
             }
 
             transformIgnoreBuffer.Clear();
+            Profiler.EndSample();
 
             perfStats.skinnedMeshCount += count;
             perfStats.materialCount += materialSlots;
@@ -204,21 +225,27 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
         private static void AnalyzeMeshRenderers(IEnumerable<Renderer> renderers, AvatarPerformanceStats perfStats)
         {
+            Profiler.BeginSample("AnalyzeMeshRenderers");
             int count = 0;
             int materialSlots = 0;
             foreach(Renderer renderer in renderers)
             {
+                Profiler.BeginSample("Analyze MeshRenderer");
                 MeshRenderer meshRenderer = renderer as MeshRenderer;
                 if(meshRenderer == null)
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
                 count++;
 
+                Profiler.BeginSample("Get MeshFilter");
                 MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                Profiler.EndSample();
                 if(meshFilter == null)
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
@@ -228,6 +255,8 @@ namespace VRCSDK2.Validation.Performance.Scanners
                     materialSlots += sharedMesh.subMeshCount;
                 }
             }
+
+            Profiler.EndSample();
 
             perfStats.meshCount += count;
             perfStats.materialCount += materialSlots;

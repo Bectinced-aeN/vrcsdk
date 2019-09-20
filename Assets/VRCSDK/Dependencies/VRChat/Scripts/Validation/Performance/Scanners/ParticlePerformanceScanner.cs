@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
@@ -11,24 +12,24 @@ namespace VRCSDK2.Validation.Performance.Scanners
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/ParticlePerformanceScanner"
     )]
     #endif
-    public class ParticlePerformanceScanner : AbstractPerformanceScanner
+    public sealed class ParticlePerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            List<ParticleSystem> particleSystems = new List<ParticleSystem>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, particleSystems);
+            // Particle Systems
+            List<ParticleSystem> particleSystemBuffer = new List<ParticleSystem>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, particleSystemBuffer);
             if(shouldIgnoreComponent != null)
             {
-                particleSystems.RemoveAll(c => shouldIgnoreComponent(c));
+                particleSystemBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            yield return AnalyzeParticleSystemRenderers(particleSystems, perfStats);
+            AnalyzeParticleSystemRenderers(particleSystemBuffer, perfStats);
+
+            yield return null;
         }
 
-        private static IEnumerator AnalyzeParticleSystemRenderers(IEnumerable<ParticleSystem> particleSystems, AvatarPerformanceStats perfStats)
+        private static void AnalyzeParticleSystemRenderers(IEnumerable<ParticleSystem> particleSystems, AvatarPerformanceStats perfStats)
         {
             int particleSystemCount = 0;
             ulong particleTotalCount = 0;
@@ -37,11 +38,14 @@ namespace VRCSDK2.Validation.Performance.Scanners
             bool particleCollisionEnabled = false;
             int materialSlots = 0;
 
+            Profiler.BeginSample("AnalyzeParticleSystemRenderers");
             foreach(ParticleSystem particleSystem in particleSystems)
             {
+                Profiler.BeginSample("Single Particle System");
                 int particleCount = particleSystem.main.maxParticles;
                 if(particleCount <= 0)
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
@@ -51,6 +55,7 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 ParticleSystemRenderer particleSystemRenderer = particleSystem.GetComponent<ParticleSystemRenderer>();
                 if(particleSystemRenderer == null)
                 {
+                    Profiler.EndSample();
                     continue;
                 }
 
@@ -92,7 +97,11 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 {
                     particleCollisionEnabled = true;
                 }
+
+                Profiler.EndSample();
             }
+
+            Profiler.EndSample();
 
             perfStats.particleSystemCount = particleSystemCount;
             perfStats.particleTotalCount = particleTotalCount > int.MaxValue ? int.MaxValue : (int)particleTotalCount;
@@ -100,8 +109,6 @@ namespace VRCSDK2.Validation.Performance.Scanners
             perfStats.particleTrailsEnabled = particleTrailsEnabled;
             perfStats.particleCollisionEnabled = particleCollisionEnabled;
             perfStats.materialCount += materialSlots;
-
-            yield break;
         }
     }
 }

@@ -6,7 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace VRCSDK2
 {
@@ -40,6 +42,10 @@ namespace VRCSDK2
 			public ISerializationSurrogate GetSurrogate(Type type, StreamingContext context, out ISurrogateSelector selector)
 			{
 				selector = this;
+				if (!IsAllowedType(type))
+				{
+					throw new SecurityException("Unknown type: " + type.FullName);
+				}
 				if (type == typeof(Vector2))
 				{
 					return new Vector2Surrogate();
@@ -82,6 +88,23 @@ namespace VRCSDK2
 					return _next.GetSurrogate(type, context, out selector);
 				}
 				return null;
+			}
+
+			private static bool IsAllowedType(Type type)
+			{
+				if (_allowedTypes.Contains(type) || (type.IsSubclassOf(typeof(Array)) && _allowedTypes.Contains(type.GetElementType())))
+				{
+					return true;
+				}
+				if (!AllowPluginTypes)
+				{
+					return false;
+				}
+				if (!_allowedPluginTypes.Contains(type) && (!type.IsSubclassOf(typeof(Array)) || !_allowedPluginTypes.Contains(type.GetElementType())))
+				{
+					return false;
+				}
+				return true;
 			}
 		}
 
@@ -562,19 +585,46 @@ namespace VRCSDK2
 			}
 		}
 
-		private static ISurrogateSelector _networkSurrogateSelector;
-
-		private static ISurrogateSelector SurrogateSelector
+		private static readonly HashSet<Type> _allowedTypes = new HashSet<Type>
 		{
-			get
-			{
-				if (_networkSurrogateSelector == null)
-				{
-					_networkSurrogateSelector = new NetworkSurrogateSelector();
-				}
-				return _networkSurrogateSelector;
-			}
+			typeof(string),
+			typeof(byte),
+			typeof(short),
+			typeof(ushort),
+			typeof(int),
+			typeof(uint),
+			typeof(float),
+			typeof(double),
+			typeof(object[]),
+			typeof(Vector2),
+			typeof(Vector3),
+			typeof(Vector4),
+			typeof(Quaternion),
+			typeof(GameObject),
+			typeof(Transform),
+			typeof(Color),
+			typeof(Color32),
+			typeof(VRC_SyncVideoPlayer.VideoEntry),
+			typeof(VideoSource),
+			typeof(VideoAspectRatio),
+			typeof(VideoClip),
+			typeof(VRC_SceneDescriptor.SpawnOrientation),
+			typeof(VRC_SyncVideoStream.VideoEntry),
+			typeof(VRC_SyncVideoStream.VideoSyncType),
+			typeof(VRC_SyncVideoStream.VideoTextureFormat)
+		};
+
+		private static readonly HashSet<Type> _allowedPluginTypes = new HashSet<Type>();
+
+		private static ISurrogateSelector _networkSurrogateSelector = null;
+
+		public static bool AllowPluginTypes
+		{
+			get;
+			set;
 		}
+
+		private static ISurrogateSelector SurrogateSelector => _networkSurrogateSelector ?? (_networkSurrogateSelector = new NetworkSurrogateSelector());
 
 		public static VRC_EventDispatcher Dispatcher
 		{
@@ -586,6 +636,26 @@ namespace VRCSDK2
 					return null;
 				}
 				return val.GetComponent<VRC_EventDispatcher>();
+			}
+		}
+
+		public static void RegisterVRCPlayer(Type type)
+		{
+			if (type.FullName != "VRC.Player")
+			{
+				throw new SecurityException("Unrecognized VRC.Player type: " + type.FullName);
+			}
+			if (!_allowedTypes.Contains(type))
+			{
+				_allowedTypes.Add(type);
+			}
+		}
+
+		public static void RegisterPluginType(Type type)
+		{
+			if (!_allowedPluginTypes.Contains(type))
+			{
+				_allowedPluginTypes.Add(type);
 			}
 		}
 
@@ -602,11 +672,16 @@ namespace VRCSDK2
 			{
 				formatter.Serialize(memoryStream, parameters);
 			}
-			catch (Exception ex)
+			catch (SecurityException)
 			{
-				Debug.LogError((object)("Something went wrong serializing RPC parameters: \n" + ex.Message + "\n" + ex.StackTrace));
+				throw;
+				IL_002f:;
+			}
+			catch (Exception ex2)
+			{
+				Debug.LogError((object)("Something went wrong serializing RPC parameters: \n" + ex2.Message + "\n" + ex2.StackTrace));
 				return null;
-				IL_0054:;
+				IL_005c:;
 			}
 			memoryStream.Flush();
 			return memoryStream.ToArray();
@@ -617,21 +692,28 @@ namespace VRCSDK2
 			if (dataParameters != null && dataParameters.Length > 0)
 			{
 				MemoryStream serializationStream = new MemoryStream(dataParameters);
-				BinaryFormatter binaryFormatter = new BinaryFormatter();
-				binaryFormatter.SurrogateSelector = SurrogateSelector;
+				IFormatter formatter = new BinaryFormatter();
+				formatter.SurrogateSelector = SurrogateSelector;
 				try
 				{
-					return (object[])binaryFormatter.Deserialize(serializationStream);
+					return (object[])formatter.Deserialize(serializationStream);
 				}
-				catch (Exception ex)
+				catch (SecurityException)
+				{
+					throw;
+					IL_003c:
+					object[] result;
+					return result;
+				}
+				catch (Exception ex2)
 				{
 					if (rethrow)
 					{
-						throw ex;
+						throw;
 					}
-					Debug.LogError((object)("Error decoding parameters: " + ex.Message + "\n" + ex.StackTrace));
+					Debug.LogError((object)("Error decoding parameters: " + ex2.Message + "\n" + ex2.StackTrace));
 					return null;
-					IL_006a:
+					IL_0072:
 					object[] result;
 					return result;
 				}

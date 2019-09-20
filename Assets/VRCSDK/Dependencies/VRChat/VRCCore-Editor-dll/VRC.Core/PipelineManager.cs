@@ -33,8 +33,8 @@ namespace VRC.Core
 
 		public ContentType contentType;
 
-		[Obsolete("Property is not used.")]
 		[HideInInspector]
+		[Obsolete("Property is not used.")]
 		public string assetBundleUnityVersion;
 
 		private Ownership owned;

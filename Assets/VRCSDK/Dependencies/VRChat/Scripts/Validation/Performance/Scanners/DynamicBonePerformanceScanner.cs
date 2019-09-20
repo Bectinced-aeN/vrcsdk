@@ -4,59 +4,54 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
 {
     #if VRC_CLIENT
     [CreateAssetMenu(
-        fileName =  "New DynamicBonePerformanceScanner",
+        fileName = "New DynamicBonePerformanceScanner",
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/DynamicBonePerformanceScanner"
     )]
     #endif
-    public class DynamicBonePerformanceScanner : AbstractPerformanceScanner
+    public sealed class DynamicBonePerformanceScanner : AbstractPerformanceScanner
     {
-        private static readonly object initLock = new object();
+        private Type _dynamicBoneType;
+        private FieldInfo _dynamicBoneRootFieldInfo;
+        private FieldInfo _dynamicBoneExclusionsFieldInfo;
+        private FieldInfo _dynamicBoneCollidersFieldInfo;
+        private FieldInfo _dynamicBoneEndLengthFieldInfo;
+        private FieldInfo _dynamicBoneEndOffsetFieldInfo;
 
-        private static Type _dynamicBoneType = null;
-        private static FieldInfo _dynamicBoneRootFieldInfo = null;
-        private static FieldInfo _dynamicBoneExclusionsFieldInfo = null;
-        private static FieldInfo _dynamicBoneCollidersFieldInfo = null;
-        private static FieldInfo _dynamicBoneEndLengthFieldInfo = null;
-        private static FieldInfo _dynamicBoneEndOffsetFieldInfo = null;
-        private static bool _searchedOptionalTypes = false;
-        
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        private void Awake()
         {
-            lock (initLock)
-            {
-                if (!_searchedOptionalTypes)
-                {
-                    FindDynamicBoneTypes();
-                    _searchedOptionalTypes = true;
-                }
-            }
+            FindDynamicBoneTypes();
+        }
 
-            int totalSimulatedBoneCount = 0;
-            int totalCollisionChecks = 0;
-
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        {
             if(_dynamicBoneType == null)
             {
                 yield break;
             }
 
-            List<Component> dynamicBones = avatarObject.GetComponentsInChildren(_dynamicBoneType, includeInactiveObjectsInStats).ToList();
-            if (shouldIgnoreComponent != null)
+            // Dynamic Bone as Component
+            List<Component> dynamicBoneComponentBuffer = new List<Component>();
+            List<object> dynamicBoneColliderObjectBuffer = new List<object>();
+            yield return ScanAvatarForComponentsOfType(_dynamicBoneType, avatarObject, dynamicBoneComponentBuffer);
+            if(shouldIgnoreComponent != null)
             {
-                dynamicBones.RemoveAll(c => shouldIgnoreComponent(c));
+                dynamicBoneComponentBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            List<object> colliders = new List<object>();
-            foreach(Component dynamicBone in dynamicBones)
+            int totalSimulatedBoneCount = 0;
+            int totalCollisionChecks = 0;
+
+            Profiler.BeginSample("Analyze Dynamic Bones");
+            foreach(Component dynamicBone in dynamicBoneComponentBuffer)
             {
+                Profiler.BeginSample("Single Dynamic Bone Component");
                 int simulatedBones = 0;
 
                 // Add extra bones to the end of each chain if end bones are being used.
@@ -65,10 +60,10 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 bool hasEndBones = endLength > 0 || endOffset != Vector3.zero;
 
                 Transform root = (Transform)_dynamicBoneRootFieldInfo.GetValue(dynamicBone);
-                if (root != null)
+                if(root != null)
                 {
                     List<Transform> exclusions = (List<Transform>)_dynamicBoneExclusionsFieldInfo.GetValue(dynamicBone);
-                    
+
                     // Calculate number of simulated bones for the hierarchy
                     simulatedBones = CountTransformsRecursively(root, exclusions, hasEndBones);
                     totalSimulatedBoneCount += simulatedBones;
@@ -76,73 +71,79 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
                 int colliderListEntryCount = 0;
                 IList colliderList = (IList)_dynamicBoneCollidersFieldInfo.GetValue(dynamicBone);
-                if (colliderList != null)
+                if(colliderList != null)
                 {
                     foreach(object collider in colliderList)
                     {
                         colliderListEntryCount += 1;
-                        if(collider != null && !colliders.Contains(collider))
+                        if(collider != null && !dynamicBoneColliderObjectBuffer.Contains(collider))
                         {
-                            colliders.Add(collider);
+                            dynamicBoneColliderObjectBuffer.Add(collider);
                         }
                     }
                 }
 
                 // The root bone is skipped in collision checks.
                 totalCollisionChecks += (simulatedBones - 1) * colliderListEntryCount;
+                Profiler.EndSample();
             }
 
-            perfStats.dynamicBoneComponentCount = dynamicBones.Count;
+            Profiler.EndSample();
+
+            yield return null;
+
+            perfStats.dynamicBoneComponentCount = dynamicBoneComponentBuffer.Count;
             perfStats.dynamicBoneSimulatedBoneCount = totalSimulatedBoneCount;
-            perfStats.dynamicBoneColliderCount = colliders.Count;
+            perfStats.dynamicBoneColliderCount = dynamicBoneColliderObjectBuffer.Count;
             perfStats.dynamicBoneCollisionCheckCount = totalCollisionChecks;
         }
 
-        private static void FindDynamicBoneTypes()
+        private void FindDynamicBoneTypes()
         {
-            if (_dynamicBoneType != null)
+            if(_dynamicBoneType != null)
             {
                 return;
             }
 
             Type dyBoneType = ValidationUtils.GetTypeFromName("DynamicBone");
-            if (dyBoneType == null)
+            if(dyBoneType == null)
             {
                 return;
             }
 
             Type dyBoneColliderType = ValidationUtils.GetTypeFromName("DynamicBoneColliderBase") ?? ValidationUtils.GetTypeFromName("DynamicBoneCollider");
-            if (dyBoneColliderType == null)
+            if(dyBoneColliderType == null)
             {
                 return;
             }
 
             FieldInfo rootFieldInfo = dyBoneType.GetField("m_Root", BindingFlags.Public | BindingFlags.Instance);
-            if (rootFieldInfo == null || rootFieldInfo.FieldType != typeof(Transform))
+            if(rootFieldInfo == null || rootFieldInfo.FieldType != typeof(Transform))
             {
                 return;
             }
 
             FieldInfo exclusionsFieldInfo = dyBoneType.GetField("m_Exclusions", BindingFlags.Public | BindingFlags.Instance);
-            if (exclusionsFieldInfo == null || exclusionsFieldInfo.FieldType != typeof(List<Transform>))
+            if(exclusionsFieldInfo == null || exclusionsFieldInfo.FieldType != typeof(List<Transform>))
             {
                 return;
             }
 
             FieldInfo collidersFieldInfo = dyBoneType.GetField("m_Colliders", BindingFlags.Public | BindingFlags.Instance);
-            if (collidersFieldInfo == null || collidersFieldInfo.FieldType.GetGenericTypeDefinition() != typeof(List<>) || collidersFieldInfo.FieldType.GetGenericArguments().Single() != dyBoneColliderType)
+            if(collidersFieldInfo == null || collidersFieldInfo.FieldType.GetGenericTypeDefinition() != typeof(List<>) ||
+               collidersFieldInfo.FieldType.GetGenericArguments().Single() != dyBoneColliderType)
             {
                 return;
             }
 
             FieldInfo endLengthFieldInfo = dyBoneType.GetField("m_EndLength", BindingFlags.Public | BindingFlags.Instance);
-            if (endLengthFieldInfo == null || endLengthFieldInfo.FieldType != typeof(float))
+            if(endLengthFieldInfo == null || endLengthFieldInfo.FieldType != typeof(float))
             {
                 return;
             }
-            
+
             FieldInfo endOffsetFieldInfo = dyBoneType.GetField("m_EndOffset", BindingFlags.Public | BindingFlags.Instance);
-            if (endOffsetFieldInfo == null || endOffsetFieldInfo.FieldType != typeof(Vector3))
+            if(endOffsetFieldInfo == null || endOffsetFieldInfo.FieldType != typeof(Vector3))
             {
                 return;
             }
@@ -159,7 +160,7 @@ namespace VRCSDK2.Validation.Performance.Scanners
         // This means the root bone itself never excluded.
         private static int CountTransformsRecursively(Transform transform, List<Transform> exclusions, bool addEndBones)
         {
-            if (transform == null)
+            if(transform == null)
             {
                 return 0;
             }

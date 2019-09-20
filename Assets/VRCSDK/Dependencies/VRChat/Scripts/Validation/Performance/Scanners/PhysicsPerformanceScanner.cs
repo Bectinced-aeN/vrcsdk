@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
@@ -11,15 +12,13 @@ namespace VRCSDK2.Validation.Performance.Scanners
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/PhysicsPerformanceScanner"
     )]
     #endif
-    public class PhysicsPerformanceScanner : AbstractPerformanceScanner
+    public sealed class PhysicsPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            List<Collider> colliderBuffer = new List<Collider>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, colliderBuffer);
+            // Colliders
+            List<Collider> colliderBuffer = new List<Collider>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, colliderBuffer);
             colliderBuffer.RemoveAll(
                 o =>
                 {
@@ -39,10 +38,9 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
             perfStats.physicsColliderCount = colliderBuffer.Count;
 
-            yield return null;
-
-            List<Rigidbody> rigidbodyBuffer = new List<Rigidbody>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, rigidbodyBuffer);
+            // Rigidbodies
+            List<Rigidbody> rigidbodyBuffer = new List<Rigidbody>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, rigidbodyBuffer);
             rigidbodyBuffer.RemoveAll(
                 o =>
                 {
@@ -61,8 +59,6 @@ namespace VRCSDK2.Validation.Performance.Scanners
             );
 
             perfStats.physicsRigidbodyCount = rigidbodyBuffer.Count;
-
-            yield return null;
         }
     }
 }

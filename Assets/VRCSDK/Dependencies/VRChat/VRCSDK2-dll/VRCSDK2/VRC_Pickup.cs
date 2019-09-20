@@ -62,8 +62,8 @@ namespace VRCSDK2
 		[HideInInspector]
 		public string UseDownEventName;
 
-		[Obsolete("Please use a VRC_Trigger", false)]
 		[HideInInspector]
+		[Obsolete("Please use a VRC_Trigger", false)]
 		public string UseUpEventName;
 
 		[Obsolete("Please use a VRC_Trigger", false)]

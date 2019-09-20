@@ -7,21 +7,19 @@ namespace VRCSDK2.Validation.Performance.Scanners
 {
     #if VRC_CLIENT
     [CreateAssetMenu(
-        fileName =  "New AnimatorPerformanceScanner",
+        fileName = "New AnimatorPerformanceScanner",
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/AnimatorPerformanceScanner"
     )]
     #endif
-    public class AnimatorPerformanceScanner : AbstractPerformanceScanner
+    public sealed class AnimatorPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
             int animatorCount = 0;
 
-            List<Animator> animatorBuffer = new List<Animator>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, animatorBuffer);
+            // Animators
+            List<Animator> animatorBuffer = new List<Animator>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, animatorBuffer);
             if(shouldIgnoreComponent != null)
             {
                 animatorBuffer.RemoveAll(c => shouldIgnoreComponent(c));
@@ -29,10 +27,9 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
             animatorCount += animatorBuffer.Count;
 
-            yield return null;
-
-            List<Animation> animationBuffer = new List<Animation>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, animationBuffer);
+            // Animations
+            List<Animation> animationBuffer = new List<Animation>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, animationBuffer);
             if(shouldIgnoreComponent != null)
             {
                 animationBuffer.RemoveAll(c => shouldIgnoreComponent(c));
@@ -40,9 +37,7 @@ namespace VRCSDK2.Validation.Performance.Scanners
 
             animatorCount += animationBuffer.Count;
 
-            perfStats.animatorCount = animatorCount;
-
-            yield return null;
+            perfStats.animatorCount += animatorCount;
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using VRC;
 using VRC.Core.BestHTTP;
 using VRC.Core.BestHTTP.Caching;
 
@@ -217,7 +218,10 @@ public class ImageDownloader : MonoBehaviour
 		if (Instance == null)
 		{
 			GameObject val = new GameObject("ImageDownloader");
-			val.set_tag("VRCGlobalRoot");
+			if (Tools.isClient)
+			{
+				val.set_tag("VRCGlobalRoot");
+			}
 			return val.AddComponent<ImageDownloader>();
 		}
 		return Instance;

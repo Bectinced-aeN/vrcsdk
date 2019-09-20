@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
@@ -11,26 +12,21 @@ namespace VRCSDK2.Validation.Performance.Scanners
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/LineRendererPerformanceScanner"
     )]
     #endif
-    public class LineRendererPerformanceScanner : AbstractPerformanceScanner
+    public sealed class LineRendererPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            List<LineRenderer> lineRenderers = new List<LineRenderer>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, lineRenderers);
+            // Line Renderers
+            List<LineRenderer> lineRendererBuffer = new List<LineRenderer>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, lineRendererBuffer);
             if(shouldIgnoreComponent != null)
             {
-                lineRenderers.RemoveAll(c => shouldIgnoreComponent(c));
+                lineRendererBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            int numLineRenderers = lineRenderers.Count;
-
+            int numLineRenderers = lineRendererBuffer.Count;
             perfStats.lineRendererCount += numLineRenderers;
             perfStats.materialCount += numLineRenderers;
-
-            yield break;
         }
     }
 }

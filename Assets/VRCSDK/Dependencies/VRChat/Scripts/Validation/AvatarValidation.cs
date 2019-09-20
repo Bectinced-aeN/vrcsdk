@@ -209,28 +209,14 @@ using UnityEngine.Profiling;
                         Profiler.EndSample();
                         continue;
                     }
-
-                    VRC_SpatialAudioSource vrcSpatialAudioSource = audioSource.gameObject.GetComponent<VRC_SpatialAudioSource>();
+                    
 
                     #if VRC_CLIENT
                     audioSource.outputAudioMixerGroup = VRCAudioManager.GetAvatarGroup();
                     audioSource.priority = Mathf.Clamp(audioSource.priority, 200, 255);
-                    if (vrcSpatialAudioSource != null)
-                    {
-                        // copy the values into the onsp component
-                        var onspAudioSource = audioSource.gameObject.GetOrAddComponent<ONSPAudioSource>();
-                        onspAudioSource.Gain = vrcSpatialAudioSource.Gain;
-                        onspAudioSource.Near = vrcSpatialAudioSource.Near;
-                        onspAudioSource.Far = vrcSpatialAudioSource.Far;
-                        onspAudioSource.VolumetricRadius = vrcSpatialAudioSource.VolumetricRadius;
-                        onspAudioSource.EnableSpatialization = vrcSpatialAudioSource.EnableSpatialization;
-                        onspAudioSource.UseInvSqr = !vrcSpatialAudioSource.UseAudioSourceVolumeCurve;
-                        if (!vrcSpatialAudioSource.EnableSpatialization)
-                        {
-                            audioSource.spatialize = false;
-                        }
-                    }
                     #else
+                    VRC_SpatialAudioSource vrcSpatialAudioSource = audioSource.gameObject.GetComponent<VRC_SpatialAudioSource>();
+
                     // these are SDK only, we rely on AvatarAudioSourceLimiter to enforce
                     // values at runtime
 

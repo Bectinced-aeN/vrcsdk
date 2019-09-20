@@ -1,34 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
 {
     #if VRC_CLIENT
     [CreateAssetMenu(
-        fileName =  "New ClothPerformanceScanner",
+        fileName = "New ClothPerformanceScanner",
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/ClothPerformanceScanner"
     )]
     #endif
-    public class ClothPerformanceScanner : AbstractPerformanceScanner
+    public sealed class ClothPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            int totalClothVertices = 0;
-
-            List<Cloth> clothBuffer = new List<Cloth>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, clothBuffer);
+            // Cloth
+            List<Cloth> clothBuffer = new List<Cloth>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, clothBuffer);
             if(shouldIgnoreComponent != null)
             {
                 clothBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            perfStats.clothCount = clothBuffer.Count;
-
+            int totalClothVertices = 0;
             foreach(Cloth cloth in clothBuffer)
             {
                 if(cloth == null)
@@ -45,9 +41,8 @@ namespace VRCSDK2.Validation.Performance.Scanners
                 totalClothVertices += clothVertices.Length;
             }
 
-            perfStats.clothMaxVertices = totalClothVertices;
-
-            yield break;
+            perfStats.clothCount += clothBuffer.Count;
+            perfStats.clothMaxVertices += totalClothVertices;
         }
     }
 }

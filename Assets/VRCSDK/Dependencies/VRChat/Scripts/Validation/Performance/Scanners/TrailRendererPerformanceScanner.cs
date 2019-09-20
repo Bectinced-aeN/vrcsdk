@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VRCSDK2.Validation.Performance.Stats;
 
 namespace VRCSDK2.Validation.Performance.Scanners
@@ -11,26 +12,21 @@ namespace VRCSDK2.Validation.Performance.Scanners
         menuName = "VRC Scriptable Objects/Performance/Avatar/Scanners/TrailRendererPerformanceScanner"
     )]
     #endif
-    public class TrailRendererPerformanceScanner : AbstractPerformanceScanner
+    public sealed class TrailRendererPerformanceScanner : AbstractPerformanceScanner
     {
-        [SerializeField]
-        private bool includeInactiveObjectsInStats = true;
-
-        public override IEnumerator RunPerformanceScan(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
+        public override IEnumerator RunPerformanceScanEnumerator(GameObject avatarObject, AvatarPerformanceStats perfStats, AvatarPerformance.IgnoreDelegate shouldIgnoreComponent)
         {
-            List<TrailRenderer> trailRenderers = new List<TrailRenderer>(16);
-            avatarObject.GetComponentsInChildren(includeInactiveObjectsInStats, trailRenderers);
+            // Trail Renderers
+            List<TrailRenderer> trailRendererBuffer = new List<TrailRenderer>();
+            yield return ScanAvatarForComponentsOfType(avatarObject, trailRendererBuffer);
             if(shouldIgnoreComponent != null)
             {
-                trailRenderers.RemoveAll(c => shouldIgnoreComponent(c));
+                trailRendererBuffer.RemoveAll(c => shouldIgnoreComponent(c));
             }
 
-            int numTrailRenderers = trailRenderers.Count;
-
+            int numTrailRenderers = trailRendererBuffer.Count;
             perfStats.trailRendererCount += numTrailRenderers;
             perfStats.materialCount += numTrailRenderers;
-
-            yield break;
         }
     }
 }
